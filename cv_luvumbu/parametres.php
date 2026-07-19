@@ -276,8 +276,10 @@ function render_scope_checkboxes(array $allScopes, array $checked): void
     <div class="panel">
         <h2><span class="dot"></span> Connexion avec Google</h2>
         <p class="muted" style="margin-top:-8px">
-            Permet de vous connecter en un clic avec un compte Google.
-            Seules les adresses de la liste « Comptes Google autorisés » ci-dessous peuvent se connecter.
+            Permet de vous connecter en un clic avec un compte Google. Peuvent se connecter :
+            l'adresse liée à votre compte (ci-dessous « Mon compte ») <em>et</em> toute
+            adresse de la liste « Comptes Google autorisés ». Si aucune n'est définie,
+            la <strong>première</strong> connexion Google est adoptée automatiquement.
             Statut :
             <?php if (google_enabled()): ?>
                 <span class="badge badge-on">Activée</span>
@@ -290,8 +292,10 @@ function render_scope_checkboxes(array $allScopes, array $checked): void
         <fieldset style="margin-top:18px">
             <legend>Comptes Google autorisés</legend>
             <p class="muted" style="font-size:.85rem;margin:0 0 14px">
-                Seules ces adresses Google peuvent se connecter. Ajoutez ou retirez-les
-                à tout moment.
+                Adresses Google autorisées <strong>en plus</strong> de celle liée à votre
+                compte. Utile pour donner l'accès à un second compte Google. Ajoutez ou
+                retirez-les à tout moment. Dès qu'au moins une adresse est listée ici,
+                l'adoption automatique de la première connexion est désactivée.
             </p>
 
             <?php if (!$googleEmails): ?>
@@ -358,10 +362,26 @@ function render_scope_checkboxes(array $allScopes, array $checked): void
             <?php if (!empty($account['email'])): ?> · e-mail : <code><?= htmlspecialchars($account['email']) ?></code><?php endif; ?>
         </p>
 
+        <?php if (!empty($account['email'])): ?>
+            <p class="muted" style="font-size:.9rem;line-height:1.6">
+                🔗 Adresse Google actuellement liée :
+                <code><?= htmlspecialchars($account['email']) ?></code>.
+                Vous pouvez la dissocier : après dissociation, la prochaine
+                connexion Google « adoptera » automatiquement la nouvelle adresse choisie.
+            </p>
+            <form method="post" style="margin-bottom:18px"
+                  onsubmit="return confirm('Dissocier l\'adresse Google du compte ? La prochaine connexion Google adoptera la nouvelle adresse choisie.');">
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+                <input type="hidden" name="action" value="set_email">
+                <input type="hidden" name="email" value="">
+                <button class="btn-link danger" type="submit">Dissocier l'adresse Google</button>
+            </form>
+        <?php endif; ?>
+
         <form method="post" style="margin-bottom:24px">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
             <input type="hidden" name="action" value="set_email">
-            <label>Adresse e-mail <span class="muted">(permet de se connecter avec l'e-mail)</span>
+            <label>Adresse e-mail <span class="muted">(sert d'identifiant de connexion et d'adresse Google liée)</span>
                 <input name="email" type="email" value="<?= htmlspecialchars($account['email'] ?? '') ?>" placeholder="vous@exemple.com">
             </label>
             <button class="btn" type="submit">Enregistrer l'e-mail</button>

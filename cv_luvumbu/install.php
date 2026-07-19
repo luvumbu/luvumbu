@@ -181,8 +181,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $php = "<?php\n// Fichier généré par l'assistant d'installation. Ne pas committer en clair.\nreturn "
                      . var_export($cfg, true) . ";\n";
 
-                if (file_put_contents(config_path(), $php) === false) {
-                    throw new RuntimeException("Impossible d'écrire le fichier de configuration (droits du dossier config/).");
+                $cfgFile = config_path();
+                $cfgDir  = dirname($cfgFile);
+
+                // Le dossier config/ n'est pas versionné par git (dossier vide) :
+                // sur un hébergement fraîchement déployé il peut être absent.
+                // On le crée avant d'écrire.
+                if (!is_dir($cfgDir) && !@mkdir($cfgDir, 0755, true) && !is_dir($cfgDir)) {
+                    throw new RuntimeException(
+                        "Le dossier de configuration n'a pas pu être créé : « $cfgDir ». "
+                        . "Créez-le manuellement (gestionnaire de fichiers hPanel) puis relancez l'installation."
+                    );
+                }
+
+                if (@file_put_contents($cfgFile, $php) === false) {
+                    // Diagnostic précis : dossier non inscriptible ou fichier verrouillé.
+                    $why = !is_writable($cfgDir)
+                        ? "le dossier « config/ » n'est pas inscriptible (donnez-lui les droits 755 ou 775 dans hPanel)"
+                        : (file_exists($cfgFile) && !is_writable($cfgFile)
+                            ? "le fichier config/config.php existe déjà et n'est pas modifiable (droits en lecture seule)"
+                            : "écriture refusée par le serveur");
+                    throw new RuntimeException("Impossible d'écrire le fichier de configuration : $why.");
                 }
 
                 unset($_SESSION['db_error']);

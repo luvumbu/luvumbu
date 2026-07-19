@@ -77,11 +77,54 @@ function google_allowed_emails(): array
     return array_values(array_unique($emails));
 }
 
+/**
+ * Mode « ouvert » : si activé, N'IMPORTE QUELLE adresse Google vérifiée peut
+ * se connecter (sur le compte administrateur principal), sans liste blanche.
+ * ⚠️ DANGEREUX en production (site public) : à réserver aux tests locaux.
+ * Réglage réversible : mettre 'google_allow_any_email' à '0' pour désactiver.
+ */
+function google_allow_any_email(): bool
+{
+    return get_setting('google_allow_any_email', '0') === '1';
+}
+
 /** L'adresse Google donnée figure-t-elle dans la liste blanche ? */
 function is_google_email_allowed(string $email): bool
 {
+    // Mode ouvert : toute adresse vérifiée est acceptée.
+    if (google_allow_any_email()) {
+        return true;
+    }
     $email = strtolower(trim($email));
     return $email !== '' && in_array($email, google_allowed_emails(), true);
+}
+
+/**
+ * Adoption automatique à la PREMIÈRE connexion Google.
+ * Si aucune liste blanche n'est définie ET que le compte administrateur
+ * principal n'a pas encore d'e-mail associé, la première adresse Google
+ * vérifiée est enregistrée sur ce compte. Ensuite, seule cette adresse
+ * pourra se connecter (elle correspondra à l'e-mail du compte).
+ * Renvoie le compte administrateur si l'adoption a eu lieu, sinon null.
+ */
+function google_adopt_primary_email(string $email): ?array
+{
+    $email = strtolower(trim($email));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return null;
+    }
+    // On ne touche à rien si une liste blanche a été définie explicitement :
+    // dans ce cas l'accès est déjà géré par is_google_email_allowed().
+    if (google_allowed_emails() !== []) {
+        return null;
+    }
+    $admin = get_primary_account();
+    if (!$admin || !empty($admin['email'])) {
+        return null; // pas de compte admin, ou e-mail déjà lié
+    }
+    update_account_email((int) $admin['id'], $email);
+    $admin['email'] = $email;
+    return $admin;
 }
 
 /** Enregistre la liste blanche (normalise, dédoublonne, ignore les invalides). */

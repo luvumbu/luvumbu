@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check($_POST['csrf'] ?? null)) {
         $error = "Session expirée, merci de réessayer.";
     } elseif ($username === '') {
-        $error = "Identifiant ou e-mail obligatoire.";
+        $error = "Identifiant obligatoire.";
     } else {
         try {
             // 1) Connexion normale : vérification du hash stocké
@@ -98,16 +98,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="brand-logo">CV <span>Luvumbu</span></div>
 <div class="card">
     <h1>Connexion</h1>
-    <p class="subtitle">Entrez vos identifiants pour accéder à l'application</p>
+    <p class="subtitle">Choisissez votre méthode de connexion</p>
+
+    <?php
+        // Si une tentative admin vient d'échouer, on ré-ouvre directement le
+        // formulaire (sinon l'utilisateur ne verrait plus le champ ni l'erreur).
+        $openAdmin = ($_SERVER['REQUEST_METHOD'] === 'POST');
+    ?>
 
     <?php if ($error): ?>
         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="post" autocomplete="off">
+    <!-- Bouton qui fait apparaître le formulaire admin -->
+    <button type="button" class="btn" id="adminToggle"
+            style="<?= $openAdmin ? 'display:none' : '' ?>">
+        🔒 Se connecter en tant qu'admin
+    </button>
+
+    <!-- Formulaire admin (identifiant + mot de passe), masqué par défaut -->
+    <form method="post" autocomplete="off" id="adminForm"
+          style="margin-top:16px;<?= $openAdmin ? '' : 'display:none' ?>">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <label>Identifiant ou e-mail
-            <input name="username" value="<?= htmlspecialchars($username) ?>" required autofocus>
+        <label>Identifiant
+            <input name="username" value="<?= htmlspecialchars($username) ?>" placeholder="admin" required>
         </label>
         <label>Mot de passe
             <input name="password" type="password">
@@ -134,5 +148,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </p>
     <?php endif; ?>
 </div>
+<script>
+    (function () {
+        var toggle = document.getElementById('adminToggle');
+        var form   = document.getElementById('adminForm');
+        if (toggle && form) {
+            toggle.addEventListener('click', function () {
+                form.style.display = 'block';   // affiche le formulaire admin
+                toggle.style.display = 'none';  // masque le bouton
+                var u = form.querySelector('input[name="username"]');
+                if (u) { u.focus(); }
+            });
+        }
+    })();
+</script>
 </body>
 </html>

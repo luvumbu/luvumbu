@@ -2,8 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Compte à rebours anniversaire</title>
+
+<!-- PWA (application installable, Android / iOS / bureau) -->
+<meta name="theme-color" content="#4c1d95">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anniversaires">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -820,7 +827,94 @@
   .trash-row { border: 1px dashed #f0c9c3 !important; background: #fdf5f4 !important; }
   .trash-row .t-info .t-left { color: var(--danger); }
   .gift-item .g-text { border: none !important; background: none !important; }
+
+  /* ---- Connexion Google ---- */
+  .gate-or { display:flex; align-items:center; gap:10px; margin:18px 0 14px; color:var(--muted); font-size:.85rem; }
+  .gate-or::before, .gate-or::after { content:""; flex:1; height:1px; background:rgba(255,255,255,0.18); }
+  .google-btn-wrap { display:flex; justify-content:center; }
+
+  /* ---- Barre d'outils (recherche + tri) ---- */
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%; max-width:680px; margin:0 auto 14px; }
+  .toolbar input[type="search"] { flex:1; min-width:180px; padding:11px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:var(--card); color:var(--text); font-size:.95rem; }
+  .toolbar select { padding:11px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:var(--card); color:var(--text); font-size:.9rem; cursor:pointer; }
+  .toolbar select option { color:#111; }
+
+  /* ---- Avatar emoji + note personne ---- */
+  .p-emoji { font-size:1.15em; margin-right:4px; }
+  .p-note { font-size:.8rem; color:var(--muted); font-style:italic; margin-top:3px; }
+  .row .actions .edit, .hero .edit { cursor:pointer; }
+
+  /* ---- Boutons de données (réglages) ---- */
+  .data-btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .stat-grid { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .stat-pill { background:rgba(255,255,255,0.06); border-radius:10px; padding:8px 12px; font-size:.85rem; }
+  .stat-pill b { font-size:1.05rem; }
+
+  /* ============ CONTRÔLE SEGMENTÉ (Clair/Sombre, Coins) ============ */
+  .seg { display:inline-flex; gap:6px; }
+  .seg-btn {
+    padding:9px 16px; border-radius:10px; cursor:pointer; font-size:.9rem; font-weight:600;
+    background:#fff; border:1px solid #d5dbe3; color:var(--text);
+  }
+  .seg-btn.active { background:var(--brand); border-color:var(--brand); color:#fff; }
+  html[data-theme="dark"] .seg-btn { background:#232c3d; border-color:#374050; color:var(--text); }
+  html[data-theme="dark"] .seg-btn.active { background:var(--brand); border-color:var(--brand); color:#fff; }
+
+  /* ============ COINS CARRÉS ============ */
+  html[data-corners="square"] .hero,
+  html[data-corners="square"] .row,
+  html[data-corners="square"] .noel-card,
+  html[data-corners="square"] .panel,
+  html[data-corners="square"] .gift-item,
+  html[data-corners="square"] .gate-box,
+  html[data-corners="square"] .btn-primary,
+  html[data-corners="square"] .btn-ghost,
+  html[data-corners="square"] .form button,
+  html[data-corners="square"] .form input,
+  html[data-corners="square"] .field input,
+  html[data-corners="square"] .field select,
+  html[data-corners="square"] .toolbar input,
+  html[data-corners="square"] .toolbar select,
+  html[data-corners="square"] .tab,
+  html[data-corners="square"] .chip,
+  html[data-corners="square"] .unit { border-radius:6px !important; }
+
+  /* ============ MODE SOMBRE ============ */
+  html[data-theme="dark"] {
+    --ink:#f1f5f9; --text:#d7dee7; --muted:#95a3b4;
+    --card:#1a2130; --line:#2b3547; --bg1:#0f141c; --bg2:#0f141c;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45); --shadow-md:0 6px 20px rgba(0,0,0,.55);
+  }
+  html[data-theme="dark"] .topbar { background:#161c27; }
+  html[data-theme="dark"] .session-bar { background:#232c3d; border-color:#374050; color:var(--text); }
+  html[data-theme="dark"] .unit { background:#1f2a3d !important; border-color:#2c3648; }
+  html[data-theme="dark"] .form input, html[data-theme="dark"] .gate .field input,
+  html[data-theme="dark"] .gift-form input, html[data-theme="dark"] .np-add input,
+  html[data-theme="dark"] .field input[type=text], html[data-theme="dark"] .field select,
+  html[data-theme="dark"] .gift-item .g-text, html[data-theme="dark"] .toolbar input,
+  html[data-theme="dark"] .toolbar select {
+    background:#232c3d !important; border-color:#374050 !important; color:var(--text) !important;
+  }
+  html[data-theme="dark"] .field input:not([type=color]),
+  html[data-theme="dark"] .panel input:not([type=color]) {
+    background:#232c3d !important; border-color:#374050 !important; color:var(--text) !important;
+  }
+  html[data-theme="dark"] input::placeholder, html[data-theme="dark"] .toolbar input::placeholder { color:#6b7686 !important; }
+  html[data-theme="dark"] .tab, html[data-theme="dark"] .chip { background:#232c3d !important; border-color:#374050 !important; color:var(--text) !important; }
+  html[data-theme="dark"] .btn-ghost { background:#232c3d !important; color:#cbd5e1 !important; }
+  html[data-theme="dark"] .tag, html[data-theme="dark"] .gift-item .g-link { background:#22304a !important; color:#93c5fd !important; border-color:#33415c !important; }
+  html[data-theme="dark"] .gift-btn { background:#3a300f !important; border-color:#5c4a12 !important; color:#f0c96a !important; }
+  html[data-theme="dark"] .gift-btn .badge { background:#f0c96a; color:#3a300f; }
+  html[data-theme="dark"] .noel-card { background:#1a2130 !important; }
+  html[data-theme="dark"] .panel { background:#1a2130 !important; color:var(--text); }
+  html[data-theme="dark"] .gate { background:linear-gradient(135deg,#0f141c,#151b26) !important; }
+  html[data-theme="dark"] .gate-box { background:#1a2130 !important; }
+  html[data-theme="dark"] .admin-link { background:#232c3d !important; color:var(--muted) !important; border-color:#3a4657 !important; }
+  html[data-theme="dark"] .trash-row { background:#2a1f1f !important; border-color:#5b3a36 !important; }
+  html[data-theme="dark"] .t-restore { background:#12341f !important; color:#7ee2a8 !important; }
+  html[data-theme="dark"] .stat-pill { background:rgba(255,255,255,0.05); }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <!-- Écran d'accueil : créer ou rejoindre un espace -->
@@ -852,6 +946,10 @@
 
       <p class="gate-err" id="gateErr"></p>
       <button class="btn-primary gate-btn" id="gateBtn">Se connecter</button>
+
+      <div class="gate-or" id="gateOr"><span>ou</span></div>
+      <div class="google-btn-wrap" id="googleBtn"></div>
+
       <p class="hint" style="margin-top:14px;text-align:center;">🔒 Le mot de passe protège la modification et la suppression de tes données.</p>
     </div>
   </div>
@@ -863,6 +961,7 @@
       <!-- Barre de session (espace courant) -->
       <div class="session-bar" id="sessionBar" style="display:none;">
         <span>📁 <b id="spaceLabel"></b></span>
+        <select id="spaceSwitcher" title="Changer d'espace" style="display:none;"></select>
         <button id="logoutBtn" title="Se déconnecter">Quitter</button>
       </div>
       <button class="gear" id="gear" title="Mode admin">⚙️<span class="gear-label">Admin</span></button>
@@ -1016,20 +1115,34 @@
         </div>
 
         <div class="field">
-          <label>Couleur d'accent 1</label>
+          <label>Couleur principale (boutons, accents)</label>
           <div class="colorrow"><input type="color" id="cAccent"><span class="val" id="vAccent"></span></div>
         </div>
         <div class="field">
-          <label>Couleur d'accent 2</label>
+          <label>Couleur secondaire (dégradés)</label>
           <div class="colorrow"><input type="color" id="cAccent2"><span class="val" id="vAccent2"></span></div>
         </div>
-        <div class="field">
-          <label>Fond — haut du dégradé</label>
+        <!-- Champs de fond masqués : le fond est désormais piloté par le mode Clair/Sombre -->
+        <div class="field" style="display:none">
           <div class="colorrow"><input type="color" id="cBg1"><span class="val" id="vBg1"></span></div>
         </div>
-        <div class="field">
-          <label>Fond — bas du dégradé</label>
+        <div class="field" style="display:none">
           <div class="colorrow"><input type="color" id="cBg2"><span class="val" id="vBg2"></span></div>
+        </div>
+
+        <div class="field">
+          <label>Ambiance</label>
+          <div class="seg" id="themeSeg">
+            <button type="button" class="seg-btn" data-theme-opt="light">☀️ Clair</button>
+            <button type="button" class="seg-btn" data-theme-opt="dark">🌙 Sombre</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Coins</label>
+          <div class="seg" id="cornersSeg">
+            <button type="button" class="seg-btn" data-corners-opt="round">⬭ Arrondis</button>
+            <button type="button" class="seg-btn" data-corners-opt="square">⬛ Carrés</button>
+          </div>
         </div>
 
         <div class="field">
@@ -1043,9 +1156,32 @@
           </select>
         </div>
 
-        <div class="field">
+        <div class="field" id="dataField">
+          <label>📊 Statistiques & sauvegarde</label>
+          <div class="stat-grid" id="statGrid"></div>
+          <div class="data-btns">
+            <button type="button" class="btn-ghost" id="icsBtn">📅 Exporter vers l'agenda (.ics)</button>
+            <button type="button" class="btn-ghost" id="jsonExportBtn">💾 Sauvegarder (JSON)</button>
+            <button type="button" class="btn-ghost" id="jsonImportBtn">📥 Importer (JSON)</button>
+            <input type="file" id="jsonFile" accept="application/json,.json" style="display:none">
+          </div>
+          <p class="hint" style="margin-top:6px;">L'export <b>.ics</b> ajoute tous les anniversaires (répétés chaque année) à Google Agenda ou au calendrier du téléphone.</p>
+        </div>
+
+        <div class="field" id="setPwdField">
           <label for="setPwd">Changer le mot de passe de l'espace</label>
           <input type="text" id="setPwd" placeholder="Laisser vide pour ne pas changer" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+
+        <div class="field" id="shareField">
+          <label>🔗 Partage — accès complet (voir + modifier)</label>
+          <p class="hint" style="margin:2px 0 8px;">Ajoute l'adresse Gmail des personnes qui pourront ouvrir cet espace en se connectant avec leur compte Google.</p>
+          <div style="display:flex;gap:8px;">
+            <input type="email" id="shareEmail" placeholder="prenom@gmail.com" autocomplete="off" style="flex:1;">
+            <button type="button" class="btn-primary" id="shareAddBtn" style="white-space:nowrap;">Ajouter</button>
+          </div>
+          <p class="hint" id="shareErr" style="color:#fca5a5;display:none;margin-top:6px;"></p>
+          <ul id="shareList" style="list-style:none;padding:0;margin:10px 0 0;"></ul>
         </div>
 
         <div class="panel-actions">
@@ -1053,6 +1189,67 @@
           <button class="btn-danger" id="resetBtn">Réinitialiser</button>
           <button class="btn-ghost" id="closeSettings">Fermer</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assistant d'installation : forcé tant que la base n'est pas configurée -->
+  <div class="overlay" id="setupOverlay">
+    <div class="panel">
+      <h2>⚙️ Configuration de la base de données</h2>
+      <p class="hint">L'application n'est pas encore reliée à une base MySQL. Renseigne les identifiants de ton hébergement pour terminer l'installation. <b>La base doit déjà exister</b> (créée dans ton panneau) ; les tables se créeront automatiquement.</p>
+      <div class="field">
+        <label for="setupHost">Hôte (DB_HOST)</label>
+        <input type="text" id="setupHost" value="localhost" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="setupName">Nom de la base (DB_NAME)</label>
+        <input type="text" id="setupName" placeholder="ex. luvumbu_anniv" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="setupUser">Utilisateur (DB_USER)</label>
+        <input type="text" id="setupUser" placeholder="ex. luvumbu_annivuser" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="setupPass">Mot de passe (DB_PASS)</label>
+        <input type="text" id="setupPass" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+      </div>
+      <p class="hint" id="setupErr" style="color:#fca5a5;display:none;"></p>
+      <div class="panel-actions">
+        <button class="btn-primary" id="setupSaveBtn">Tester et enregistrer</button>
+      </div>
+      <p class="hint" style="margin-top:12px;">Si l'écriture échoue (dossier protégé), reporte ces valeurs à la main dans <b>api.php</b>.</p>
+    </div>
+  </div>
+
+  <!-- Fenêtre modale : modifier une personne -->
+  <div class="overlay" id="editOverlay">
+    <div class="panel">
+      <h2>✏️ Modifier</h2>
+      <div class="field">
+        <label for="editName">Prénom</label>
+        <input type="text" id="editName" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="editDob">Date de naissance</label>
+        <input type="date" id="editDob">
+      </div>
+      <div class="field">
+        <label for="editFamilies">Famille(s) — séparées par une virgule</label>
+        <input type="text" id="editFamilies" list="familyList" autocomplete="off" style="text-transform:uppercase">
+      </div>
+      <div class="field">
+        <label for="editEmoji">Emoji (avatar) — optionnel</label>
+        <input type="text" id="editEmoji" maxlength="4" placeholder="ex. 👑 🎈 🐱 ⚽" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="editNote">Note — optionnel</label>
+        <input type="text" id="editNote" maxlength="120" placeholder="ex. Adore le chocolat" autocomplete="off">
+      </div>
+      <p class="hint" id="editErr" style="color:#fca5a5;display:none;"></p>
+      <div class="panel-actions">
+        <button class="btn-primary" id="editSaveBtn">Enregistrer</button>
+        <button class="btn-ghost" id="editCancelBtn">Annuler</button>
       </div>
     </div>
   </div>
@@ -1107,6 +1304,15 @@
 
   <div class="filters" id="filters"></div>
 
+  <div class="toolbar" id="toolbar">
+    <input type="search" id="searchInput" placeholder="🔍 Rechercher un prénom…" autocomplete="off">
+    <select id="sortSelect" title="Trier">
+      <option value="next">↕️ Prochain anniversaire</option>
+      <option value="name">Prénom (A → Z)</option>
+      <option value="age">Âge (jeune → âgé)</option>
+    </select>
+  </div>
+
   <div class="noel-card" id="noelCard">
     <div class="noel-title">🎄 Noël</div>
     <div class="when" id="noelDate"></div>
@@ -1125,9 +1331,65 @@
 <script>
   // ===== État en mémoire + synchro serveur =====
   const GRACE_MS = 2 * 24 * 60 * 60 * 1000; // 2 jours avant suppression définitive
-  const APP_BASE = "/anniversaire/";        // dossier de l'app sur le serveur
-  const API_URL = APP_BASE + "api.php";     // chemin absolu (URL propre = base différente)
+  // Base de l'app calculée automatiquement : marche aussi bien en ligne
+  // (luvumbu.com/anniversaire) qu'en local (localhost/luvumbu/anniversaire).
+  const APP_BASE = (function () {
+    const parts = location.pathname.split("/");
+    const i = parts.indexOf("anniversaire");
+    if (i >= 0) return parts.slice(0, i + 1).join("/") + "/";   // …/anniversaire/
+    return location.pathname.replace(/[^/]*$/, "");             // sinon : dossier courant
+  })();
+  const API_URL = APP_BASE + "api.php";     // api.php du bon dossier
+
+  // --- PWA : manifest, icône Apple et service worker (chemins basés sur APP_BASE) ---
+  (function setupPWA() {
+    const linkManifest = document.createElement("link");
+    linkManifest.rel = "manifest";
+    linkManifest.href = APP_BASE + "manifest.webmanifest";
+    document.head.appendChild(linkManifest);
+
+    const appleIcon = document.createElement("link");
+    appleIcon.rel = "apple-touch-icon";
+    appleIcon.href = APP_BASE + "icon-192.png";
+    document.head.appendChild(appleIcon);
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register(APP_BASE + "sw.js", { scope: APP_BASE })
+          .catch(err => console.warn("Service worker non enregistré :", err.message));
+      });
+    }
+
+    // Bouton "Installer l'application" : apparaît quand le navigateur le permet.
+    let deferredPrompt = null;
+    const installBtn = document.createElement("button");
+    installBtn.textContent = "📲 Installer l'application";
+    installBtn.style.cssText =
+      "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9999;display:none;" +
+      "padding:12px 20px;border:none;border-radius:999px;cursor:pointer;font-weight:700;font-size:.95rem;" +
+      "color:#fff;background:linear-gradient(90deg,#f472b6,#38bdf8);box-shadow:0 8px 24px rgba(0,0,0,.35);";
+    document.addEventListener("DOMContentLoaded", () => document.body.appendChild(installBtn));
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = "block";
+    });
+    installBtn.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = "none";
+    });
+    window.addEventListener("appinstalled", () => { installBtn.style.display = "none"; });
+  })();
+  // ⬇️ CONNEXION GOOGLE — colle ici le même "Client ID" que dans api.php.
+  //    Vide = le bouton Google est masqué automatiquement.
+  const GOOGLE_CLIENT_ID = "878381681024-mc6bg84ftpig7eee4h26treosike77b7.apps.googleusercontent.com";
   let SPACE = null;                 // nom de l'espace connecté
+  let IS_GOOGLE = false;            // espace ouvert via un compte Google ?
+  let ACCESS_SPACES = [];           // espaces accessibles au compte Google connecté
   let STATE = { people: [], settings: {} };
   let persistTimer = null;
 
@@ -1156,7 +1418,7 @@
     });
     let json;
     try { json = await res.json(); } catch { throw new Error("Réponse serveur invalide."); }
-    if (!json.ok) throw new Error(json.error || "Erreur serveur.");
+    if (!json.ok) { const e = new Error(json.error || "Erreur serveur."); e.setup = !!json.setup; throw e; }
     return json;
   }
 
@@ -1174,6 +1436,8 @@
   const familiesInput = document.getElementById("families");
   const filtersBox = document.getElementById("filters");
   let activeFamily = null; // null = toutes les familles
+  let searchQuery = "";    // recherche par prénom (barre d'outils)
+  let sortMode = "next";   // "next" | "name" | "age"
   const hero = document.getElementById("hero");
   const list = document.getElementById("list");
 
@@ -1195,6 +1459,25 @@
   function ageTurning(dob, nextDate) {
     const b = new Date(dob + "T00:00:00");
     return nextDate.getFullYear() - b.getFullYear();
+  }
+
+  // Âge actuel (révolu) d'après la date de naissance.
+  function currentAge(dob) {
+    const b = new Date(dob + "T00:00:00");
+    const n = new Date();
+    let a = n.getFullYear() - b.getFullYear();
+    const passed = n.getMonth() > b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() >= b.getDate());
+    if (!passed) a--;
+    return a;
+  }
+
+  // Applique le tri choisi dans la barre d'outils.
+  function sortPeople(arr) {
+    const a = [...arr];
+    if (sortMode === "name") a.sort((x, y) => x.name.localeCompare(y.name, "fr"));
+    else if (sortMode === "age") a.sort((x, y) => currentAge(x.dob) - currentAge(y.dob));
+    else a.sort((x, y) => x.next - y.next);
+    return a;
   }
 
   function isBirthdayToday(dob) {
@@ -1268,23 +1551,38 @@
     renderHero(featured);
     if (isBirthdayToday(featured.dob)) launchConfetti(); // 🎉 le jour J
 
-    // liste des suivants
-    const rest = enriched.slice(1);
-    let html = rest.length ? '<h2>Les suivants</h2>' : '';
-    enriched.forEach((p, i) => {
-      if (i === 0) return;
+    // Liste : on applique la recherche puis le tri choisi.
+    let items = enriched;
+    if (searchQuery) items = items.filter(p => p.name.toLowerCase().includes(searchQuery));
+    items = sortPeople(items);
+    // En tri "prochain" sans recherche, on garde le comportement d'origine (la vedette est en haut).
+    const excludeFeatured = !searchQuery && sortMode === "next";
+    if (excludeFeatured) items = items.filter(p => p.id !== featured.id);
+
+    let heading = "";
+    if (searchQuery) heading = `<h2>Résultats (${items.length})</h2>`;
+    else if (sortMode !== "next") heading = `<h2>Toutes les personnes (${items.length})</h2>`;
+    else if (items.length) heading = "<h2>Les suivants</h2>";
+
+    let html = heading;
+    if (!items.length && searchQuery) {
+      html += `<div class="empty">Aucun résultat pour « ${escapeHtml(searchQuery)} ».</div>`;
+    }
+    items.forEach((p) => {
       const days = Math.ceil((p.next - new Date(new Date().toDateString())) / 86400000);
       const dateStr = `${p.next.getDate()} ${MOIS[p.next.getMonth()]}`;
       html += `
         <div class="row">
           <div class="info">
-            <div class="name">${escapeHtml(p.name)} ${isBirthdayToday(p.dob) ? "🎉" : ""}</div>
+            <div class="name">${emojiPrefix(p)}${escapeHtml(p.name)} ${isBirthdayToday(p.dob) ? "🎉" : ""}</div>
             <div class="date">${dateStr} · ${ageTurning(p.dob, p.next)} ans</div>
+            ${noteLine(p)}
             ${familyTags(p.families)}
           </div>
           <div class="days">${isBirthdayToday(p.dob) ? "Aujourd'hui !" : days + " j"}<small>${isBirthdayToday(p.dob) ? "" : "restants"}</small></div>
           <div class="actions">
             <button class="gift-btn" data-gift="${p.id}" title="Idées cadeaux">🎁${giftCount(p) ? `<span class="badge">${giftCount(p)}</span>` : ""}</button>
+            <button class="edit" data-edit="${p.id}" title="Modifier" style="background:none;border:none;cursor:pointer;font-size:1rem;">✏️</button>
             <button class="del" data-id="${p.id}" title="Supprimer">✕</button>
           </div>
         </div>`;
@@ -1296,27 +1594,35 @@
     });
   }
 
+  // Préfixe emoji et ligne de note (réutilisés dans la vedette et la liste).
+  function emojiPrefix(p) { return p.emoji ? `<span class="p-emoji">${escapeHtml(p.emoji)}</span>` : ""; }
+  function noteLine(p) { return p.note ? `<div class="p-note">📝 ${escapeHtml(p.note)}</div>` : ""; }
+
   function renderHero(p) {
     const dateStr = `${p.next.getDate()} ${MOIS[p.next.getMonth()]} ${p.next.getFullYear()}`;
+    const editBtn = `<button class="edit" data-edit="${p.id}" title="Modifier" style="font-size:1rem;color:var(--muted);background:none;border:1px solid var(--muted);border-radius:10px;padding:6px 12px;cursor:pointer">✏️ Modifier</button>`;
+    const delBtn = `<button class="del" data-id="${p.id}" title="Supprimer" style="font-size:1rem;color:#f87171;background:none;border:1px solid #f87171;border-radius:10px;padding:6px 12px;cursor:pointer">Supprimer</button>`;
     if (isBirthdayToday(p.dob)) {
       hero.innerHTML = `
-        <div class="who">${escapeHtml(p.name)}</div>
+        <div class="who">${emojiPrefix(p)}${escapeHtml(p.name)}</div>
         <div class="today-banner">🎉 C'est aujourd'hui ! Joyeux anniversaire ! 🎂</div>
         <div class="when">${ageTurning(p.dob, p.next)} ans</div>
+        ${noteLine(p)}
         ${familyTags(p.families)}
         <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="gift-btn" data-gift="${p.id}">🎁 Idées cadeaux${giftCount(p) ? ` (${giftCount(p)})` : ""}</button>
-          <button class="del" data-id="${p.id}" title="Supprimer" style="font-size:1rem;color:#f87171;background:none;border:1px solid #f87171;border-radius:10px;padding:6px 12px;cursor:pointer">Supprimer</button>
+          ${editBtn}${delBtn}
         </div>`;
     } else {
       hero.innerHTML = `
-        <div class="who">Prochain : ${escapeHtml(p.name)}</div>
+        <div class="who">Prochain : ${emojiPrefix(p)}${escapeHtml(p.name)}</div>
         <div class="when">${dateStr} · ${ageTurning(p.dob, p.next)} ans</div>
+        ${noteLine(p)}
         ${familyTags(p.families)}
         <div class="countdown" id="cd"></div>
         <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="gift-btn" data-gift="${p.id}">🎁 Idées cadeaux${giftCount(p) ? ` (${giftCount(p)})` : ""}</button>
-          <button class="del" data-id="${p.id}" title="Supprimer" style="font-size:1rem;color:#f87171;background:none;border:1px solid #f87171;border-radius:10px;padding:6px 12px;cursor:pointer">Supprimer</button>
+          ${editBtn}${delBtn}
         </div>`;
     }
     hero.querySelectorAll(".del").forEach(btn => btn.onclick = () => remove(btn.dataset.id));
@@ -1384,6 +1690,14 @@
 
   function escapeHtml(str) {
     return str.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  // N'autorise que http/https/mailto pour un href (bloque javascript:, data:, etc.)
+  function safeUrl(u) {
+    try {
+      const x = new URL(u, location.href);
+      return (x.protocol === "http:" || x.protocol === "https:" || x.protocol === "mailto:") ? x.href : "#";
+    } catch { return "#"; }
   }
 
   // Pluie de confettis (le jour d'un anniversaire), avec throttle
@@ -1508,33 +1822,209 @@
     }
   });
 
+  /* =================== BARRE D'OUTILS : RECHERCHE + TRI =================== */
+  const searchInput = document.getElementById("searchInput");
+  const sortSelect = document.getElementById("sortSelect");
+  searchInput.addEventListener("input", () => { searchQuery = searchInput.value.trim().toLowerCase(); render(); });
+  sortSelect.addEventListener("change", () => { sortMode = sortSelect.value; render(); });
+
+  /* =================== MODIFIER UNE PERSONNE =================== */
+  const editOverlay = document.getElementById("editOverlay");
+  let editingId = null;
+
+  function openEdit(id) {
+    const p = load().find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById("editName").value = p.name || "";
+    document.getElementById("editDob").value = p.dob || "";
+    document.getElementById("editFamilies").value = (p.families || []).join(", ");
+    document.getElementById("editEmoji").value = p.emoji || "";
+    document.getElementById("editNote").value = p.note || "";
+    document.getElementById("editErr").style.display = "none";
+    editOverlay.classList.add("open");
+  }
+  function closeEdit() { editOverlay.classList.remove("open"); editingId = null; }
+
+  document.getElementById("editSaveBtn").addEventListener("click", () => {
+    const err = document.getElementById("editErr");
+    const name = document.getElementById("editName").value.trim();
+    const dob = document.getElementById("editDob").value;
+    if (!name || !dob) { err.textContent = "Le prénom et la date sont requis."; err.style.display = "block"; return; }
+    const data = load();
+    const p = data.find(x => x.id === editingId);
+    if (!p) { closeEdit(); return; }
+    p.name = name;
+    p.dob = dob;
+    p.families = parseFamilies(document.getElementById("editFamilies").value);
+    p.emoji = document.getElementById("editEmoji").value.trim().slice(0, 4);
+    p.note = document.getElementById("editNote").value.trim().slice(0, 120);
+    save(data);
+    closeEdit();
+    render();
+  });
+  document.getElementById("editCancelBtn").addEventListener("click", closeEdit);
+  editOverlay.addEventListener("click", e => { if (e.target === editOverlay) closeEdit(); });
+
+  // Délégation : bouton ✏️ (vedette + liste)
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-edit]");
+    if (!btn) return;
+    openEdit(btn.dataset.edit);
+  });
+
+  /* =================== DONNÉES : STATS / EXPORT / IMPORT =================== */
+  // Récap statistique affiché à l'ouverture des réglages.
+  function updateStats() {
+    const grid = document.getElementById("statGrid");
+    if (!grid) return;
+    const people = activePeople();
+    const total = people.length;
+    const enriched = getSortedList();
+    let nextTxt = "—";
+    if (enriched.length) {
+      const p = enriched[0];
+      const days = Math.max(0, Math.ceil((p.next - new Date(new Date().toDateString())) / 86400000));
+      nextTxt = isBirthdayToday(p.dob) ? `${p.name} 🎉` : `${p.name} · ${days} j`;
+    }
+    // Mois le plus chargé
+    const perMonth = {};
+    people.forEach(p => { const m = new Date(p.dob + "T00:00:00").getMonth(); perMonth[m] = (perMonth[m] || 0) + 1; });
+    let topMonth = "—";
+    const months = Object.keys(perMonth);
+    if (months.length) {
+      const best = months.sort((a, b) => perMonth[b] - perMonth[a])[0];
+      topMonth = `${MOIS[best]} (${perMonth[best]})`;
+    }
+    const famCount = Object.keys(allFamilies()).length;
+    grid.innerHTML = `
+      <div class="stat-pill">👥 <b>${total}</b> personne${total > 1 ? "s" : ""}</div>
+      <div class="stat-pill">⏭️ Prochain : <b>${escapeHtml(nextTxt)}</b></div>
+      <div class="stat-pill">📅 Mois chargé : <b>${topMonth}</b></div>
+      <div class="stat-pill">🏷️ <b>${famCount}</b> famille${famCount > 1 ? "s" : ""}</div>`;
+  }
+
+  // Télécharge un fichier généré côté navigateur.
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // Export .ics : un événement annuel récurrent par personne.
+  function exportICS() {
+    const people = activePeople();
+    if (!people.length) { alert("Aucun anniversaire à exporter."); return; }
+    const pad = n => String(n).padStart(2, "0");
+    const esc = s => String(s).replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
+    let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Anniversaires//FR\r\nCALSCALE:GREGORIAN\r\n";
+    people.forEach(p => {
+      const b = new Date(p.dob + "T00:00:00");
+      const dt = `${b.getFullYear()}${pad(b.getMonth() + 1)}${pad(b.getDate())}`;
+      const uid = `anniv-${p.id}@luvumbu`;
+      ics += "BEGIN:VEVENT\r\n";
+      ics += `UID:${uid}\r\n`;
+      ics += `DTSTART;VALUE=DATE:${dt}\r\n`;
+      ics += "RRULE:FREQ=YEARLY\r\n";
+      ics += `SUMMARY:🎂 Anniversaire de ${esc(p.name)}\r\n`;
+      if (p.note) ics += `DESCRIPTION:${esc(p.note)}\r\n`;
+      ics += "END:VEVENT\r\n";
+    });
+    ics += "END:VCALENDAR\r\n";
+    downloadFile("anniversaires.ics", ics, "text/calendar");
+  }
+
+  // Sauvegarde JSON (toutes les personnes + cadeaux).
+  function exportJSON() {
+    const payload = JSON.stringify({ app: "anniversaires", exportedFrom: SPACE, people: load() }, null, 2);
+    downloadFile("anniversaires-sauvegarde.json", payload, "application/json");
+  }
+
+  // Import JSON : remplace les personnes après confirmation.
+  function importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const people = Array.isArray(parsed) ? parsed : parsed.people;
+        if (!Array.isArray(people)) throw new Error("Format non reconnu.");
+        if (!confirm(`Importer ${people.length} personne(s) ? Cela REMPLACE la liste actuelle de cet espace.`)) return;
+        // Nettoyage minimal + id garanti
+        STATE.people = people.map(p => ({
+          id: String(p.id || (Date.now() + Math.floor(Math.random() * 1e6))),
+          name: String(p.name || "").slice(0, 80),
+          dob: String(p.dob || ""),
+          families: Array.isArray(p.families) ? p.families.slice(0, 2).map(String) : [],
+          emoji: p.emoji ? String(p.emoji).slice(0, 4) : "",
+          note: p.note ? String(p.note).slice(0, 120) : "",
+          gifts: p.gifts, giftsNoel: p.giftsNoel, deletedAt: p.deletedAt
+        })).filter(p => p.name && p.dob);
+        persist();
+        render();
+        alert("Import terminé ✅");
+      } catch (err) {
+        alert("Import impossible : " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.getElementById("icsBtn").addEventListener("click", exportICS);
+  document.getElementById("jsonExportBtn").addEventListener("click", exportJSON);
+  document.getElementById("jsonImportBtn").addEventListener("click", () => document.getElementById("jsonFile").click());
+  document.getElementById("jsonFile").addEventListener("change", e => {
+    if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
+    e.target.value = "";
+  });
+
   /* =================== MODE ADMIN / RÉGLAGES =================== */
   const DEFAULTS = {
     title: "🎂 Compte à rebours anniversaire",
-    accent: "#f472b6",
-    accent2: "#38bdf8",
-    bg1: "#1e1b4b",
+    accent: "#2557a7",     // bleu de marque (look actuel par défaut)
+    accent2: "#1e4789",
+    bg1: "#1e1b4b",        // conservés pour compat, non utilisés en mode Clair/Sombre
     bg2: "#4c1d95",
-    titlefont: ""
+    titlefont: "",
+    theme: "light",        // "light" | "dark"
+    corners: "round"       // "round" | "square"
   };
+  // Palettes d'accent (couleur principale + secondaire) applicables en 1 clic.
   const PRESETS = [
-    { name: "Violet",   accent: "#f472b6", accent2: "#38bdf8", bg1: "#1e1b4b", bg2: "#4c1d95" },
-    { name: "Coucher",  accent: "#fbbf24", accent2: "#fb7185", bg1: "#7c2d12", bg2: "#be123c" },
-    { name: "Océan",    accent: "#22d3ee", accent2: "#34d399", bg1: "#083344", bg2: "#0f766e" },
-    { name: "Forêt",    accent: "#a3e635", accent2: "#fbbf24", bg1: "#14532d", bg2: "#166534" },
-    { name: "Nuit",     accent: "#818cf8", accent2: "#e879f9", bg1: "#020617", bg2: "#1e1b4b" },
-    { name: "Bonbon",   accent: "#f472b6", accent2: "#f9a8d4", bg1: "#831843", bg2: "#db2777" }
+    { name: "Bleu",     accent: "#2557a7", accent2: "#1e4789" },
+    { name: "Violet",   accent: "#7c3aed", accent2: "#5b21b6" },
+    { name: "Rose",     accent: "#db2777", accent2: "#9d174d" },
+    { name: "Océan",    accent: "#0891b2", accent2: "#0e7490" },
+    { name: "Forêt",    accent: "#16a34a", accent2: "#15803d" },
+    { name: "Corail",   accent: "#ea580c", accent2: "#c2410c" }
   ];
 
   function loadSettings() { return { ...DEFAULTS, ...(STATE.settings || {}) }; }
   function saveSettings(s) { STATE.settings = s; persist(); }
 
   function applySettings(s) {
-    const root = document.documentElement.style;
-    // Thème fixe "HR Consulting" : les couleurs ne sont plus pilotées par l'espace.
-    root.setProperty("--titlefont", s.titlefont || "inherit");
+    const root = document.documentElement;
+    const rs = root.style;
+    // Couleur d'accent (principale + secondaire) → variables du thème.
+    rs.setProperty("--brand", s.accent);
+    rs.setProperty("--brand-d", s.accent2);
+    rs.setProperty("--accent", s.accent);
+    rs.setProperty("--accent2", s.accent2);
+    rs.setProperty("--titlefont", s.titlefont || "inherit");
+    // Ambiance (clair/sombre) + coins (arrondis/carrés).
+    root.dataset.theme = s.theme || "light";
+    root.dataset.corners = s.corners || "round";
     document.getElementById("pageTitle").textContent = s.title;
     document.title = s.title.replace(/^[^\w]+/, "") || "Compte à rebours";
+  }
+
+  // Marque le bouton actif d'un contrôle segmenté (Clair/Sombre, Coins).
+  function setSeg(containerId, attr, value) {
+    document.querySelectorAll(`#${containerId} .seg-btn`).forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-" + attr) === value);
+    });
   }
 
   // Éléments admin
@@ -1563,18 +2053,33 @@
 
   // Aperçu en direct quand on bouge un curseur de couleur
   function livePreview() {
-    const root = document.documentElement.style;
-    // Thème fixe : l'aperçu ne modifie plus les couleurs (design HR Consulting).
-    root.setProperty("--titlefont", fields.font.value || "inherit");
+    const rs = document.documentElement.style;
+    rs.setProperty("--brand", fields.accent.value);
+    rs.setProperty("--brand-d", fields.accent2.value);
+    rs.setProperty("--accent", fields.accent.value);
+    rs.setProperty("--accent2", fields.accent2.value);
+    rs.setProperty("--titlefont", fields.font.value || "inherit");
     document.getElementById("pageTitle").textContent = fields.title.value || DEFAULTS.title;
     vals.accent.textContent = fields.accent.value;
     vals.accent2.textContent = fields.accent2.value;
-    vals.bg1.textContent = fields.bg1.value;
-    vals.bg2.textContent = fields.bg2.value;
   }
-  ["accent","accent2","bg1","bg2"].forEach(k => fields[k].addEventListener("input", livePreview));
+  ["accent","accent2"].forEach(k => fields[k].addEventListener("input", livePreview));
   fields.font.addEventListener("change", livePreview);
   fields.title.addEventListener("input", livePreview);
+
+  // Boutons Clair/Sombre et Coins : aperçu immédiat (appliqué au document).
+  document.getElementById("themeSeg").addEventListener("click", e => {
+    const b = e.target.closest("[data-theme-opt]"); if (!b) return;
+    const v = b.getAttribute("data-theme-opt");
+    document.documentElement.dataset.theme = v;
+    setSeg("themeSeg", "theme-opt", v);
+  });
+  document.getElementById("cornersSeg").addEventListener("click", e => {
+    const b = e.target.closest("[data-corners-opt]"); if (!b) return;
+    const v = b.getAttribute("data-corners-opt");
+    document.documentElement.dataset.corners = v;
+    setSeg("cornersSeg", "corners-opt", v);
+  });
 
   // Remplir le formulaire avec les réglages actuels
   function fillForm() {
@@ -1590,6 +2095,11 @@
     vals.accent2.textContent = s.accent2;
     vals.bg1.textContent = s.bg1;
     vals.bg2.textContent = s.bg2;
+    // Ambiance + coins
+    document.documentElement.dataset.theme = s.theme || "light";
+    document.documentElement.dataset.corners = s.corners || "round";
+    setSeg("themeSeg", "theme-opt", s.theme || "light");
+    setSeg("cornersSeg", "corners-opt", s.corners || "round");
   }
 
   // Thèmes prédéfinis
@@ -1598,23 +2108,35 @@
     const sw = document.createElement("div");
     sw.className = "swatch";
     sw.title = p.name;
-    sw.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
-    sw.style.boxShadow = `inset 0 0 0 3px ${p.accent}`;
+    sw.style.background = `linear-gradient(135deg, ${p.accent}, ${p.accent2})`;
     sw.onclick = () => {
       fields.accent.value = p.accent;
       fields.accent2.value = p.accent2;
-      fields.bg1.value = p.bg1;
-      fields.bg2.value = p.bg2;
       livePreview();
     };
     presetsBox.appendChild(sw);
   });
 
   function openOverlay() {
-    // Rappelle dans quel espace on est (le mot de passe attendu est celui de CET espace)
+    overlay.classList.add("open");
+    // Espace Google : déjà authentifié → on ouvre les réglages directement, sans mot de passe.
+    if (IS_GOOGLE) { showSettingsScreen(); return; }
+    // Espace classique : on demande le mot de passe de l'espace.
+    loginScreen.style.display = "block";
+    settingsScreen.style.display = "none";
     document.getElementById("adminHint").innerHTML =
       `Entre le <b>mot de passe de l'espace « ${escapeHtml(SPACE || "")} »</b> (le même qu'à la connexion).`;
-    overlay.classList.add("open");
+  }
+
+  // Affiche l'écran des réglages (après déverrouillage, ou directement pour un espace Google).
+  function showSettingsScreen() {
+    loginScreen.style.display = "none";
+    settingsScreen.style.display = "block";
+    // Le mot de passe n'a de sens que pour un espace classique.
+    document.getElementById("setPwdField").style.display = IS_GOOGLE ? "none" : "";
+    fillForm();
+    loadShareList();
+    updateStats();
   }
   function closeOverlay() {
     overlay.classList.remove("open");
@@ -1640,9 +2162,7 @@
     loginBtn.disabled = true;
     try {
       await api("verify", { password: pwd.value });
-      loginScreen.style.display = "none";
-      settingsScreen.style.display = "block";
-      fillForm();
+      showSettingsScreen();
     } catch (err) {
       loginErr.textContent = err.message || "Mot de passe incorrect.";
       loginErr.style.display = "block";
@@ -1659,6 +2179,8 @@
     s.bg1 = fields.bg1.value;
     s.bg2 = fields.bg2.value;
     s.titlefont = fields.font.value;
+    s.theme = document.documentElement.dataset.theme || "light";
+    s.corners = document.documentElement.dataset.corners || "round";
     saveSettings(s);
     applySettings(s);
 
@@ -1681,6 +2203,64 @@
     persist();
     applySettings(loadSettings());
     fillForm();
+  });
+
+  /* =================== PARTAGE DE L'ESPACE =================== */
+  const shareEmailEl = document.getElementById("shareEmail");
+  const shareListEl  = document.getElementById("shareList");
+  const shareErrEl   = document.getElementById("shareErr");
+
+  function renderShareList(emails) {
+    if (!emails || !emails.length) {
+      shareListEl.innerHTML = '<li class="hint" style="padding:6px 0;">Personne pour l\'instant. Ajoute une adresse ci-dessus.</li>';
+      return;
+    }
+    shareListEl.innerHTML = emails.map(e => `
+      <li style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;margin-bottom:6px;background:rgba(255,255,255,0.06);border-radius:8px;">
+        <span>👤 ${escapeHtml(e)}</span>
+        <button type="button" class="btn-ghost" data-remove="${escapeHtml(e)}" style="padding:2px 10px;">Retirer</button>
+      </li>`).join("");
+  }
+
+  async function loadShareList() {
+    shareErrEl.style.display = "none";
+    try {
+      const res = await api("share_list");
+      renderShareList(res.emails);
+    } catch (err) {
+      shareListEl.innerHTML = `<li class="hint" style="color:#fca5a5;">${escapeHtml(err.message)}</li>`;
+    }
+  }
+
+  async function addShareEmail() {
+    const email = shareEmailEl.value.trim();
+    shareErrEl.style.display = "none";
+    if (!email) return;
+    try {
+      const res = await api("share_add", { email });
+      shareEmailEl.value = "";
+      renderShareList(res.emails);
+    } catch (err) {
+      shareErrEl.textContent = err.message;
+      shareErrEl.style.display = "block";
+    }
+  }
+
+  document.getElementById("shareAddBtn").addEventListener("click", addShareEmail);
+  shareEmailEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addShareEmail(); } });
+
+  shareListEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    const email = btn.getAttribute("data-remove");
+    if (!confirm(`Retirer l'accès de « ${email} » ?`)) return;
+    try {
+      const res = await api("share_remove", { email });
+      renderShareList(res.emails);
+    } catch (err) {
+      shareErrEl.textContent = err.message;
+      shareErrEl.style.display = "block";
+    }
   });
 
   /* =================== IDÉES CADEAUX =================== */
@@ -1732,7 +2312,7 @@
     giftListBox.innerHTML = gifts.map((g, i) => `
       <div class="gift-item">
         <span class="g-text">${escapeHtml(g.text)}</span>
-        ${g.url ? `<a class="g-link" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
+        ${g.url ? `<a class="g-link" href="${escapeHtml(safeUrl(g.url))}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
         <button class="g-del" data-gidx="${i}" title="Supprimer">✕</button>
       </div>`).join("");
 
@@ -1792,7 +2372,7 @@
       const items = gifts.map((g, i) => `
         <div class="gift-item">
           <span class="g-text">${escapeHtml(g.text)}</span>
-          ${g.url ? `<a class="g-link" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
+          ${g.url ? `<a class="g-link" href="${escapeHtml(safeUrl(g.url))}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
           <button class="g-del" data-np="${p.id}" data-ni="${i}" title="Supprimer">✕</button>
         </div>`).join("");
       return `
@@ -1907,21 +2487,78 @@
     }
   }
 
+  // --- Connexion avec Google ---
+  // Callback appelé par Google Identity Services une fois l'utilisateur identifié.
+  function handleGoogleCredential(response) {
+    gateErr.textContent = "";
+    api("google_login", { credential: response.credential })
+      .then(res => enterSpace(res.space, res.data, res.google, res.spaces))
+      .catch(err => { gateErr.textContent = err.message; });
+  }
+
+  // Prépare le bouton Google (ou masque la section si non configuré / script pas chargé).
+  function initGoogleSignIn(tries = 0) {
+    const wrap = document.getElementById("googleBtn");
+    const orLine = document.getElementById("gateOr");
+    if (!GOOGLE_CLIENT_ID) {                 // pas configuré → on retire la section Google
+      if (orLine) orLine.style.display = "none";
+      if (wrap) wrap.style.display = "none";
+      return;
+    }
+    if (!window.google || !google.accounts || !google.accounts.id) {
+      if (tries < 20) return setTimeout(() => initGoogleSignIn(tries + 1), 250);
+      return;                                // script GIS indisponible → on abandonne en silence
+    }
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+    google.accounts.id.renderButton(wrap, {
+      theme: "outline", size: "large", text: "continue_with", shape: "pill", width: 280
+    });
+  }
+
   // Entre dans un espace : charge les données et démarre l'app
   let appStarted = false;
-  function enterSpace(spaceName, data) {
+  function enterSpace(spaceName, data, google = false, spaces = []) {
     SPACE = spaceName;
+    IS_GOOGLE = !!google;
+    ACCESS_SPACES = Array.isArray(spaces) ? spaces : [];
     STATE = {
       people: (data && data.people) || [],
       settings: (data && data.settings) || {}
     };
     document.getElementById("spaceLabel").textContent = spaceName;
+    updateSpaceSwitcher();
     sessionBar.style.display = "flex";
     gate.classList.add("hidden");
     spacePwdEl.value = ""; spacePwd2El.value = "";
     setUrlForSpace(spaceName); // URL propre : /anniversaire/DUPONT
     initApp();
   }
+
+  // Remplit et affiche le sélecteur d'espace (si le compte Google a accès à plusieurs espaces).
+  function updateSpaceSwitcher() {
+    const sel = document.getElementById("spaceSwitcher");
+    if (!sel) return;
+    if (!ACCESS_SPACES || ACCESS_SPACES.length < 2) { sel.style.display = "none"; return; }
+    sel.innerHTML = ACCESS_SPACES.map(s => {
+      const tag = s.role === "owner" ? "👑 " : "🔗 ";
+      const sel2 = s.name === SPACE ? " selected" : "";
+      return `<option value="${escapeHtml(s.name)}"${sel2}>${tag}${escapeHtml(s.name)}</option>`;
+    }).join("");
+    sel.style.display = "";
+  }
+
+  // Changement d'espace via le sélecteur.
+  document.getElementById("spaceSwitcher").addEventListener("change", async (e) => {
+    const target = e.target.value;
+    if (!target || target === SPACE) return;
+    try {
+      const res = await api("switch_space", { name: target });
+      enterSpace(res.space, res.data, res.google, res.spaces);
+    } catch (err) {
+      alert("Changement d'espace impossible : " + err.message);
+      updateSpaceSwitcher(); // remet la sélection sur l'espace courant
+    }
+  });
 
   // Verrouille l'écran d'accueil sur un espace donné (via l'URL) :
   // on cache la création + le champ nom, il ne reste que le mot de passe.
@@ -1963,6 +2600,15 @@
     setUrlForSpace(null);     // revient à /anniversaire/
     unlockGate();             // réaffiche création + champ nom
     applyGlobalConfig(GCONFIG); // restaure l'apparence de l'accueil
+    // Réinitialise le thème (l'accueil reste en clair, accent par défaut)
+    const rs = document.documentElement.style;
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.dataset.corners = "round";
+    rs.setProperty("--brand", DEFAULTS.accent);
+    rs.setProperty("--brand-d", DEFAULTS.accent2);
+    rs.setProperty("--accent", DEFAULTS.accent);
+    rs.setProperty("--accent2", DEFAULTS.accent2);
+    rs.setProperty("--titlefont", "inherit");
     gate.classList.remove("hidden");
   });
 
@@ -2235,13 +2881,47 @@
     } catch (err) { alert("Suppression impossible : " + err.message); }
   }
 
+  /* =================== ASSISTANT D'INSTALLATION (base non configurée) =================== */
+  const setupOverlay = document.getElementById("setupOverlay");
+  function showSetup() {
+    setupOverlay.classList.add("open"); // modale forcée : pas de fermeture au clic extérieur
+    gate.classList.add("hidden");
+    setTimeout(() => document.getElementById("setupName").focus(), 80);
+  }
+  document.getElementById("setupSaveBtn").addEventListener("click", async () => {
+    const err = document.getElementById("setupErr");
+    const btn = document.getElementById("setupSaveBtn");
+    err.style.display = "none";
+    const payload = {
+      host: document.getElementById("setupHost").value.trim(),
+      name: document.getElementById("setupName").value.trim(),
+      user: document.getElementById("setupUser").value.trim(),
+      pass: document.getElementById("setupPass").value
+    };
+    if (!payload.host || !payload.name || !payload.user) {
+      err.textContent = "Hôte, base et utilisateur sont requis."; err.style.display = "block"; return;
+    }
+    btn.disabled = true; btn.textContent = "Test en cours…";
+    try {
+      await api("setup_save", payload);
+      btn.textContent = "✅ Configuré ! Rechargement…";
+      location.reload();
+    } catch (e) {
+      err.textContent = e.message; err.style.display = "block";
+      btn.disabled = false; btn.textContent = "Tester et enregistrer";
+    }
+  });
+
   // Au chargement : gère l'URL /anniversaire/NOM et reprend la session
   (async function boot() {
     // Config globale de l'accueil (publique)
     try {
       const cfg = await api("config_get");
       applyGlobalConfig(cfg.data);
-    } catch { applyGlobalConfig(GDEFAULTS); }
+    } catch (e) {
+      if (e.setup) { showSetup(); return; }   // base non configurée → assistant forcé
+      applyGlobalConfig(GDEFAULTS);
+    }
 
     const urlSpace = spaceFromUrl();
     let me = null;
@@ -2249,12 +2929,13 @@
 
     // Déjà connecté au bon espace (ou pas d'espace dans l'URL) → on entre
     if (me && me.ok && (!urlSpace || me.space === urlSpace)) {
-      enterSpace(me.space, me.data);
+      enterSpace(me.space, me.data, me.google, me.spaces);
       return;
     }
     // Un espace est demandé dans l'URL → on ne demande que le mot de passe
     if (urlSpace) lockGateToSpace(urlSpace);
     gate.classList.remove("hidden");
+    initGoogleSignIn();   // prépare le bouton « Se connecter avec Google »
   })();
 </script>
 </body>

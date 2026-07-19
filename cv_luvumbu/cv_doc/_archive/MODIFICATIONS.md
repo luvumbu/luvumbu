@@ -277,3 +277,48 @@ il répond `401` en JSON sinon (pas de redirection).
 2. Aller dans `https://luvumbu.com/cv_luvumbu/parametres.php`.
 3. Panneau **Connexion avec Google** → **Ajouter** son adresse Gmail.
 4. Se déconnecter, puis tester **« Se connecter avec Google »**.
+
+---
+
+## Mises à jour — 19/07/2026 (espace admin & installation)
+
+### A. Installation — création automatique du dossier `config/`
+**Problème :** `install.php` affichait « Impossible d'écrire le fichier de
+configuration (droits du dossier config/) » car le dossier `config/` n'était pas
+déployé (git ne versionne pas les dossiers vides).
+
+**Correctif :**
+- `install.php` **crée le dossier `config/`** s'il manque, puis écrit la config,
+  avec un message d'erreur précis (dossier absent / non inscriptible / fichier
+  verrouillé).
+- Ajout de `config/.gitignore` : force git à versionner le dossier `config/`
+  tout en continuant d'ignorer `config.php`.
+
+**Fichiers :** `install.php`, `config/.gitignore` *(nouveau)*.
+
+### B. Connexion Google — adoption à la première connexion
+**But :** ne plus avoir à saisir manuellement l'adresse Gmail. La **première**
+connexion Google est **adoptée** automatiquement par le compte administrateur
+(si aucune liste blanche n'est définie et que le compte n'a pas encore d'e-mail).
+Ensuite, seule cette adresse peut se connecter.
+
+**Aussi :** possibilité de **dissocier** l'adresse Google depuis
+*Paramètres → Mon compte* (le prochain login Google ré-adopte la nouvelle
+adresse), et réglage réversible `google_allow_any_email` (mode « toutes adresses »,
+**désactivé par défaut — à ne JAMAIS activer en production**).
+
+**Fichiers :** `includes/google_auth.php` (`google_adopt_primary_email`,
+`google_allow_any_email`), `google_callback.php`, `parametres.php`.
+
+### C. Espace admin dédié + bouton révélant le formulaire
+- Sur `login.php` : le formulaire admin est **masqué**, un bouton
+  **« 🔒 Se connecter en tant qu'admin »** le fait apparaître au clic. Le champ
+  ne demande que l'**Identifiant** (plus « ou e-mail »).
+- `admin.php` *(nouveau)* : page de connexion **par identifiants uniquement**
+  (ni e-mail, ni Google).
+- `cv_public.php` : lien discret **« 🔒 Espace admin »** dans la barre d'outils.
+
+**Fichiers :** `login.php`, `admin.php` *(nouveau)*, `cv_public.php`.
+
+> ⚠️ Rappel production : **ne pas** activer `google_allow_any_email` en ligne
+> (n'importe quel compte Google pourrait alors se connecter en admin).

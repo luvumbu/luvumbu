@@ -61,6 +61,11 @@ $jsVer = @filemtime(__DIR__ . '/assets/js/cv-builder.js');
             padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px;
         }
         .toolbar button:hover { filter: brightness(1.07); }
+        .toolbar .admin-link {
+            color: #cdd6ea; text-decoration: none; font-size: 13px; font-weight: 600;
+            padding: 8px 12px; border: 1px solid #3a4a72; border-radius: 8px;
+        }
+        .toolbar .admin-link:hover { color: #fff; border-color: #d4a23c; }
         .stage { flex: 1 1 auto; overflow: auto; display: flex; justify-content: center; padding: 22px; }
         #cvFrame {
             width: 210mm; min-height: 297mm; border: none; background: #fff;
@@ -75,6 +80,7 @@ $jsVer = @filemtime(__DIR__ . '/assets/js/cv-builder.js');
 <div class="toolbar">
     <span class="name"><?= e($cv['full_name']) ?></span>
     <button id="btnPrint">🖨 Imprimer / Enregistrer en PDF</button>
+    <a class="admin-link" href="admin.php">🔒 Espace admin</a>
 </div>
 
 <div class="stage">

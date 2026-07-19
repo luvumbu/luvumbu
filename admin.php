@@ -81,75 +81,85 @@ if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_appea
 if ($authed && isset($_GET['reset']) && is_file($appFile)) { @unlink($appFile); $app = []; header('Location: admin.php?ok=reset'); exit; }
 
 /* ═══════════════════════════════════════════════════════════
-   LUVUMBU — projets : chemin (point d'entrée) · monde · ordre · visibilité.
-   Édition directe de luvumbu/index/config.php, réservée à l'admin connecté.
-   Mêmes règles de validation que luvumbu/index/api.php (action « save »).
+   PROJETS — point d'entrée (sous-dossier) de chaque dossier de la racine.
+   Autonome : scanne la racine du portfolio, enregistre dans config/projets.json.
+   inc/carte.php lit CE MÊME fichier pour construire les URL de la carte.
    ═══════════════════════════════════════════════════════════ */
-$LV_DIR      = __DIR__ . '/luvumbu';
-$LV_CFG_PATH = $LV_DIR . '/index/config.php';
-$lvReady   = is_dir($LV_DIR) && is_file($LV_CFG_PATH) && is_file($LV_DIR . '/index/scan.php');
-$lvCfg = []; $lvProjects = []; $lvTargets = []; $lvOrder = [];
-$savedProj = false; $projErr = '';
-if ($lvReady) {
-    require_once $LV_DIR . '/index/scan.php';
-    $lvCfg     = require $LV_CFG_PATH;
-    $lvRoot    = __DIR__;                                 // les projets sont à la racine du portfolio
-    $lvExclude = array_values(array_unique(array_merge(   // même liste que luvumbu/index.php
-        $lvCfg['exclude'] ?? [],
-        ['luvumbu', 'config', 'css', 'js', 'inc', 'images', 'vendor', 'node_modules']
-    )));
-    $lvProjects = lv_order_projects(lv_projects($lvRoot, $lvExclude), $lvCfg['order'] ?? []);
+$PROJ_FILE = __DIR__ . '/config/projets.json';
+$pfRoot    = __DIR__;                                       // les projets sont à la racine
+$pfExclude = array_values(array_unique(array_merge(         // même liste que inc/carte.php
+    $CFG['carte']['exclude'] ?? [],
+    ['luvumbu', 'config', 'css', 'js', 'inc', 'images', 'vendor', 'node_modules']
+)));
 
-    /* Enregistrement des réglages projets */
-    if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_projects'])) {
-        // Point d'entrée par projet (validé : chemin réellement présent sous le projet)
-        $targets = [];
-        $tsel = (array)($_POST['target'] ?? []);
-        foreach ($lvProjects as $p) {
-            $path = isset($tsel[$p]) ? trim(str_replace('\\', '/', (string)$tsel[$p]), '/') : '';
-            if ($path !== '' && lv_target_allowed($lvRoot . '/' . $p, $path)) $targets[$p] = $path;
-        }
-        // Monde d'appartenance (n° >= 2 ; 1 = monde par défaut, non stocké)
-        $worlds = [];
-        $wsel = (array)($_POST['world'] ?? []);
-        foreach ($lvProjects as $p) {
-            $w = isset($wsel[$p]) ? (int)$wsel[$p] : 1;
-            if ($w >= 2) $worlds[$p] = $w;
-        }
-        // Ordre (N°1, N°2…) déduit des rangs choisis ; départage stable par position d'origine
-        $ranks = (array)($_POST['rank'] ?? []);
-        $pairs = [];
-        foreach ($lvProjects as $i => $p) {
-            $r = isset($ranks[$p]) ? (int)$ranks[$p] : ($i + 1);
-            $pairs[] = [$p, $r, $i];
-        }
-        usort($pairs, fn($a, $b) => $a[1] === $b[1] ? ($a[2] <=> $b[2]) : ($a[1] <=> $b[1]));
-        $order = array_map(fn($x) => $x[0], $pairs);
-        // Visibilité (case cochée = visible ; décochée = masqué)
-        $vsel = (array)($_POST['visible'] ?? []);
-        $hidden = [];
-        foreach ($lvProjects as $p) { if (empty($vsel[$p])) $hidden[] = $p; }
-
-        // On ne touche QUE ces 4 clés : noms de mondes, modes, descriptions… restent intacts
-        $lvCfg['targets'] = $targets;
-        $lvCfg['worlds']  = $worlds;
-        $lvCfg['order']   = array_values($order);
-        $lvCfg['hidden']  = array_values(array_unique($hidden));
-
-        $php = "<?php\n/* CONFIGURATION — LUVUMBU LAND (généré via le panneau ⚙) */\nreturn "
-             . var_export($lvCfg, true) . ";\n";
-        if (@file_put_contents($LV_CFG_PATH, $php) !== false) {
-            $savedProj = true;
-            $lvProjects = lv_order_projects(lv_projects($lvRoot, $lvExclude), $lvCfg['order'] ?? []);
-        } else {
-            $projErr = "Impossible d'écrire luvumbu/index/config.php (droits ?).";
-        }
+/* index présent directement dans ce dossier ? */
+$pf_has_index = function ($dir) {
+    foreach (['index.php', 'index.html', 'index.htm'] as $f) {
+        if (is_file($dir . '/' . $f)) return true;
     }
+    return false;
+};
+/* points d'entrée SUGGÉRÉS : racine, sous-dossiers immédiats, et leurs fichiers index.*
+   (le champ reste LIBRE : on peut taper n'importe quel chemin exact fichier/dossier). */
+$pf_targets = function ($absDir) use ($pf_has_index) {
+    $idx = ['index.php', 'index.html', 'index.htm'];
+    $out = [['path' => '', 'file' => false, 'hasIndex' => $pf_has_index($absDir)]];
+    foreach ($idx as $f) if (is_file($absDir . '/' . $f)) $out[] = ['path' => $f, 'file' => true, 'hasIndex' => true];
+    foreach (glob($absDir . '/*', GLOB_ONLYDIR) ?: [] as $sub) {
+        $b = basename($sub);
+        $out[] = ['path' => $b, 'file' => false, 'hasIndex' => $pf_has_index($sub)];
+        foreach ($idx as $f) if (is_file($sub . '/' . $f)) $out[] = ['path' => $b . '/' . $f, 'file' => true, 'hasIndex' => true];
+    }
+    return $out;
+};
+/* auto-détection (identique à inc/carte.php) — sert de valeur par défaut du menu */
+$pf_auto = function ($cands) {
+    if (!empty($cands[0]['hasIndex'])) return '';                 // index à la racine
+    foreach ($cands as $c) { if ($c['path'] !== '' && !empty($c['hasIndex'])) return $c['path']; }
+    return '';
+};
 
-    foreach ($lvProjects as $p) $lvTargets[$p] = lv_targets($lvRoot . '/' . $p);
-    // Ordre effectif d'affichage : ordre choisi d'abord, puis le reste
-    $lvOrder = array_values(array_filter($lvCfg['order'] ?? [], fn($n) => in_array($n, $lvProjects, true)));
-    $lvOrder = array_merge($lvOrder, array_values(array_filter($lvProjects, fn($n) => !in_array($n, $lvOrder, true))));
+/* dossiers-projets de la racine */
+$pfProjects = [];
+foreach (scandir($pfRoot) ?: [] as $e) {
+    if ($e === '.' || $e === '..' || $e[0] === '.') continue;
+    if (in_array($e, $pfExclude, true)) continue;
+    if (!is_dir($pfRoot . '/' . $e)) continue;
+    $pfProjects[] = $e;
+}
+sort($pfProjects, SORT_NATURAL | SORT_FLAG_CASE);
+
+/* choix déjà enregistrés */
+$pfChoice = is_file($PROJ_FILE) ? (json_decode(file_get_contents($PROJ_FILE), true) ?: []) : [];
+
+/* enregistrement du point d'entrée par projet */
+$savedProj = false; $projErr = '';
+if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_projects'])) {
+    $tsel = (array)($_POST['target'] ?? []);
+    $new  = [];
+    foreach ($pfProjects as $p) {
+        $path = isset($tsel[$p]) ? trim(str_replace('\\', '/', (string)$tsel[$p]), '/') : '';
+        if ($path !== '') {
+            // sécurité : la cible (fichier OU dossier) doit exister SOUS le projet, sans en sortir
+            $base = realpath($pfRoot . '/' . $p);
+            $full = realpath($pfRoot . '/' . $p . '/' . $path);
+            $inside = $base && $full && strncmp($full, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) === 0;
+            if (!$inside || !(is_file($full) || is_dir($full))) $path = '';   // invalide → racine
+        }
+        $new[$p] = $path;                                   // '' = on entre à la racine
+    }
+    if (@file_put_contents($PROJ_FILE, json_encode($new, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) {
+        $pfChoice = $new; $savedProj = true;
+    } else {
+        $projErr = "Impossible d'écrire config/projets.json (droits ?).";
+    }
+}
+
+/* candidats + valeur courante de chaque projet (pour le menu) */
+$pfCandidates = $pfCurrent = [];
+foreach ($pfProjects as $p) {
+    $pfCandidates[$p] = $pf_targets($pfRoot . '/' . $p);
+    $pfCurrent[$p]    = array_key_exists($p, $pfChoice) ? (string)$pfChoice[$p] : $pf_auto($pfCandidates[$p]);
 }
 
 /* Valeurs courantes */
@@ -219,6 +229,9 @@ $themes = [
   .sub2{display:block;font-size:.82rem;color:#8b93a7;margin-bottom:6px}
   select.sel{width:100%;padding:12px 14px;border-radius:12px;font-size:.95rem;background:#0d1018;border:1px solid rgba(255,255,255,.1);color:#eef1f8;font-family:inherit;cursor:pointer}
   select.sel:focus{outline:none;border-color:var(--acc)}
+  input.pin{width:100%;padding:9px 10px;border-radius:12px;font-size:.82rem;background:#0d1018;border:1px solid rgba(255,255,255,.1);color:#eef1f8;font-family:inherit}
+  input.pin:focus{outline:none;border-color:var(--acc)}
+  input.pin::placeholder{color:#5b647a}
   .proj-section{margin-top:26px}
   .proj-scroll{overflow-x:auto;margin-top:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px}
   .proj-table{display:flex;flex-direction:column;gap:8px;min-width:520px}
@@ -335,53 +348,44 @@ $themes = [
     </div>
   </form>
 
-  <?php if ($lvReady && $lvProjects): ?>
+  <?php if ($pfProjects): ?>
   <div class="proj-section">
-    <label>📂 Projets — chemin · monde · ordre</label>
-    <p class="sub2">Pour chaque projet : son <b>point d'entrée</b> (★ = contient un index), le <b>monde</b> où le placer (2+ = nouveau monde), son <b>ordre</b> (change un N° déjà pris → permutation immédiate) et sa <b>visibilité</b>.</p>
-    <?php if ($savedProj): ?><div class="msg ok">✔ Projets enregistrés.</div><?php endif; ?>
+    <label>📂 Projets — point d'entrée (chemin exact)</label>
+    <p class="sub2">Pour chaque dossier de la racine, la page ouverte <b>au clic</b> : laisse <b>vide</b> pour la racine, ou tape le <b>chemin exact</b> d'un dossier <u>ou d'un fichier</u> (ex. <code>public_html/app.php</code>, <code>api/index.php</code>). La liste te suggère les entrées détectées (<b>★</b> = un index s'y trouve). Le choix s'applique à la carte et aux fiches.</p>
+    <?php if ($savedProj): ?><div class="msg ok">✔ Points d'entrée enregistrés.</div><?php endif; ?>
     <?php if ($projErr): ?><div class="msg err"><?= ea($projErr) ?></div><?php endif; ?>
     <form method="post" id="fp">
       <input type="hidden" name="save_projects" value="1">
       <div class="proj-scroll">
-        <div class="proj-table">
-          <div class="proj-row proj-head-row">
-            <span>N°</span><span>Projet</span><span>Monde</span><span>Point d'entrée</span><span>👁</span>
+        <div class="proj-table" style="min-width:420px">
+          <div class="proj-row proj-head-row" style="grid-template-columns:1fr 1.5fr">
+            <span>Projet</span><span>Point d'entrée</span>
           </div>
-          <?php $rk = 0; $nProj = count($lvOrder); foreach ($lvOrder as $p): $rk++;
-            $w       = max(1, (int)($lvCfg['worlds'][$p] ?? 1));
-            $curT    = (string)($lvCfg['targets'][$p] ?? '');
-            $visible = !in_array($p, $lvCfg['hidden'] ?? [], true);
-            $opts    = $lvTargets[$p] ?? [['path' => '', 'hasIndex' => false]];
-            $maxW    = max($nProj, $w);
+          <?php foreach ($pfProjects as $i => $p):
+            $cands = $pfCandidates[$p];
+            $cur   = (string)$pfCurrent[$p];
+            $dlId  = 'cd-' . $i;
           ?>
-          <div class="proj-row">
-            <select name="rank[<?= ea($p) ?>]" class="sel rank" data-prev="<?= $rk ?>" title="Ordre d'affichage — choisis un N° déjà pris pour permuter">
-              <?php for ($i = 1; $i <= $nProj; $i++): ?>
-              <option value="<?= $i ?>"<?= $i === $rk ? ' selected' : '' ?>>N°<?= $i ?></option>
-              <?php endfor; ?>
-            </select>
+          <div class="proj-row" style="grid-template-columns:1fr 1.5fr">
             <span class="proj-name" title="<?= ea($p) ?>"><?= ea($p) ?></span>
-            <select name="world[<?= ea($p) ?>]" class="sel" title="Monde où placer ce projet (2+ = nouveau monde)">
-              <?php for ($i = 1; $i <= $maxW; $i++): ?>
-              <option value="<?= $i ?>"<?= $i === $w ? ' selected' : '' ?>><?= $i === 1 ? '🌍 1 (défaut)' : '🌍 ' . $i ?></option>
-              <?php endfor; ?>
-            </select>
-            <select name="target[<?= ea($p) ?>]" class="sel" title="Fichier/dossier ouvert quand on entre dans ce projet">
-              <?php foreach ($opts as $o):
-                $lbl = $o['path'] === '' ? "(racine) /$p/" : "/$p/{$o['path']}/";
+            <input type="text" name="target[<?= ea($p) ?>]" value="<?= ea($cur) ?>" list="<?= $dlId ?>"
+                   class="pin" autocomplete="off" spellcheck="false"
+                   placeholder="(racine) — ou chemin exact fichier/dossier"
+                   title="Vide = racine, ou chemin exact (ex. public_html/app.php)">
+            <datalist id="<?= $dlId ?>">
+              <?php foreach ($cands as $o):
+                $lbl = $o['path'] === '' ? "(racine) /$p/" : "/$p/{$o['path']}" . (empty($o['file']) ? '/' : '');
                 if (!empty($o['hasIndex'])) $lbl .= '  ★'; ?>
-              <option value="<?= ea($o['path']) ?>"<?= $o['path'] === $curT ? ' selected' : '' ?>><?= ea($lbl) ?></option>
+              <option value="<?= ea($o['path']) ?>"><?= ea($lbl) ?></option>
               <?php endforeach; ?>
-            </select>
-            <label class="vis-cell"><input type="checkbox" name="visible[<?= ea($p) ?>]" value="1"<?= $visible ? ' checked' : '' ?>></label>
+            </datalist>
           </div>
           <?php endforeach; ?>
         </div>
       </div>
       <div class="actions">
-        <button class="btn" type="submit">💾 Enregistrer les projets</button>
-        <a class="back" href="luvumbu/?admin=1" target="_blank">⚙ Réglages avancés (noms de mondes, modes, descriptions) ↗</a>
+        <button class="btn" type="submit">💾 Enregistrer les points d'entrée</button>
+        <a class="back" href="index.php" target="_blank">Voir la carte ↗</a>
       </div>
     </form>
   </div>
@@ -426,18 +430,6 @@ $themes = [
     document.querySelectorAll('.theme-card').forEach(function(x){x.classList.remove('sel');});
     el.classList.add('sel');
     live(); }); });
-
-  /* Ordre des projets : permutation immédiate — si on choisit un N° déjà pris,
-     le projet qui l'occupait récupère l'ancien N° (échange). */
-  document.querySelectorAll('select.rank').forEach(function(rk){
-    rk.addEventListener('change',function(){
-      var all=Array.prototype.slice.call(document.querySelectorAll('select.rank'));
-      var v=parseInt(rk.value,10), prev=parseInt(rk.dataset.prev,10);
-      var other=all.find(function(s){return s!==rk && parseInt(s.value,10)===v;});
-      if(other && !isNaN(prev)){ other.value=prev; other.dataset.prev=String(prev); }
-      rk.dataset.prev=String(v);
-    });
-  });
 </script>
 <?php if ($saved || $savedProj): ?>
 <script>

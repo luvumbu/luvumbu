@@ -1,8 +1,8 @@
 {
-    "accent": "#34d399",
-    "accent_dim": "#10b981",
+    "accent": "#fbbf24",
+    "accent_dim": "#f59e0b",
     "dark": true,
     "particules": true,
-    "carte_mode": "carte",
+    "carte_mode": "default",
     "carte_biome": ""
 }

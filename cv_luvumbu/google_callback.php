@@ -63,6 +63,14 @@ if (!$user && is_google_email_allowed($profile['email'])) {
 }
 
 if (!$user) {
+    // Adoption automatique à la première connexion : si le compte admin n'a pas
+    // encore d'e-mail (et qu'aucune liste blanche n'est définie), cette première
+    // adresse Google devient celle de l'admin. Les fois suivantes, seule elle
+    // correspondra (via find_user_by_login ci-dessus).
+    $user = google_adopt_primary_email($profile['email']);
+}
+
+if (!$user) {
     google_fail('nomatch');
 }
 

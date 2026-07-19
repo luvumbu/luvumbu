@@ -1,0 +1,4 @@
+# Le dossier config/ doit exister sur le serveur (pour l'assistant d'installation),
+# mais son contenu généré ne doit jamais être versionné.
+*
+!.gitignore

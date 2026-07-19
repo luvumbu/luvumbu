@@ -7,6 +7,29 @@
    ═══════════════════════════════════════════════════════════ */
 if (!isset($CFG)) { return; }
 if (!function_exists('e')) { function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); } }
+
+/* ─── Détecte le VRAI point d'entrée d'un dossier-projet ───
+   1) un index à sa racine        → ''            (on entre directement dans /dossier/)
+   2) sinon, 1er sous-dossier avec un index → 'sousdossier'  (ex: public_html, api)
+   3) sinon                        → ''            (repli : /dossier/)
+   Sert à ce que la redirection au clic tombe TOUJOURS sur une page qui existe,
+   sans avoir à écrire le chemin à la main dans config/portfolio.php. */
+if (!function_exists('carte_entry_target')) {
+    function carte_entry_target($absDir) {
+        $index = ['index.php', 'index.html', 'index.htm'];
+        foreach ($index as $f) {
+            if (is_file($absDir . '/' . $f)) return '';   // index à la racine du dossier
+        }
+        $subs = glob($absDir . '/*', GLOB_ONLYDIR) ?: [];
+        natcasesort($subs);
+        foreach ($subs as $sub) {
+            foreach ($index as $f) {
+                if (is_file($sub . '/' . $f)) return basename($sub);   // index dans un sous-dossier
+            }
+        }
+        return '';
+    }
+}
 $C = $CFG['carte'];
 $root = dirname(__DIR__);                 // racine du portfolio (portefolio/)
 $projets = [];
@@ -28,6 +51,15 @@ if (($C['source'] ?? 'manuel') === 'scan') {
     $exclude = $C['exclude'] ?? ['luvumbu', 'config', 'css', 'js', 'inc', 'images', 'vendor', 'node_modules'];
     $meta    = $C['meta'] ?? [];
 
+    // Points d'entrée réglés depuis l'espace admin (config/projets.json) — prioritaires.
+    // Format : { "dossier": "sous-dossier" }  ("" = on entre à la racine du dossier).
+    $projTargets = [];
+    $projFile = $root . '/config/projets.json';
+    if (is_file($projFile)) {
+        $tmp = json_decode(file_get_contents($projFile), true);
+        if (is_array($tmp)) $projTargets = $tmp;
+    }
+
     $folders = [];
     if (is_dir($scanAbs)) {
         foreach (scandir($scanAbs) as $e) {
@@ -41,9 +73,25 @@ if (($C['source'] ?? 'manuel') === 'scan') {
 
     foreach ($folders as $f) {
         $m = $meta[$f] ?? [];
-        $target    = isset($m['target']) ? trim($m['target'], '/') : '';
+        // Point d'entrée, par ordre de priorité :
+        //   1) choix admin (config/projets.json)  2) 'target' du config  3) auto-détection
+        //   (index à la racine du dossier, ou dans un sous-dossier type public_html / api).
+        if (array_key_exists($f, $projTargets)) {
+            $target = trim(str_replace('\\', '/', (string)$projTargets[$f]), '/');
+        } else {
+            $explicit = isset($m['target']) ? trim($m['target'], '/') : '';
+            $target   = $explicit !== '' ? $explicit : carte_entry_target($scanAbs . '/' . $f);
+        }
         $urlPrefix = $isRoot ? '' : $scanRel . '/';
-        $autoUrl   = $urlPrefix . rawurlencode($f) . ($target !== '' ? '/' . $target : '') . '/';
+        if ($target === '') {
+            $autoUrl = $urlPrefix . rawurlencode($f) . '/';
+        } else {
+            // chaque segment encodé ; si la cible est un FICHIER → lien direct (pas de / final),
+            // si c'est un DOSSIER → / final (Apache sert son index).
+            $encTarget = implode('/', array_map('rawurlencode', explode('/', $target)));
+            $isFile    = is_file($scanAbs . '/' . $f . '/' . $target);
+            $autoUrl   = $urlPrefix . rawurlencode($f) . '/' . $encTarget . ($isFile ? '' : '/');
+        }
         $projets[] = [
             'icon'   => $m['icon'] ?? '🕹️',
             'img'    => $m['img']  ?? '',
