@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐣 Mon Tamagotchi</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+
+  <!-- ============ Écran CONNEXION PARENT (Google) ============ -->
+  <div id="auth-screen" class="fullscreen">
+    <div class="auth-card">
+      <div class="auth-logo">🐣</div>
+      <h1>Mon Tamagotchi</h1>
+      <p class="auth-sub">Espace parent 👨‍👩‍👧 — connecte-toi pour gérer les profils de tes enfants.</p>
+      <div id="gbtn" class="gbtn"></div>
+      <p id="auth-msg" class="auth-msg"></p>
+      <a href="admin.php" class="admin-link">🛠️ Espace admin</a>
+    </div>
+  </div>
+
+  <!-- ============ Écran CHOIX DU PROFIL ENFANT ============ -->
+  <div id="children-screen" class="fullscreen" hidden>
+    <div class="auth-card">
+      <h1>Qui joue ? 👦👧</h1>
+      <div id="children-grid" class="children-grid"></div>
+
+      <!-- Mini formulaire d'ajout -->
+      <div id="add-form" class="add-form" hidden>
+        <input id="add-name" type="text" maxlength="20" placeholder="Prénom de l'enfant">
+        <div id="add-avatars" class="add-avatars"></div>
+        <div class="add-actions">
+          <button id="add-cancel" class="btn-ghost">Annuler</button>
+          <button id="add-ok" class="btn-go">Créer le profil</button>
+        </div>
+      </div>
+
+      <div class="children-actions">
+        <button id="logout-btn" class="auth-link">Se déconnecter</button>
+        <button id="wipe-btn" class="auth-link danger">🗑️ Effacer toutes mes données</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game" hidden>
+
+    <!-- Barre du haut : monnaie + niveau + changer de profil -->
+    <div class="topbar">
+      <span class="coins">💰 <b id="points">0</b></span>
+      <span class="level">Niveau <b id="level">1</b></span>
+      <button id="switch-profile" class="switch-profile" title="Changer d'enfant">👤</button>
+    </div>
+
+    <!-- La créature -->
+    <div class="creature">
+      <div id="pet-emoji" class="pet-emoji">🥚</div>
+      <div id="pet-name" class="pet-name">…</div>
+    </div>
+
+    <!-- Jauges -->
+    <div class="stats">
+      <div class="stat"><span>❤️ Santé</span>       <progress id="health"    max="100" value="100"></progress></div>
+      <div class="stat"><span>🍖 Satiété</span>     <progress id="hunger"    max="100" value="100"></progress></div>
+      <div class="stat"><span>😊 Bonheur</span>     <progress id="happiness" max="100" value="100"></progress></div>
+      <div class="stat"><span>⚡ Énergie</span>     <progress id="energy"    max="100" value="100"></progress></div>
+      <div class="stat"><span>🧠 Connaissance</span><progress id="knowledge" max="100" value="0"></progress></div>
+    </div>
+
+    <p id="status">Connexion…</p>
+
+    <!-- Navigation enfant : 5 gros boutons -->
+    <nav class="hub">
+      <button class="hub-btn" data-nav="feed">🍎<span>Nourrir</span></button>
+      <button class="hub-btn" data-nav="learn">🧠<span>Apprendre</span></button>
+      <button class="hub-btn" data-nav="shop">🏪<span>Boutique</span></button>
+      <button class="hub-btn" data-nav="home">🏠<span>Maison</span></button>
+    </nav>
+  </div>
+
+  <!-- ============ Écran APPRENDRE ============ -->
+  <div id="learn-modal" class="modal" hidden>
+    <div class="modal-box learn-box">
+      <header class="modal-head">
+        <h2>🧠 Apprendre</h2>
+        <button class="close" data-close>✕</button>
+      </header>
+
+      <!-- Réglages du quiz -->
+      <div id="learn-setup">
+        <p class="setup-hint">1️⃣ Choisis un âge</p>
+
+        <div class="age-section">
+          <div class="age-section-label">🎒 Maternelle</div>
+          <div class="age-tabs mat">
+            <button type="button" class="age-tab" data-age="age3">🧸<span>PS<br>3-4</span></button>
+            <button type="button" class="age-tab" data-age="age4">🎈<span>MS<br>4-5</span></button>
+            <button type="button" class="age-tab" data-age="age5">✏️<span>GS<br>5-6</span></button>
+          </div>
+        </div>
+
+        <div class="age-section">
+          <div class="age-section-label">🏫 École primaire</div>
+          <div class="age-tabs prim">
+            <button type="button" class="age-tab" data-age="age6">🎓<span>CP<br>6-7</span></button>
+            <button type="button" class="age-tab" data-age="age7">🧮<span>CE1<br>7-8</span></button>
+            <button type="button" class="age-tab" data-age="age8">📚<span>CE2<br>8-9</span></button>
+            <button type="button" class="age-tab" data-age="age9">🏫<span>CM1<br>9-10</span></button>
+            <button type="button" class="age-tab" data-age="age10">🎖️<span>CM2<br>10-11</span></button>
+          </div>
+        </div>
+
+        <div class="age-section">
+          <div class="age-section-label">🎒 Collège</div>
+          <div class="age-tabs col">
+            <button type="button" class="age-tab" data-age="age11">📐<span>6ème<br>11-12</span></button>
+            <button type="button" class="age-tab" data-age="age12">📊<span>5ème<br>12-13</span></button>
+            <button type="button" class="age-tab" data-age="age13">🔬<span>4ème<br>13-14</span></button>
+            <button type="button" class="age-tab" data-age="age14">🎓<span>3ème<br>14-15</span></button>
+          </div>
+        </div>
+
+        <div class="age-section">
+          <div class="age-section-label">🎓 Lycée</div>
+          <div class="age-tabs col">
+            <button type="button" class="age-tab" data-age="age15">🏛️<span>2nde<br>15-16</span></button>
+          </div>
+        </div>
+        <p class="setup-hint">2️⃣ Choisis un exercice</p>
+        <div class="age-groups">
+          <div class="age-group" data-group="age3">
+            <div class="age-title">🧸 3-4 ans · Petite section</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🌈 Découverte</div>
+              <div class="topics">
+                <button class="lvl" data-topic="colors">🎨 Couleurs</button>
+                <button class="lvl" data-topic="shapes">🔷 Formes</button>
+                <button class="lvl" data-topic="sizes">📏 Tailles</button>
+                <button class="lvl" data-topic="animals">🐱 Animaux</button>
+                <button class="lvl" data-topic="animalsound">🔊 Cris des animaux</button>
+                <button class="lvl" data-topic="foods">🍎 Aliments</button>
+                <button class="lvl" data-topic="body">🧍 Le corps</button>
+                <button class="lvl" data-topic="emotions">😊 Émotions</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="pareil">👯 Le même</button>
+                <button class="lvl" data-topic="intrus">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc">🔗 Associer</button>
+                <button class="lvl" data-topic="compare">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="suitenum">🔢 Nombre manquant</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Nombres</div>
+              <div class="topics">
+                <button class="lvl" data-topic="count3">🔢 Compter (1-3)</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age3">🎲 Au hasard (3-4 ans)</button>
+          </div>
+
+          <div class="age-group" data-group="age4">
+            <div class="age-title">🎈 4-5 ans · Moyenne section</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🌈 Découverte</div>
+              <div class="topics">
+                <button class="lvl" data-topic="colors4">🎨 Couleurs</button>
+                <button class="lvl" data-topic="shapes4">🔷 Formes</button>
+                <button class="lvl" data-topic="sizes4">📏 Tailles</button>
+                <button class="lvl" data-topic="animals4">🐱 Animaux</button>
+                <button class="lvl" data-topic="animalsound4">🔊 Cris des animaux</button>
+                <button class="lvl" data-topic="foods4">🍎 Aliments</button>
+                <button class="lvl" data-topic="body4">🧍 Le corps</button>
+                <button class="lvl" data-topic="emotions4">😊 Émotions</button>
+                <button class="lvl" data-topic="opposites">↔️ Contraires</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="pareil4">👯 Le même</button>
+                <button class="lvl" data-topic="intrus4">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite4">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc4">🔗 Associer</button>
+                <button class="lvl" data-topic="compare4">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="suitenum4">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="categorie">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang">🥇 Premier / dernier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters">🔤 Lettres</button>
+                <button class="lvl" data-topic="letters_sound">🔊 Écouter les lettres</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Compter &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="digits">🔟 Chiffres</button>
+                <button class="lvl" data-topic="count">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem4">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age4">🎲 Au hasard (4-5 ans)</button>
+          </div>
+
+          <div class="age-group" data-group="age5">
+            <div class="age-title">✏️ 5-6 ans · Grande section</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🌈 Découverte</div>
+              <div class="topics">
+                <button class="lvl" data-topic="colors5">🎨 Couleurs</button>
+                <button class="lvl" data-topic="shapes5">🔷 Formes</button>
+                <button class="lvl" data-topic="sizes5">📏 Tailles</button>
+                <button class="lvl" data-topic="animals5">🐱 Animaux</button>
+                <button class="lvl" data-topic="animalsound5">🔊 Cris des animaux</button>
+                <button class="lvl" data-topic="foods5">🍎 Aliments</button>
+                <button class="lvl" data-topic="body5">🧍 Le corps</button>
+                <button class="lvl" data-topic="emotions5">😊 Émotions</button>
+                <button class="lvl" data-topic="opposites5">↔️ Contraires</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="pareil5">👯 Le même</button>
+                <button class="lvl" data-topic="intrus5">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite5">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc5">🔗 Associer</button>
+                <button class="lvl" data-topic="compare5">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="suitenum5">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="categorie5">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang5">🥇 Premier / dernier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters5">🔤 Lettres (A-Z)</button>
+                <button class="lvl" data-topic="letters_sound5">🔊 Écouter les lettres</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Compter &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="digits5">🔟 Nombres</button>
+                <button class="lvl" data-topic="count5">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum5">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig5">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+                <button class="lvl" data-topic="addsub">➕➖ Mélange</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem5">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age5">🎲 Au hasard (5-6 ans)</button>
+          </div>
+
+          <div class="age-group" data-group="age6">
+            <div class="age-title">🎓 6-7 ans · CP</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🌈 Découverte</div>
+              <div class="topics">
+                <button class="lvl" data-topic="colors6">🎨 Couleurs</button>
+                <button class="lvl" data-topic="shapes6">🔷 Formes</button>
+                <button class="lvl" data-topic="sizes6">📏 Tailles</button>
+                <button class="lvl" data-topic="animals6">🐱 Animaux</button>
+                <button class="lvl" data-topic="animalsound6">🔊 Cris des animaux</button>
+                <button class="lvl" data-topic="foods6">🍎 Aliments</button>
+                <button class="lvl" data-topic="body6">🧍 Le corps</button>
+                <button class="lvl" data-topic="emotions6">😊 Émotions</button>
+                <button class="lvl" data-topic="opposites6">↔️ Contraires</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="pareil6">👯 Le même</button>
+                <button class="lvl" data-topic="intrus6">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite6">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc6">🔗 Associer</button>
+                <button class="lvl" data-topic="compare6">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="suitenum6">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="categorie6">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang6">🥇 Premier / dernier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres &amp; Lecture</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters6">🔤 Lettres (A-Z)</button>
+                <button class="lvl" data-topic="letters_sound6">🔊 Écouter les lettres</button>
+                <button class="lvl" data-topic="readword6">📖 Lire un mot</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Compter &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="digits6">🔟 Nombres</button>
+                <button class="lvl" data-topic="count6">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum6">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig6">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+                <button class="lvl" data-topic="double6">✖️2 Les doubles</button>
+                <button class="lvl" data-topic="muldiv">✖️ Multiplier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem6">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age6">🎲 Au hasard (6-7 ans)</button>
+          </div>
+
+          <div class="age-group" data-group="age7">
+            <div class="age-title">🧮 7-8 ans · CE1</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="intrus7">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite7">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc7">🔗 Associer</button>
+                <button class="lvl" data-topic="compare7">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="suitenum7">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="categorie7">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang7">🥇 Premier / dernier</button>
+                <button class="lvl" data-topic="sizes7">📏 Tailles</button>
+                <button class="lvl" data-topic="opposites7">↔️ Contraires</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres &amp; Lecture</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters7">🔤 Lettres (A-Z)</button>
+                <button class="lvl" data-topic="letters_sound7">🔊 Écouter les lettres</button>
+                <button class="lvl" data-topic="readword7">📖 Lire un mot</button>
+                <button class="lvl" data-topic="spell7">✍️ Orthographe</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Nombres &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="digits7">🔟 Nombres</button>
+                <button class="lvl" data-topic="count7">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum7">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig7">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+                <button class="lvl" data-topic="double7">✖️2 Les doubles</button>
+                <button class="lvl" data-topic="muldiv">✖️ Multiplier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📜 À l'ancienne</div>
+              <div class="topics">
+                <button class="lvl" data-topic="roman7">Ⅻ Chiffres romains</button>
+                <button class="lvl" data-topic="time7">🕐 Lire l'heure</button>
+                <button class="lvl" data-topic="money7">🪙 La monnaie</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem7">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age7">🎲 Au hasard (7-8 ans)</button>
+          </div>
+
+          <div class="age-group" data-group="age8">
+            <div class="age-title">📚 8-9 ans · CE2</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="intrus8">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite8">🧩 Suite logique</button>
+                <button class="lvl" data-topic="suitenum8">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="compare8">⚖️ Le plus / le moins</button>
+                <button class="lvl" data-topic="categorie8">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang8">🥇 Premier / dernier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres &amp; Lecture</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters8">🔤 Lettres (A-Z)</button>
+                <button class="lvl" data-topic="readword8">📖 Lire un mot</button>
+                <button class="lvl" data-topic="spell8">✍️ Orthographe</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Nombres &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="count8">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum8">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig8">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="double8">✖️2 Les doubles</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+                <button class="lvl" data-topic="muldiv">✖️ Multiplier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📜 À l'ancienne</div>
+              <div class="topics">
+                <button class="lvl" data-topic="roman8">Ⅻ Chiffres romains</button>
+                <button class="lvl" data-topic="measure8">📏 Mesures</button>
+                <button class="lvl" data-topic="time8">🕐 Lire l'heure</button>
+                <button class="lvl" data-topic="money8">🪙 La monnaie</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem8">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age8">🎲 Au hasard (CE2)</button>
+          </div>
+
+          <div class="age-group" data-group="age9">
+            <div class="age-title">🏫 9-10 ans · CM1</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🧩 Logique</div>
+              <div class="topics">
+                <button class="lvl" data-topic="intrus9">🔍 Intrus</button>
+                <button class="lvl" data-topic="suite9">🧩 Suite logique</button>
+                <button class="lvl" data-topic="assoc9">🔗 Associer</button>
+                <button class="lvl" data-topic="categorie9">🗂️ Le bon groupe</button>
+                <button class="lvl" data-topic="rang9">🥇 Premier / dernier</button>
+                <button class="lvl" data-topic="suitenum9">🔢 Nombre manquant</button>
+                <button class="lvl" data-topic="compare9">⚖️ Le plus / le moins</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔤 Lettres &amp; Lecture</div>
+              <div class="topics">
+                <button class="lvl" data-topic="letters9">🔤 Lettres (A-Z)</button>
+                <button class="lvl" data-topic="readword9">📖 Lire un mot</button>
+                <button class="lvl" data-topic="spell9">✍️ Orthographe</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔢 Nombres &amp; Calcul</div>
+              <div class="topics">
+                <button class="lvl" data-topic="digits9">🔟 Nombres</button>
+                <button class="lvl" data-topic="count9">🔢 Compter</button>
+                <button class="lvl" data-topic="nextnum9">🔢 Avant / Après</button>
+                <button class="lvl" data-topic="numbig9">🔢 Le plus grand</button>
+                <button class="lvl" data-topic="evenodd9">🔢 Pair ou impair</button>
+                <button class="lvl" data-topic="complement9">🎯 Compléter à 10/100</button>
+                <button class="lvl" data-topic="double9">✖️2 Les doubles</button>
+                <button class="lvl" data-topic="half9">✂️ La moitié</button>
+                <button class="lvl" data-topic="triple9">✖️3 Le triple</button>
+                <button class="lvl" data-topic="addition">➕ Additions</button>
+                <button class="lvl" data-topic="subtraction">➖ Soustractions</button>
+                <button class="lvl" data-topic="muldiv">✖️ Multiplier</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📜 À l'ancienne</div>
+              <div class="topics">
+                <button class="lvl" data-topic="roman9">Ⅻ Chiffres romains</button>
+                <button class="lvl" data-topic="measure9">📏 Mesures</button>
+                <button class="lvl" data-topic="time9">🕐 Lire l'heure</button>
+                <button class="lvl" data-topic="money9">🪙 La monnaie</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem9">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age9">🎲 Au hasard (CM1)</button>
+          </div>
+
+          <div class="age-group" data-group="age10">
+            <div class="age-title">🎖️ 10-11 ans · CM2 (certificat)</div>
+
+            <div class="theme-block">
+              <div class="theme-title">➗ Calcul avancé</div>
+              <div class="topics">
+                <button class="lvl" data-topic="longmult">✖️ Multiplications (×2 chiffres)</button>
+                <button class="lvl" data-topic="division">➗ Divisions</button>
+                <button class="lvl" data-topic="fraction">½ Fractions</button>
+                <button class="lvl" data-topic="decimals">🔟 Nombres décimaux</button>
+                <button class="lvl" data-topic="double9">✖️2 Les doubles</button>
+                <button class="lvl" data-topic="triple9">✖️3 Le triple</button>
+                <button class="lvl" data-topic="complementa">🎯 Compléter à 100</button>
+                <button class="lvl" data-topic="evenodda">🔢 Pair ou impair</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes &amp; Lecture</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problem">📝 Petits problèmes</button>
+                <button class="lvl" data-topic="readworda">📖 Lire un mot</button>
+                <button class="lvl" data-topic="spella">✍️ Orthographe</button>
+                <button class="lvl" data-topic="numbiga">🔢 Le plus grand</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📜 À l'ancienne</div>
+              <div class="topics">
+                <button class="lvl" data-topic="romana">Ⅿ Chiffres romains (jusqu'à M)</button>
+                <button class="lvl" data-topic="measurea">📏 Mesures</button>
+                <button class="lvl" data-topic="moneya">🪙 La monnaie</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age10">🎲 Au hasard (CM2)</button>
+          </div>
+
+          <div class="age-group" data-group="age11">
+            <div class="age-title">📐 11-12 ans · 6ème (collège)</div>
+
+            <div class="theme-block">
+              <div class="theme-title">🧮 Calcul & géométrie</div>
+              <div class="topics">
+                <button class="lvl" data-topic="priorities">✖️➕ Priorités opératoires</button>
+                <button class="lvl" data-topic="square">² Les carrés</button>
+                <button class="lvl" data-topic="perimeter">📐 Périmètre</button>
+                <button class="lvl" data-topic="aire">🟦 Aire</button>
+                <button class="lvl" data-topic="relative">🌡️ Nombres relatifs</button>
+                <button class="lvl" data-topic="diveucl">➗ Division (reste)</button>
+                <button class="lvl" data-topic="multiple">🔢 Les multiples</button>
+                <button class="lvl" data-topic="roundten">≈ Arrondir</button>
+                <button class="lvl" data-topic="comparedec">🔟 Comparer décimaux</button>
+                <button class="lvl" data-topic="longmult">✖️ Multiplications</button>
+                <button class="lvl" data-topic="division">➗ Divisions</button>
+                <button class="lvl" data-topic="muldiv">✖️ Tables</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">½ Fractions & nombres</div>
+              <div class="topics">
+                <button class="lvl" data-topic="fraction">½ Fractions</button>
+                <button class="lvl" data-topic="decimals">🔟 Nombres décimaux</button>
+                <button class="lvl" data-topic="numbiga">🔢 Comparer les grands nombres</button>
+                <button class="lvl" data-topic="problem">📝 Problèmes</button>
+                <button class="lvl" data-topic="romana">Ⅿ Chiffres romains</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+                <button class="lvl" data-topic="probpercent">📝 Problème de %</button>
+                <button class="lvl" data-topic="probpropor">📝 Problème de proportion</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age11">🎲 Au hasard (6ème)</button>
+          </div>
+
+          <div class="age-group" data-group="age12">
+            <div class="age-title">📊 12-13 ans · 5ème</div>
+            <div class="theme-block">
+              <div class="theme-title">🧮 Nouveautés 5ème</div>
+              <div class="topics">
+                <button class="lvl" data-topic="percent">% Pourcentages</button>
+                <button class="lvl" data-topic="airetri">🔺 Aire du triangle</button>
+                <button class="lvl" data-topic="priorpar">() Priorités (parenthèses)</button>
+                <button class="lvl" data-topic="relatadd">± Additionner les relatifs</button>
+                <button class="lvl" data-topic="relatsub">± Soustraire les relatifs</button>
+                <button class="lvl" data-topic="proportion">⚖️ Proportionnalité</button>
+                <button class="lvl" data-topic="volumecube">🧊 Volume du cube</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔁 Révisions</div>
+              <div class="topics">
+                <button class="lvl" data-topic="fraction">½ Fractions</button>
+                <button class="lvl" data-topic="decimals">🔟 Décimaux</button>
+                <button class="lvl" data-topic="relative">🌡️ Relatifs</button>
+                <button class="lvl" data-topic="priorities">✖️➕ Priorités</button>
+                <button class="lvl" data-topic="aire">🟦 Aire</button>
+                <button class="lvl" data-topic="perimeter">📐 Périmètre</button>
+                <button class="lvl" data-topic="muldiv">✖️ Tables</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+                <button class="lvl" data-topic="probpercent">📝 Problème de %</button>
+                <button class="lvl" data-topic="probpropor">📝 Problème de proportion</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age12">🎲 Au hasard (5ème)</button>
+          </div>
+
+          <div class="age-group" data-group="age13">
+            <div class="age-title">🔬 13-14 ans · 4ème</div>
+            <div class="theme-block">
+              <div class="theme-title">🧮 Nouveautés 4ème</div>
+              <div class="topics">
+                <button class="lvl" data-topic="power">^ Puissances</button>
+                <button class="lvl" data-topic="powerten">🔟 Puissances de 10</button>
+                <button class="lvl" data-topic="relatmul">± Multiplier les relatifs</button>
+                <button class="lvl" data-topic="expand">x Développer</button>
+                <button class="lvl" data-topic="factorise">x Factoriser</button>
+                <button class="lvl" data-topic="percent">% Pourcentages</button>
+                <button class="lvl" data-topic="proportion">⚖️ Proportionnalité</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔁 Révisions</div>
+              <div class="topics">
+                <button class="lvl" data-topic="priorpar">() Priorités</button>
+                <button class="lvl" data-topic="airetri">🔺 Aire du triangle</button>
+                <button class="lvl" data-topic="relatadd">± Additionner les relatifs</button>
+                <button class="lvl" data-topic="relatsub">± Soustraire les relatifs</button>
+                <button class="lvl" data-topic="square">² Carrés</button>
+                <button class="lvl" data-topic="longmult">✖️ Multiplications</button>
+                <button class="lvl" data-topic="division">➗ Divisions</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+                <button class="lvl" data-topic="probpercent">📝 Problème de %</button>
+                <button class="lvl" data-topic="probpropor">📝 Problème de proportion</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age13">🎲 Au hasard (4ème)</button>
+          </div>
+
+          <div class="age-group" data-group="age14">
+            <div class="age-title">🎓 14-15 ans · 3ème (brevet)</div>
+            <div class="theme-block">
+              <div class="theme-title">🧮 Nouveautés 3ème</div>
+              <div class="topics">
+                <button class="lvl" data-topic="sqrt">√ Racines carrées</button>
+                <button class="lvl" data-topic="equation">= Équations simples</button>
+                <button class="lvl" data-topic="equation2">= Équations (2 étapes)</button>
+                <button class="lvl" data-topic="function">ƒ Fonctions</button>
+                <button class="lvl" data-topic="pythagore">📐 Théorème de Pythagore</button>
+                <button class="lvl" data-topic="thales">📐 Théorème de Thalès</button>
+                <button class="lvl" data-topic="power">^ Puissances</button>
+                <button class="lvl" data-topic="powerten">🔟 Puissances de 10</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔁 Révisions</div>
+              <div class="topics">
+                <button class="lvl" data-topic="relatmul">± Multiplier les relatifs</button>
+                <button class="lvl" data-topic="expand">x Développer</button>
+                <button class="lvl" data-topic="factorise">x Factoriser</button>
+                <button class="lvl" data-topic="percent">% Pourcentages</button>
+                <button class="lvl" data-topic="proportion">⚖️ Proportionnalité</button>
+                <button class="lvl" data-topic="priorpar">() Priorités</button>
+                <button class="lvl" data-topic="muldiv">✖️ Tables</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+                <button class="lvl" data-topic="probpercent">📝 Problème de %</button>
+                <button class="lvl" data-topic="probpropor">📝 Problème de proportion</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age14">🎲 Au hasard (3ème)</button>
+          </div>
+
+          <div class="age-group" data-group="age15">
+            <div class="age-title">🏛️ 15-16 ans · Seconde (lycée)</div>
+            <div class="theme-block">
+              <div class="theme-title">🧮 Nouveautés Seconde</div>
+              <div class="topics">
+                <button class="lvl" data-topic="identremar">(a+b)² Identités remarquables</button>
+                <button class="lvl" data-topic="milieu">• Milieu d'un segment</button>
+                <button class="lvl" data-topic="antecedent">ƒ Antécédent d'une fonction</button>
+                <button class="lvl" data-topic="evolution">% Évolution (hausse/baisse)</button>
+                <button class="lvl" data-topic="moyenne">📊 Moyenne</button>
+                <button class="lvl" data-topic="vecteur">📏 Distance sur une droite</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">🔁 Révisions</div>
+              <div class="topics">
+                <button class="lvl" data-topic="sqrt">√ Racines carrées</button>
+                <button class="lvl" data-topic="equation2">= Équations</button>
+                <button class="lvl" data-topic="function">ƒ Fonctions</button>
+                <button class="lvl" data-topic="expand">x Développer</button>
+                <button class="lvl" data-topic="factorise">x Factoriser</button>
+                <button class="lvl" data-topic="power">^ Puissances</button>
+                <button class="lvl" data-topic="pythagore">📐 Pythagore</button>
+                <button class="lvl" data-topic="thales">📐 Thalès</button>
+              </div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-title">📝 Problèmes</div>
+              <div class="topics">
+                <button class="lvl" data-topic="problema">📝 Problèmes</button>
+                <button class="lvl" data-topic="probpercent">📝 Problème de %</button>
+                <button class="lvl" data-topic="probpropor">📝 Problème de proportion</button>
+              </div>
+            </div>
+            <button class="lvl rnd" data-topic="age15">🎲 Au hasard (Seconde)</button>
+          </div>
+
+          <button class="lvl rnd-all" data-topic="all">🎲🎲 SURPRISE — tout au hasard !</button>
+        </div>
+        <p class="setup-hint">3️⃣ Combien de questions ?</p>
+        <div class="count-picker">
+          <button class="cnt" data-count="5">5</button>
+          <button class="cnt" data-count="10">10</button>
+          <button class="cnt" data-count="25">25</button>
+        </div>
+        <button id="learn-start" class="big-start" disabled>▶️ Commencer</button>
+      </div>
+
+      <!-- Écran de LEÇON (pour les cours à comprendre : chiffres romains, mesures…) -->
+      <div id="learn-lesson" hidden class="learn-lesson">
+        <div class="lesson-emoji" id="lesson-emoji"></div>
+        <h3 id="lesson-title" class="lesson-title"></h3>
+        <ul id="lesson-lines" class="lesson-lines"></ul>
+        <button id="lesson-full" class="lesson-inline">📖 Voir le cours complet ↗</button>
+        <button id="lesson-go" class="big-start">J'ai compris, on commence ! ▶</button>
+      </div>
+
+      <!-- Écran de jeu -->
+      <div id="learn-play" hidden>
+        <div class="learn-progress">
+          <button id="learn-lesson-btn" class="lesson-btn" title="Voir le cours">📖 Cours</button>
+          <span id="learn-count">0/0</span> · Score <b id="learn-score">0</b>
+          <button id="learn-mute" class="mute-btn" title="Couper la voix">🔊</button>
+        </div>
+        <div id="learn-visual" class="learn-visual"></div>
+        <h3 class="learn-prompt">
+          <span id="learn-prompt"></span>
+          <button id="learn-say" class="say-btn" title="Réécouter">🔊</button>
+        </h3>
+        <div id="learn-choices" class="learn-choices"></div>
+        <p id="learn-feedback" class="learn-feedback"></p>
+        <div id="learn-anim" class="learn-anim" hidden></div>
+        <button id="learn-next" class="big-start" hidden>Suivant ▶</button>
+        <button id="learn-lesson-inline" class="lesson-inline">📖 Voir le cours</button>
+      </div>
+
+      <!-- Écran de résultat -->
+      <div id="learn-result" hidden class="learn-result">
+        <div class="result-emoji">🏆</div>
+        <p id="result-text"></p>
+        <button id="learn-again" class="big-start">🔁 Rejouer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Écran ÉVOLUTIONS (Maison) ============ -->
+  <div id="evolutions-modal" class="modal" hidden>
+    <div class="modal-box">
+      <header class="modal-head">
+        <h2>📖 Évolutions des Tamago</h2>
+        <button class="close" data-close>✕</button>
+      </header>
+      <div id="evolutions-grid" class="evo-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============ Écran BOUTIQUE ============ -->
+  <div id="shop-modal" class="modal" hidden>
+    <div class="modal-box">
+      <header class="modal-head">
+        <h2>🏪 Boutique</h2>
+        <button class="close" data-close>✕</button>
+      </header>
+      <p class="shop-wallet">Tu as <b id="shop-points">0</b> 💰</p>
+      <div id="shop-grid" class="shop-grid"></div>
+      <p id="shop-feedback" class="learn-feedback"></p>
+    </div>
+  </div>
+
+  <script type="module" src="js/auth/auth.js"></script>
+</body>
+</html>

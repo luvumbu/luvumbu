@@ -1,0 +1,2657 @@
+﻿    <script type="text/markdown" data-doc="README">
+# Documentation technique â€” Mon Blog
+
+Documentation complÃ¨te du projet : architecture, installation, fonctionnement interne, dÃ©ploiement, sÃ©curitÃ©.
+
+## Table des matiÃ¨res
+
+| Fichier | Contenu |
+|---|---|
+| [01-architecture.md](01-architecture.md) | Vue d'ensemble : composants, flux de donnÃ©es, structure du repo, mapping local â†” serveur |
+| [02-installation.md](02-installation.md) | Installation locale (XAMPP) + dÃ©ploiement sur Hostinger (FTP, hPanel, base de donnÃ©es) |
+| [03-database.md](03-database.md) | SchÃ©ma MySQL complet : tables, colonnes, types, foreign keys, contraintes |
+| [04-api.md](04-api.md) | RÃ©fÃ©rence API JSON : endpoints, paramÃ¨tres, formats de rÃ©ponse, exemples cURL |
+| [05-deployment.md](05-deployment.md) | Pipeline GitHub Actions : workflow YAML expliquÃ© ligne par ligne, secrets, exclusions |
+| [06-sync.md](06-sync.md) | SystÃ¨me de synchronisation local â†’ serveur : clÃ©s Ã  usage unique, dump SQL, zip uploads |
+| [07-mobile-app.md](07-mobile-app.md) | Architecture de la PWA mobile : manifest, service worker, systÃ¨me de mise Ã  jour, icÃ´nes |
+| [08-admin.md](08-admin.md) | Panel d'administration : pages, permissions, personnalisation landing, import/export JSON |
+| [09-security.md](09-security.md) | ModÃ¨le de sÃ©curitÃ© : auth, CSRF, tokens, sync keys, validations upload, hashing |
+| [10-troubleshooting.md](10-troubleshooting.md) | ProblÃ¨mes frÃ©quents et solutions : dÃ©ploiement, sync, cache, icÃ´nes PWA, BDD |
+
+## Conventions de cette documentation
+
+- Les blocs `bash` sont des commandes shell (Git Bash sur Windows, ou Bash/Zsh sur macOS/Linux)
+- Les blocs `php` montrent du code PHP du projet
+- Les blocs `sql` sont des requÃªtes MySQL
+- Les blocs `yaml` sont du YAML (GitHub Actions)
+- Les chemins commencent par `Blog/` = racine du repo Git (= `C:\xampp\htdocs\Blog\` sur le poste de dev)
+- Les chemins commenÃ§ant par `/public_html/` dÃ©signent la racine serveur Hostinger
+
+## Stack technique rÃ©sumÃ©
+
+| Couche | Techno |
+|---|---|
+| Serveur web | Apache (XAMPP local / Hostinger prod) |
+| Backend | PHP 7+ (compatible 8.x) sans framework, PDO MySQL |
+| Base de donnÃ©es | MySQL 5.7+ / MariaDB 10.3+ |
+| Frontend web | HTML server-rendered + CSS vanilla, pas de framework JS |
+| Frontend mobile | PWA HTML + JS vanilla, Service Worker minimal |
+| Auth web | Sessions PHP + cookies + bcrypt |
+| Auth API | Tokens opaques 30 jours (table `api_tokens`) |
+| DÃ©ploiement | GitHub Actions â†’ FTPS Hostinger |
+| Sync | PHP â†’ cURL multipart HTTPS, clÃ©s one-shot fichier JSON |
+
+## DÃ©marrage rapide
+
+1. Lis [01-architecture.md](01-architecture.md) pour comprendre oÃ¹ vit quoi
+2. Suis [02-installation.md](02-installation.md) pour faire tourner le projet en local
+3. Consulte [05-deployment.md](05-deployment.md) pour mettre en ligne
+4. Quand tu auras besoin de pousser ton local vers la prod : [06-sync.md](06-sync.md)
+
+    </script>
+    <script type="text/markdown" data-doc="01-architecture">
+# 01 â€” Architecture
+
+## Vue d'ensemble
+
+Le projet est un **blog PHP server-rendered** + **PWA mobile** + **landing page** statique, dÃ©ployÃ©s sur Hostinger via GitHub Actions, avec un systÃ¨me de synchronisation locale â†” serveur.
+
+```
+                 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                 â”‚           VISITEUR                  â”‚
+                 â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                  â”‚                  â”‚                â”‚
+   navigateur     â”‚                  â”‚                â”‚
+                  â–¼                  â–¼                â–¼
+        mariondelval.com   blog.mariondelval.com    PWA installÃ©e
+        (LANDING HTML)     (BLOG PHP + API)         (mobile-app HTML/JS)
+                                  â”‚
+                                  â–¼
+                          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                          â”‚  Apache + PHP    â”‚
+                          â”‚  PDO â†’ MySQL     â”‚
+                          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                  â”‚
+                                  â–¼
+                            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                            â”‚  MySQL   â”‚  (Hostinger BDD partagÃ©e)
+                            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+```
+
+## Structure du repo Git
+
+```
+Blog/                              <- racine repo (= C:\xampp\htdocs\Blog\)
+â”‚
+â”œâ”€â”€ .git/                          <- mÃ©tadonnÃ©es Git (jamais dÃ©ployÃ©)
+â”œâ”€â”€ .github/
+â”‚   â””â”€â”€ workflows/
+â”‚       â””â”€â”€ deploy.yml             <- pipeline FTP Hostinger
+â”‚
+â”œâ”€â”€ .gitignore                     <- exclusions Git
+â”œâ”€â”€ index.html                     <- LANDING (dÃ©ployÃ©e Ã  /public_html/)
+â”œâ”€â”€ doc/                           <- cette documentation
+â”‚
+â””â”€â”€ blog/                          <- LE BLOG complet (dÃ©ployÃ© Ã  /public_html/blog/)
+    â”‚
+    â”œâ”€â”€ .gitignore                 <- exclusions spÃ©cifiques au blog
+    â”œâ”€â”€ .htaccess                  <- rÃ¨gles Apache prod
+    â”œâ”€â”€ README.md                  <- README court cÃ´tÃ© code
+    â”œâ”€â”€ install.php                <- installeur premier lancement
+    â”œâ”€â”€ index.php                  <- accueil public du blog
+    â”œâ”€â”€ manifest.json              <- manifest PWA du blog
+    â”œâ”€â”€ sw.js                      <- service worker (kill-switch dÃ©sactivÃ©)
+    â”œâ”€â”€ icon-192.png, icon-512.png <- icÃ´nes PWA principales
+    â”‚
+    â”œâ”€â”€ api/                       <- endpoints REST JSON
+    â”‚   â”œâ”€â”€ _bootstrap.php         <- CORS + JSON headers
+    â”‚   â”œâ”€â”€ _auth.php              <- helper Bearer token
+    â”‚   â”œâ”€â”€ login.php              <- POST email/password â†’ token
+    â”‚   â”œâ”€â”€ articles.php           <- GET liste articles
+    â”‚   â”œâ”€â”€ article.php            <- GET dÃ©tail / POST publish
+    â”‚   â”œâ”€â”€ version.php            <- GET version mobile-app
+    â”‚   â”œâ”€â”€ site_info.php          <- GET settings publics + landing
+    â”‚   â””â”€â”€ sync_receive.php       <- POST rÃ©ception sync
+    â”‚
+    â”œâ”€â”€ includes/                  <- code commun PHP
+    â”‚   â”œâ”€â”€ bootstrap.php          <- DB, sessions, auth init
+    â”‚   â”œâ”€â”€ db.php                 <- connexion PDO
+    â”‚   â”œâ”€â”€ auth.php               <- login/logout/require_admin
+    â”‚   â”œâ”€â”€ helpers.php            <- e(), base_url(), CSRF, flash
+    â”‚   â”œâ”€â”€ settings.php           <- get_setting/set_setting
+    â”‚   â”œâ”€â”€ upload.php             <- validation + sauvegarde images
+    â”‚   â”œâ”€â”€ sync_keys.php          <- gestion clÃ©s sync (fichier JSON)
+    â”‚   â”œâ”€â”€ sync_dump.php          <- dump SQL + zip uploads
+    â”‚   â”œâ”€â”€ header.php             <- partial header HTML public
+    â”‚   â””â”€â”€ footer.php             <- partial footer
+    â”‚
+    â”œâ”€â”€ pages/                     <- pages publiques + admin
+    â”‚   â”œâ”€â”€ login.php / register.php / logout.php
+    â”‚   â”œâ”€â”€ article.php            <- dÃ©tail public
+    â”‚   â”œâ”€â”€ article_new.php        <- crÃ©ation (auth)
+    â”‚   â”œâ”€â”€ article_edit.php       <- Ã©dition (auth)
+    â”‚   â”œâ”€â”€ article_delete.php     <- suppression
+    â”‚   â”œâ”€â”€ comment_delete.php
+    â”‚   â”œâ”€â”€ admin.php              <- dashboard admin
+    â”‚   â”œâ”€â”€ settings.php           <- paramÃ¨tres gÃ©nÃ©raux
+    â”‚   â”œâ”€â”€ social.php             <- rÃ©seaux sociaux
+    â”‚   â”œâ”€â”€ landing_settings.php   <- apparence landing (live preview)
+    â”‚   â”œâ”€â”€ sync_keys.php          <- gÃ©nÃ©ration clÃ©s (cÃ´tÃ© serveur)
+    â”‚   â”œâ”€â”€ sync_push.php          <- envoi donnÃ©es (cÃ´tÃ© local)
+    â”‚   â””â”€â”€ sync_json.php          <- import/export JSON
+    â”‚
+    â”œâ”€â”€ mobile-app/                <- PWA mobile autonome
+    â”‚   â”œâ”€â”€ index.html             <- shell HTML
+    â”‚   â”œâ”€â”€ app.js                 <- logique SPA + API calls
+    â”‚   â”œâ”€â”€ style.css              <- styles mobile
+    â”‚   â”œâ”€â”€ manifest.json          <- manifest PWA mobile
+    â”‚   â”œâ”€â”€ sw.js                  <- service worker (kill-switch)
+    â”‚   â”œâ”€â”€ offline.html
+    â”‚   â”œâ”€â”€ icon-192.png, icon-512.png
+    â”‚   â”œâ”€â”€ widget-template.json
+    â”‚   â”œâ”€â”€ widget-data.json
+    â”‚   â””â”€â”€ generate-icons.ps1     <- script local pour rÃ©gÃ©nÃ©rer
+    â”‚
+    â”œâ”€â”€ assets/                    <- ressources statiques du site web
+    â”‚   â”œâ”€â”€ css/styles.css         <- styles publics + admin
+    â”‚   â””â”€â”€ js/preview.js          <- preview images dans article_new
+    â”‚
+    â”œâ”€â”€ config/                    <- (gitignored)
+    â”‚   â”œâ”€â”€ config.php             <- credentials BDD (gÃ©nÃ©rÃ© par install.php)
+    â”‚   â””â”€â”€ sync_keys.json         <- tokens sync (gÃ©nÃ©rÃ© Ã  la volÃ©e)
+    â”‚
+    â”œâ”€â”€ uploads/                   <- (gitignored sauf .gitkeep)
+    â”‚   â””â”€â”€ ...images des articles...
+    â”‚
+    â””â”€â”€ sql/
+        â””â”€â”€ schema.sql             <- crÃ©ation initiale des tables
+```
+
+## Mapping local â†” serveur
+
+Le local **mirroir parfaitement** la structure du serveur, ce qui simplifie tout :
+
+| Local | Serveur Hostinger | URL publique |
+|---|---|---|
+| `Blog/index.html` | `/public_html/index.html` | https://mariondelval.com/ |
+| `Blog/blog/index.php` | `/public_html/blog/index.php` | https://blog.mariondelval.com/ |
+| `Blog/blog/api/login.php` | `/public_html/blog/api/login.php` | https://blog.mariondelval.com/api/login.php |
+| `Blog/blog/mobile-app/index.html` | `/public_html/blog/mobile-app/index.html` | https://blog.mariondelval.com/mobile-app/ |
+
+Le sous-domaine `blog.mariondelval.com` est configurÃ© dans hPanel pour pointer vers `/public_html/blog/`. Donc le contenu est accessible de **deux maniÃ¨res Ã©quivalentes** :
+
+- via `mariondelval.com/blog/...` (chemin sur le domaine principal)
+- via `blog.mariondelval.com/...` (raccourci via le sous-domaine)
+
+## Flux de donnÃ©es principaux
+
+### 1. Visite d'un article public
+
+```
+visiteur â†’ blog.mariondelval.com/pages/article.php?id=42
+       â”‚
+       â–¼
+   Apache â†’ blog/pages/article.php
+       â”‚
+       â–¼
+   require_once includes/bootstrap.php
+       â”‚
+       â”œâ”€â”€ ouvre la session
+       â”œâ”€â”€ construit $pdo (PDO MySQL)
+       â””â”€â”€ charge les helpers
+       â”‚
+       â–¼
+   SELECT FROM articles WHERE id=42 + sous-articles + commentaires
+       â”‚
+       â–¼
+   include includes/header.php  (rend <head>, menu, etc.)
+   echo HTML de l'article
+   include includes/footer.php
+       â”‚
+       â–¼
+   rÃ©ponse HTML au navigateur
+```
+
+### 2. Publication d'un article depuis la PWA mobile
+
+```
+PWA â†’ POST blog.mariondelval.com/api/article.php (multipart)
+   â”‚   Authorization: Bearer <token>
+   â”‚   Body: title, content, image, ...
+   â”‚
+   â–¼
+api/_bootstrap.php  (CORS headers, charge config, PDO)
+api/_auth.php       (valide le token contre api_tokens table)
+api/article.php
+   â”‚
+   â”œâ”€â”€ valide les champs
+   â”œâ”€â”€ upload de l'image â†’ includes/upload.php â†’ uploads/...
+   â”œâ”€â”€ INSERT INTO articles ...
+   â””â”€â”€ INSERT INTO article_images ...
+   â”‚
+   â–¼
+JSON { "ok": true, "id": 123 }
+   â”‚
+   â–¼
+PWA met Ã  jour l'UI
+```
+
+### 3. Synchronisation local â†’ serveur
+
+```
+LOCAL ADMIN                              SERVEUR ADMIN
+   â”‚                                          â”‚
+   â”‚  visite sync_keys.php cÃ´tÃ© serveur   â—€â”€â”€â”€â”¤  gÃ©nÃ¨re clÃ©
+   â”‚                                          â”‚  â†’ sync_keys.json
+   â”‚                                          â”‚
+   â”‚  â—€â”€â”€ copie/colle la clÃ© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+   â”‚                                          â”‚
+   â”‚  visite sync_push.php cÃ´tÃ© local         â”‚
+   â”‚  â†’ gÃ©nÃ¨re dump SQL                       â”‚
+   â”‚  â†’ zip de uploads/                       â”‚
+   â”‚  â†’ cURL multipart POST                   â”‚
+   â”‚           â”‚                              â”‚
+   â”‚           â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¶  api/sync_receive.php
+   â”‚                                          â”‚     â”‚
+   â”‚                                          â”‚     â”œâ”€â”€ consomme la clÃ©
+   â”‚                                          â”‚     â”œâ”€â”€ importe SQL
+   â”‚                                          â”‚     â””â”€â”€ extrait zip
+   â”‚                                          â”‚     â”‚
+   â”‚  â—€â”€â”€ JSON {ok:true, uploads:42} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤â—€â”€â”€â”€â”€â”˜
+```
+
+## Choix d'architecture
+
+- **Pas de framework** : pour rester proche du code, facile Ã  dÃ©ployer en FTP shared hosting, minimum de complexitÃ©
+- **PHP server-rendered** pour les pages publiques â†’ SEO-friendly, pas besoin de SPA pour un blog
+- **API JSON sÃ©parÃ©e** pour alimenter la PWA mobile â†’ mÃªmes donnÃ©es, deux frontends
+- **Service Worker volontairement minimal** : `sw.js` est un kill-switch dÃ©sinstallation, pour Ã©viter les bugs de cache complexes qu'on a eu avant. Update-check via `version.php` et clear caches manuel
+- **Sous-domaine pour le blog** : libÃ¨re le domaine principal pour une landing Ã©lÃ©gante, permet d'Ã©voluer indÃ©pendamment
+- **Sync Ã  clÃ©s Ã  usage unique** : pas de secret partagÃ© permanent. Chaque sync nÃ©cessite une action manuelle cÃ´tÃ© serveur (admin gÃ©nÃ¨re la clÃ©). Plus sÃ»r qu'un token statique en `config.php`
+
+## Ã‰volutions possibles
+
+- Cache HTTP cÃ´tÃ© Apache (mod_expires) sur `/blog/assets/*` et `/blog/icon-*.png`
+- File d'attente pour les uploads d'images (resize Ã  la volÃ©e vs au moment de l'upload)
+- Webhooks (push event Ã  chaque article publiÃ©)
+- Migration BDD versionnÃ©e (table `migrations` + scripts dans `sql/`)
+
+    </script>
+    <script type="text/markdown" data-doc="02-installation">
+# 02 â€” Installation
+
+## A. Installation locale (XAMPP)
+
+### PrÃ©requis
+
+- Windows / macOS / Linux
+- XAMPP (Apache + MySQL + PHP 7.4+)
+- Git
+- Un Ã©diteur de code (VS Code, etc.)
+
+### Ã‰tapes
+
+#### 1. Cloner le repo
+
+```bash
+cd C:\xampp\htdocs
+git clone https://github.com/luvumbu/Blog.git Blog
+```
+
+Structure obtenue :
+
+```
+C:\xampp\htdocs\Blog\
+â”œâ”€â”€ index.html
+â”œâ”€â”€ blog/
+â”œâ”€â”€ doc/
+â””â”€â”€ .github/
+```
+
+#### 2. DÃ©marrer XAMPP
+
+Ouvre le panneau XAMPP Control â†’ dÃ©marre **Apache** et **MySQL**.
+
+VÃ©rifie :
+- http://localhost â†’ page d'accueil XAMPP
+- http://localhost/phpmyadmin â†’ phpMyAdmin
+
+#### 3. CrÃ©er la base de donnÃ©es locale
+
+Dans phpMyAdmin :
+
+1. Onglet **Bases de donnÃ©es**
+2. CrÃ©e une base : `blog` (interclassement `utf8mb4_unicode_ci`)
+3. **C'est tout** â€” l'installeur PHP crÃ©era les tables automatiquement
+
+#### 4. Lancer l'installeur
+
+Ouvre dans le navigateur :
+
+```
+http://localhost/Blog/blog/install.php
+```
+
+Remplis le formulaire :
+
+| Champ | Valeur locale |
+|---|---|
+| HÃ´te MySQL | `localhost` |
+| Nom de la base | `blog` |
+| Utilisateur | `root` |
+| Mot de passe | (vide par dÃ©faut sur XAMPP) |
+| Email admin | ton.email@exemple.com |
+| Mot de passe admin | un mot de passe robuste |
+
+L'installeur :
+1. CrÃ©e `blog/config/config.php` avec les credentials
+2. ExÃ©cute `blog/sql/schema.sql` (crÃ©e toutes les tables)
+3. CrÃ©e le premier utilisateur admin
+4. Te redirige vers le site
+
+#### 5. AccÃ¨s local
+
+- **Landing** : http://localhost/Blog/
+- **Blog** : http://localhost/Blog/blog/
+- **Admin** : http://localhost/Blog/blog/pages/admin.php
+- **PWA mobile** : http://localhost/Blog/blog/mobile-app/
+
+#### 6. Tester le mobile-app sur ton tÃ©lÃ©phone (mÃªme WiFi)
+
+```bash
+# Trouve l'IP de ton PC sur le WiFi
+ipconfig    # Windows : cherche "Adresse IPv4"
+# Exemple : 192.168.1.42
+```
+
+Sur ton tÃ©lÃ©phone (mÃªme WiFi) : `http://192.168.1.42/Blog/blog/mobile-app/`
+
+âš ï¸ Le SW PWA peut refuser de s'installer hors HTTPS sur certains navigateurs. Pour tester complÃ¨tement, dÃ©ploie en prod.
+
+---
+
+## B. DÃ©ploiement sur Hostinger
+
+### PrÃ©requis
+
+- Compte Hostinger (Premium ou Business)
+- Domaine configurÃ© (`mariondelval.com` dans cet exemple)
+- AccÃ¨s **hPanel**
+- Repo GitHub fork ou clone
+
+### Ã‰tape 1 â€” CrÃ©er la base de donnÃ©es
+
+1. hPanel â†’ **Bases de donnÃ©es** â†’ **Bases MySQL**
+2. CrÃ©e une nouvelle base. Note bien :
+   - Nom de la base : `u489596434_blog` (avec prÃ©fixe Hostinger)
+   - Utilisateur : `u489596434_admin`
+   - Mot de passe : (gÃ©nÃ¨re un fort, copie-le)
+   - HÃ´te : gÃ©nÃ©ralement `localhost`
+
+### Ã‰tape 2 â€” CrÃ©er le sous-domaine `blog.<ton-domaine>`
+
+1. hPanel â†’ **Domaines** â†’ **Sous-domaines**
+2. Nouveau sous-domaine :
+   - Nom : `blog`
+   - Domaine : `mariondelval.com`
+   - Document root : `public_html/blog` (important !)
+
+Attends quelques minutes que la propagation DNS prenne (souvent < 10 min).
+
+### Ã‰tape 3 â€” RÃ©cupÃ©rer les infos FTP
+
+1. hPanel â†’ **Fichiers** â†’ **Comptes FTP**
+2. Note :
+   - **Hostname FTP** : ex. `ftp.tondomaine.com` ou `82.180.x.x`
+   - **Username** : ex. `u489596434.tondomaine`
+   - **Password** : celui que tu utilises dans FileZilla
+
+### Ã‰tape 4 â€” Configurer GitHub Actions
+
+1. Va sur **github.com/<ton-user>/Blog** â†’ **Settings** â†’ **Secrets and variables** â†’ **Actions**
+2. Clique **New repository secret** pour chaque :
+
+| Secret | Valeur |
+|---|---|
+| `FTP_HOST` | ton hostname FTP |
+| `FTP_USER` | ton user FTP |
+| `FTP_PASSWORD` | ton mot de passe FTP |
+| `FTP_REMOTE_DIR` | `/public_html/` |
+| `FTP_PROTOCOL` | `ftps` (recommandÃ©) ou `ftp` |
+| `FTP_PORT` | `21` (uniquement si diffÃ©rent) |
+
+### Ã‰tape 5 â€” Push initial
+
+Depuis ton local :
+
+```bash
+git push origin master
+```
+
+â†’ Le workflow GitHub Actions se lance automatiquement (visible sur `github.com/<ton-user>/Blog/actions`)
+
+Il dÃ©ploie :
+1. `./blog/` â†’ `/public_html/blog/`
+2. `./index.html` â†’ `/public_html/index.html`
+
+DurÃ©e : ~30s Ã  2 min selon la taille.
+
+### Ã‰tape 6 â€” Installer le blog cÃ´tÃ© serveur
+
+âš ï¸ Le `config/config.php` du repo n'est **pas** dÃ©ployÃ© (exclu du workflow car en `.gitignore`). Il faut donc lancer l'installeur cÃ´tÃ© serveur **une seule fois** :
+
+1. Ouvre `https://blog.mariondelval.com/install.php`
+2. Remplis le formulaire avec les infos de la base Hostinger (Ã©tape 1)
+3. CrÃ©e le compte admin (peut Ãªtre diffÃ©rent du local)
+
+L'installeur crÃ©e `/public_html/blog/config/config.php` directement sur Hostinger.
+
+âš ï¸ **Important** : `install.php` doit Ãªtre supprimÃ© / dÃ©sactivÃ© aprÃ¨s installation. Tu peux soit :
+- Le supprimer via FTP/hPanel
+- Renommer `install.php` â†’ `install.php.disabled`
+- Ajouter une condition au dÃ©but pour qu'il refuse de tourner si `config.php` existe (dÃ©jÃ  fait dans le code)
+
+### Ã‰tape 7 â€” VÃ©rifier
+
+- `https://mariondelval.com` â†’ landing visible
+- `https://blog.mariondelval.com` â†’ accueil du blog visible
+- CrÃ©e un article test depuis l'admin â†’ vÃ©rifie qu'il apparaÃ®t
+- `https://blog.mariondelval.com/mobile-app/` â†’ tu peux installer la PWA
+
+---
+
+## C. Mise Ã  jour aprÃ¨s le dÃ©ploiement initial
+
+Une fois tout en place, ton workflow devient :
+
+```bash
+# 1. Tu codes en local
+# 2. Tu testes sur http://localhost/Blog/blog/
+# 3. Quand c'est bon :
+git add .
+git commit -m "Description"
+git push
+# 4. GitHub Actions dÃ©ploie automatiquement (~1 min)
+# 5. VÃ©rifie sur https://blog.mariondelval.com
+```
+
+Pour pousser le contenu (articles, images, settings) plutÃ´t que le code, voir [06-sync.md](06-sync.md).
+
+---
+
+## D. ProblÃ¨mes d'installation frÃ©quents
+
+### Le sous-domaine n'est pas accessible
+
+- VÃ©rifie le Document root dans hPanel : il doit Ãªtre `public_html/blog`
+- Attends 10 min de propagation DNS
+- Teste depuis un autre rÃ©seau (pas de cache DNS local)
+
+### "Blog non installÃ©" sur les endpoints API
+
+Le serveur cherche `blog/config/config.php`. Si absent :
+- Va sur `https://blog.mariondelval.com/install.php`
+- Ou crÃ©e manuellement le fichier en FTP avec les bons credentials
+
+### GitHub Actions Ã©choue avec "EHOSTUNREACH"
+
+- Mauvais `FTP_HOST` dans les secrets
+- Hostinger peut bloquer certaines rÃ©gions GitHub â†’ essaie de changer `FTP_PROTOCOL` de `ftps` Ã  `ftp`
+
+### Erreur PDO "Access denied"
+
+- VÃ©rifie que dans hPanel l'utilisateur MySQL a bien tous les privilÃ¨ges sur la base
+- Tape le mot de passe directement (ne le copie-colle pas, parfois des caractÃ¨res invisibles se glissent)
+
+    </script>
+    <script type="text/markdown" data-doc="03-database">
+# 03 â€” Base de donnÃ©es
+
+## Vue d'ensemble
+
+Le projet utilise MySQL (ou MariaDB) avec PDO. Le schÃ©ma est dÃ©fini dans `blog/sql/schema.sql` et crÃ©Ã© automatiquement par `install.php`.
+
+```
+settings  (key-value config)         api_tokens  (auth API)
+users     (auth + identitÃ©)          sessions    (PHP natif, pas en DB)
+articles  (contenu, hiÃ©rarchique)
+  â””â”€â”€ article_images
+  â””â”€â”€ comments
+social_links
+```
+
+Toutes les tables utilisent `ENGINE=InnoDB` (pour les foreign keys avec cascade) et `CHARSET=utf8mb4` (support des emojis et caractÃ¨res Unicode complets).
+
+## Tables
+
+### `settings`
+
+Configuration globale du site (nom, slogan, paramÃ¨tres de la landing, etc.).
+
+```sql
+CREATE TABLE settings (
+    `key`  VARCHAR(64) PRIMARY KEY,
+    value  TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+**ClÃ©s utilisÃ©es** :
+
+| ClÃ© | Description |
+|---|---|
+| `site_name` | Nom du site, affichÃ© en header |
+| `tagline` | Slogan sous le nom |
+| `header_baseline` | Phrase d'accueil dans la barre du haut |
+| `about_text` | Texte "Ã€ propos" sur la page d'accueil |
+| `landing_eyebrow` | Badge en haut de la landing |
+| `landing_title` | Override du titre sur landing (sinon fallback `site_name`) |
+| `landing_subtitle` | Override du slogan sur landing |
+| `landing_cta_text` | Texte du bouton principal de la landing |
+| `landing_cta_url` | URL cible du bouton (relative, dÃ©faut `blog/`) |
+| `landing_footer_text` | Texte du lien en bas de landing |
+| `landing_footer_url` | URL du lien en bas |
+| `landing_show_pulse` | `1` ou `0` â€” pulse vert dans le badge |
+| `landing_bg_color` | Hex `#rrggbb` |
+| `landing_text_color` | Hex |
+| `landing_muted_color` | Hex |
+| `landing_accent_color` | Hex â€” clair du dÃ©gradÃ© du bouton |
+| `landing_accent_dark` | Hex â€” foncÃ© du dÃ©gradÃ© |
+| `landing_blob_1/2/3` | Hex â€” couleurs des 3 blobs d'ambiance |
+
+AccÃ¨s via `includes/settings.php` :
+
+```php
+$nom    = get_setting('site_name', 'Mon Blog');  // fallback si vide
+set_setting('site_name', 'Nouveau nom');         // upsert
+$all    = get_all_settings();                    // tout en mÃ©moire (cache)
+```
+
+### `users`
+
+Comptes utilisateurs (web + mobile API).
+
+```sql
+CREATE TABLE users (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    nom           VARCHAR(80)  NOT NULL,
+    prenom        VARCHAR(80)  NOT NULL,
+    email         VARCHAR(190) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_admin      TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+- `password_hash` = `password_hash($plain, PASSWORD_BCRYPT)` (bcrypt, salt automatique)
+- `email` longueur 190 pour respecter la limite de 767 octets sur les index utf8mb4 (190 Ã— 4 = 760)
+- `is_admin = 1` donne accÃ¨s aux pages d'admin
+
+### `articles`
+
+Articles + sous-articles via auto-rÃ©fÃ©rence.
+
+```sql
+CREATE TABLE articles (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    parent_id   INT DEFAULT NULL,
+    titre       VARCHAR(190) NOT NULL,
+    image       VARCHAR(255) DEFAULT NULL,
+    contenu     TEXT NOT NULL,
+    sources     TEXT DEFAULT NULL,
+    layout      VARCHAR(255) DEFAULT NULL,
+    updated_at  DATETIME NULL DEFAULT NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_articles_parent (parent_id),
+    CONSTRAINT fk_articles_user   FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_articles_parent FOREIGN KEY (parent_id) REFERENCES articles(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+- `parent_id NULL` â†’ article racine
+- `parent_id = X` â†’ sous-article de X
+- Cascade : supprimer un article supprime ses sous-articles, ses images, ses commentaires
+- `image` = chemin relatif type `uploads/img-abc123.jpg` (le chemin du fichier, pas une URL)
+
+### `article_images`
+
+Galerie additionnelle attachÃ©e Ã  un article.
+
+```sql
+CREATE TABLE article_images (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    path       VARCHAR(255) NOT NULL,
+    caption    VARCHAR(255) DEFAULT NULL,
+    position   INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_images_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+- `path` = chemin relatif (ex `uploads/gallery-xyz.png`)
+- `position` = ordre d'affichage dans la galerie
+
+### `comments`
+
+Commentaires sous les articles.
+
+```sql
+CREATE TABLE comments (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    user_id    INT NOT NULL,
+    contenu    TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comments_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comments_user    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### `social_links`
+
+Liens rÃ©seaux sociaux affichÃ©s en haut du site.
+
+```sql
+CREATE TABLE social_links (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    platform   VARCHAR(40)  NOT NULL UNIQUE,
+    url        VARCHAR(255) NOT NULL,
+    icon       VARCHAR(60)  NOT NULL,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+- `platform` = nom unique (ex "twitter", "instagram")
+- `icon` = classe FontAwesome (ex `fa-twitter`)
+
+### `api_tokens` (optionnel selon la branche)
+
+Tokens d'authentification pour l'API mobile.
+
+```sql
+CREATE TABLE api_tokens (
+    token      VARCHAR(64) PRIMARY KEY,
+    user_id    INT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_token_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+- Token = `bin2hex(random_bytes(32))` (64 caractÃ¨res hex)
+- TTL : 30 jours par dÃ©faut
+- VÃ©rifiÃ© dans `api/_auth.php` Ã  chaque requÃªte API protÃ©gÃ©e
+
+## Connexion PDO
+
+ConfigurÃ©e dans `blog/includes/db.php`. Constantes lues depuis `blog/config/config.php` (non commit) :
+
+```php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'blog');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+```
+
+PDO est instanciÃ© avec :
+- `PDO::ERRMODE_EXCEPTION` â†’ toute erreur SQL devient une exception PHP
+- `PDO::ATTR_DEFAULT_FETCH_MODE = PDO::FETCH_ASSOC` â†’ fetch comme tableau associatif
+- `PDO::ATTR_EMULATE_PREPARES = false` â†’ prepared statements MySQL natifs (sÃ©curitÃ©)
+- charset `utf8mb4`
+
+Toujours utiliser **prepared statements** :
+
+```php
+// BIEN
+$stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+$stmt->execute([$email]);
+$user = $stmt->fetch();
+
+// PAS BIEN (SQL injection)
+$pdo->query("SELECT * FROM users WHERE email = '$email'");
+```
+
+## Backup / Restore
+
+### Backup manuel (mysqldump cÃ´tÃ© serveur â€” accÃ¨s SSH)
+
+```bash
+mysqldump -u u489596434_admin -p u489596434_blog > backup.sql
+```
+
+### Backup via le projet (recommandÃ©)
+
+Dans l'admin â†’ `ðŸ“¦ Import / Export JSON` â†’ bouton `TÃ©lÃ©charger l'export JSON`.
+
+L'export contient toutes les tables (sauf `api_tokens` qui est rÃ©gÃ©nÃ©rable) au format JSON, lisible Ã  l'Å“il nu.
+
+### Restore via JSON
+
+Dans l'admin â†’ `ðŸ“¦ Import / Export JSON` â†’ drag-and-drop le fichier JSON â†’ confirme.
+
+âš ï¸ L'import **remplace toutes les donnÃ©es existantes**.
+
+DÃ©tails techniques de l'import : voir [06-sync.md](06-sync.md).
+
+## Limites de schÃ©ma Ã  connaÃ®tre
+
+- `articles.contenu` est en `TEXT` (max 64 Ko). Si tu veux des articles plus longs, passer en `LONGTEXT`.
+- Pas d'index sur `articles.created_at` â†’ si tu as des milliers d'articles, ajouter un index pour accÃ©lÃ©rer la liste.
+- Pas de soft delete : `DELETE` est physique. Pour un systÃ¨me de corbeille, ajouter une colonne `deleted_at DATETIME NULL` et filtrer dans toutes les requÃªtes.
+
+    </script>
+    <script type="text/markdown" data-doc="04-api">
+# 04 â€” API JSON
+
+## Convention gÃ©nÃ©rale
+
+- **Base URL** : `https://blog.mariondelval.com/api/` (prod) ou `http://localhost/Blog/blog/api/` (local)
+- **Content-Type** : `application/json` pour les rÃ©ponses
+- **CORS** : `Access-Control-Allow-Origin: *` (ouvert, pour permettre l'app mobile cross-domain en dev)
+- **Format d'erreur** : `{ "error": "Message lisible" }` avec un code HTTP 4xx/5xx
+
+Tous les endpoints sont dans `blog/api/`. Chacun inclut `_bootstrap.php` qui :
+- Active les headers CORS
+- Force `Content-Type: application/json`
+- Charge `config/config.php` + `includes/db.php` (â†’ `$pdo` disponible)
+- DÃ©finit `json_response(array, int)` et `json_error(string, int)`
+- Installe un handler global d'exceptions
+
+## Authentification
+
+L'API mobile utilise des **tokens Bearer**. RÃ©cupÃ¨re un token via `/api/login.php`, puis envoie-le dans le header `Authorization: Bearer <token>` pour tous les endpoints protÃ©gÃ©s.
+
+Tokens : 64 caractÃ¨res hex alÃ©atoires, stockÃ©s dans la table `api_tokens`, expiration 30 jours.
+
+## Endpoints
+
+### POST `/api/login.php`
+
+Authentifie un utilisateur et renvoie un token.
+
+**Body JSON** :
+```json
+{ "email": "user@example.com", "password": "motdepasse" }
+```
+
+**RÃ©ponses** :
+- `200 OK` :
+```json
+{
+  "token": "a1b2c3d4...64chars",
+  "user":  { "id": 1, "email": "...", "nom": "...", "prenom": "...", "is_admin": 0 },
+  "expires_at": "2027-06-26 12:00:00"
+}
+```
+- `401` : `{ "error": "Identifiants invalides" }`
+- `400` : `{ "error": "Email manquant" }`
+
+**Exemple cURL** :
+```bash
+curl -X POST https://blog.mariondelval.com/api/login.php \
+     -H "Content-Type: application/json" \
+     -d '{"email":"admin@x.com","password":"secret"}'
+```
+
+### GET `/api/articles.php`
+
+Liste paginÃ©e des articles racines (sans les sous-articles).
+
+**Query** :
+- `?limit=20` (optionnel, dÃ©faut 20)
+- `?offset=0` (optionnel, dÃ©faut 0)
+
+**RÃ©ponse 200** :
+```json
+{
+  "articles": [
+    {
+      "id": 12,
+      "titre": "Mon dernier article",
+      "image": "https://blog.mariondelval.com/uploads/img-abc.jpg",
+      "contenu_extract": "Les 200 premiers caractÃ¨resâ€¦",
+      "auteur": "Marion Delval",
+      "created_at": "2026-05-20 18:00:00",
+      "nb_comments": 4,
+      "nb_children": 2
+    }
+  ],
+  "total": 47
+}
+```
+
+L'URL des images est rendue absolue (prÃ©fixÃ©e par le domaine) pour qu'elle marche depuis l'app PWA mÃªme si l'utilisateur est offline et que `window.location.host` change.
+
+### GET `/api/article.php?id=X`
+
+DÃ©tail d'un article + ses sous-articles + ses commentaires + sa galerie.
+
+**RÃ©ponse 200** :
+```json
+{
+  "article": {
+    "id": 12,
+    "titre": "...",
+    "contenu": "...",
+    "image": "https://.../uploads/img-abc.jpg",
+    "sources": "...",
+    "layout": null,
+    "auteur": { "id": 1, "nom": "Delval", "prenom": "Marion" },
+    "created_at": "...",
+    "updated_at": "..."
+  },
+  "parent":   null,
+  "children": [ { "id": 13, "titre": "Sous-article 1", ... } ],
+  "gallery":  [ { "url": "https://.../uploads/g-1.png", "caption": "..." } ],
+  "comments": [
+    {
+      "id": 5,
+      "contenu": "...",
+      "auteur": { "id": 2, "nom": "Doe", "prenom": "John" },
+      "created_at": "..."
+    }
+  ]
+}
+```
+
+**RÃ©ponse 404** : `{ "error": "Article introuvable" }`
+
+### POST `/api/article.php` (auth)
+
+Publie un nouvel article (ou un sous-article).
+
+**Headers** :
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data  (si image) OU application/json
+```
+
+**Champs** :
+- `titre` (string, obligatoire)
+- `contenu` (string, obligatoire)
+- `sources` (string, optionnel)
+- `parent_id` (int, optionnel â€” pour faire un sous-article)
+- `image` (file, optionnel)
+- `gallery[]` (files, optionnels â€” galerie additionnelle)
+
+**RÃ©ponse 201** :
+```json
+{ "ok": true, "id": 42, "url": "https://.../pages/article.php?id=42" }
+```
+
+**RÃ©ponse 401** : `{ "error": "Token manquant ou invalide" }`
+
+**RÃ©ponse 400** : `{ "error": "Titre obligatoire" }`
+
+**Exemple** :
+```bash
+curl -X POST https://blog.mariondelval.com/api/article.php \
+     -H "Authorization: Bearer a1b2c3..." \
+     -F "titre=Mon article" \
+     -F "contenu=Le contenu Markdown ou HTML" \
+     -F "image=@/path/to/cover.jpg"
+```
+
+### GET `/api/version.php`
+
+Renvoie la version courante de l'app mobile (pour la dÃ©tection de mise Ã  jour cÃ´tÃ© PWA).
+
+**RÃ©ponse 200** :
+```json
+{
+  "version":     "v16",
+  "released_at": "2026-05-27"
+}
+```
+
+Headers de rÃ©ponse forcent `no-store` pour ne pas Ãªtre mis en cache.
+
+### GET `/api/site_info.php`
+
+Renvoie les paramÃ¨tres publics du site, utilisÃ©s par la landing page externe.
+
+**RÃ©ponse 200** :
+```json
+{
+  "site_name":  "Mon Blog",
+  "tagline":    "Le blog",
+  "about_text": "Un blog ouvert oÃ¹â€¦",
+  "landing": {
+    "eyebrow":      "En ligne",
+    "title":        "",
+    "subtitle":     "",
+    "cta_text":     "DÃ©couvrir le blog",
+    "cta_url":      "blog/",
+    "footer_text":  "",
+    "footer_url":   "blog/",
+    "show_pulse":   true,
+    "bg_color":     "#0f172a",
+    "text_color":   "#f1f5f9",
+    "muted_color":  "#94a3b8",
+    "accent_color": "#16a34a",
+    "accent_dark":  "#166534",
+    "blob_1": "#6366f1",
+    "blob_2": "#ec4899",
+    "blob_3": "#22c55e"
+  }
+}
+```
+
+Headers : `Cache-Control: public, max-age=300` (5 min, pour rÃ©duire la charge BDD).
+
+### POST `/api/sync_receive.php`
+
+Endpoint qui reÃ§oit un dump SQL + zip d'uploads d'une instance locale. Voir [06-sync.md](06-sync.md) pour le dÃ©tail.
+
+**Headers** : `Content-Type: multipart/form-data`
+
+**Body** :
+- `token` (string, clÃ© de sync)
+- `sql_dump` (file)
+- `uploads_zip` (file)
+
+**RÃ©ponse 200** : `{ "ok": true, "message": "Synchronisation terminee", "uploads": 42 }`
+
+**RÃ©ponse 403** : `{ "error": "Cle invalide, expiree ou deja utilisee" }`
+
+## Codes d'erreur HTTP utilisÃ©s
+
+| Code | Cas |
+|---|---|
+| 200 | OK, donnÃ©es renvoyÃ©es |
+| 201 | Created (POST article rÃ©ussi) |
+| 204 | No Content (preflight OPTIONS) |
+| 400 | Body invalide, champ manquant |
+| 401 | Non authentifiÃ© (token absent / faux) |
+| 403 | AuthentifiÃ© mais pas autorisÃ© (clÃ© sync invalide) |
+| 404 | Ressource introuvable |
+| 405 | MÃ©thode non supportÃ©e |
+| 500 | Erreur interne (exception PHP, BDD down) |
+| 503 | Blog non installÃ© (pas de `config.php`) |
+
+## SÃ©curitÃ© API
+
+- Tous les endpoints POST nÃ©cessitent une vÃ©rification CSRF **OU** un token API valide
+- Les paramÃ¨tres SQL sont **toujours** passÃ©s via prepared statements (jamais d'interpolation directe)
+- Le token Bearer est validÃ© via `hash_equals` (comparaison timing-safe)
+- Les emails sont normalisÃ©s en minuscules avant comparaison
+- Les hashes de mots de passe utilisent `password_hash(..., PASSWORD_BCRYPT)`
+- Les uploads sont validÃ©s : type MIME, extension, taille max 12 Mo, nom random
+
+    </script>
+    <script type="text/markdown" data-doc="05-deployment">
+# 05 â€” DÃ©ploiement (GitHub Actions â†’ Hostinger FTP)
+
+## Vue d'ensemble
+
+Le dÃ©ploiement est entiÃ¨rement automatique : Ã  chaque `git push` sur la branche `master`, GitHub Actions dÃ©clenche un workflow qui upload les fichiers via FTPS sur Hostinger.
+
+```
+Local (push)
+    â”‚
+    â–¼
+GitHub Actions (Ubuntu runner)
+    â”œâ”€â”€ Ã‰tape 1 : checkout du repo
+    â”œâ”€â”€ Ã‰tape 2 : upload blog/ â†’ /public_html/blog/   (FTPS)
+    â””â”€â”€ Ã‰tape 3 : upload index.html â†’ /public_html/   (FTPS)
+    â”‚
+    â–¼
+Hostinger (serveur web)
+    â”‚
+    â–¼
+Visiteurs voient les changements (~1 min aprÃ¨s push)
+```
+
+## Le workflow `.github/workflows/deploy.yml`
+
+```yaml
+name: Deploy to Hostinger via FTP
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    name: Sync files to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: FTP Deploy blog (subdomain blog.mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:        ${{ secrets.FTP_HOST }}
+          username:      ${{ secrets.FTP_USER }}
+          password:      ${{ secrets.FTP_PASSWORD }}
+          protocol:      ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port:          ${{ secrets.FTP_PORT || 21 }}
+          server-dir:    /public_html/blog/
+          local-dir:     ./blog/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config/config.php
+            config/sync_keys.json
+            uploads/**
+            APK/**
+            *.apk
+            *.aab
+            *.keystore
+            signing-key-info.txt
+            _diagnostic.php
+            _fix_db.php
+            mobile-app/generate-icons.ps1
+            generate-site-icons.ps1
+            **/.htaccess.local
+            README.md
+
+      - name: FTP Deploy landing page (mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:        ${{ secrets.FTP_HOST }}
+          username:      ${{ secrets.FTP_USER }}
+          password:      ${{ secrets.FTP_PASSWORD }}
+          protocol:      ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port:          ${{ secrets.FTP_PORT || 21 }}
+          server-dir:    /public_html/
+          local-dir:     ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            blog/**
+            README.md
+            .gitignore
+            *.ps1
+            *.md
+```
+
+## Triggers
+
+- `push` sur `master` â†’ dÃ©clenchement automatique
+- `workflow_dispatch` â†’ dÃ©clenchement manuel via l'onglet **Actions** de GitHub
+
+## Action utilisÃ©e
+
+[SamKirkland/FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action) v4.3.5 :
+- Action GitHub officielle pour le dÃ©ploiement FTP/FTPS
+- Comparaison de hash : ne re-upload que les fichiers modifiÃ©s
+- Support FTPS (TLS chiffrÃ©)
+- Mode `dangerous-clean-slate: false` â†’ ne supprime jamais de fichiers distants (sÃ©curitÃ©)
+
+## Ã‰tapes expliquÃ©es
+
+### Ã‰tape 1 â€” Checkout
+
+```yaml
+- uses: actions/checkout@v4
+```
+
+Clone le repo dans le runner Ubuntu de GitHub Actions. Ã€ la fin, le filesystem temporaire contient tout le code Ã  la mÃªme structure que sur `master`.
+
+### Ã‰tape 2 â€” DÃ©ploiement du blog
+
+| ParamÃ¨tre | Valeur |
+|---|---|
+| `local-dir` | `./blog/` |
+| `server-dir` | `/public_html/blog/` |
+
+â†’ Tout le contenu du dossier `blog/` du repo est envoyÃ© Ã  `/public_html/blog/` sur Hostinger.
+
+**Exclusions** (cf. liste `exclude`) :
+- Fichiers Git (`.git`, `.gitignore`)
+- Config locale (`config/config.php`) â€” la prod a son propre `config.php` crÃ©Ã© par `install.php`
+- ClÃ©s de sync (`config/sync_keys.json`) â€” fichier local de chaque instance
+- Uploads (`uploads/**`) â€” les images sont gÃ©rÃ©es via le systÃ¨me de sync (pas le dÃ©ploiement)
+- Binaires APK et clÃ© de signature â€” ne doivent jamais Ãªtre en ligne
+- Scripts de debug (`_diagnostic.php`, `_fix_db.php`)
+- Scripts locaux (`generate-icons.ps1`)
+- README (pas utile en prod)
+
+### Ã‰tape 3 â€” DÃ©ploiement de la landing
+
+| ParamÃ¨tre | Valeur |
+|---|---|
+| `local-dir` | `./` (racine du repo) |
+| `server-dir` | `/public_html/` |
+
+â†’ La racine du repo est envoyÃ©e Ã  `/public_html/`. **Mais** avec un `exclude` strict qui exclut tout sauf `index.html` :
+
+- `blog/**` â†’ dÃ©jÃ  dÃ©ployÃ© Ã  l'Ã©tape 2, on ne le rÃ©envoie pas
+- `.git*`, `.github/**` â†’ mÃ©tadonnÃ©es
+- `*.md` â†’ docs
+- `.gitignore`, `*.ps1` â†’ fichiers de repo
+
+RÃ©sultat : seul `index.html` (la landing) est uploadÃ© Ã  `/public_html/`.
+
+## Secrets requis
+
+Ã€ configurer dans `github.com/<user>/Blog â†’ Settings â†’ Secrets and variables â†’ Actions` :
+
+| Secret | Obligatoire | Description |
+|---|---|---|
+| `FTP_HOST` | âœ… | Hostname ou IP du serveur FTP Hostinger |
+| `FTP_USER` | âœ… | Nom d'utilisateur FTP (souvent `uXXXXX.<domaine>`) |
+| `FTP_PASSWORD` | âœ… | Mot de passe FTP |
+| `FTP_PROTOCOL` | âŒ | `ftps` (dÃ©faut) ou `ftp` |
+| `FTP_PORT` | âŒ | `21` (dÃ©faut) |
+
+Pour les trouver dans hPanel : **Fichiers â†’ Comptes FTP**.
+
+## Logs de dÃ©ploiement
+
+AprÃ¨s chaque push, va sur :
+
+```
+https://github.com/<user>/Blog/actions
+```
+
+Tu y vois la liste des runs avec leur statut (âœ… vert, âŒ rouge, ðŸŸ¡ en cours).
+
+Clique sur un run pour voir les dÃ©tails :
+- Liste des fichiers uploadÃ©s
+- Erreurs FTP Ã©ventuelles (timeout, auth fail, etc.)
+
+## Pourquoi pas `dangerous-clean-slate: true` ?
+
+Cette option supprimerait sur le serveur les fichiers qui n'existent plus dans le repo. DÃ©sactivÃ©e car :
+- Risque de supprimer `config/config.php`, `uploads/`, etc. par erreur si on oublie une exclusion
+- Sur Hostinger les opÃ©rations de delete FTP sont parfois lentes / capricieuses
+- En cas de bug, plus difficile Ã  diagnostiquer
+
+**ConsÃ©quence** : si tu supprimes un fichier du repo, il reste sur le serveur. Pour le nettoyer, supprime-le manuellement via FileZilla ou hPanel.
+
+## Bug courant : "Cannot connect to FTP server"
+
+Causes habituelles :
+1. **Mauvais `FTP_HOST`** : copie depuis hPanel exactement
+2. **Hostinger bloque la rÃ©gion du runner** : essaie de passer `FTP_PROTOCOL` Ã  `ftp` (au lieu de `ftps`)
+3. **Mot de passe avec caractÃ¨res spÃ©ciaux** : encoder en URL ou simplifier le mot de passe
+
+## DÃ©ploiement manuel (sans Git push)
+
+Va sur l'onglet **Actions** de GitHub â†’ workflow "Deploy to Hostinger via FTP" â†’ bouton **Run workflow** (en haut Ã  droite) â†’ sÃ©lectionne la branche â†’ confirme.
+
+Utile pour redÃ©ployer aprÃ¨s avoir corrigÃ© un secret sans nouveau commit.
+
+## Synchronisation des donnÃ©es (â‰  du code)
+
+Le workflow ne dÃ©ploie **que le code source**. Pour pousser :
+- Les articles, commentaires, utilisateurs (BDD)
+- Les images uploadÃ©es (`uploads/`)
+- Les paramÃ¨tres (table `settings`)
+
+... il faut utiliser le systÃ¨me de synchronisation manuel. Voir [06-sync.md](06-sync.md).
+
+    </script>
+    <script type="text/markdown" data-doc="06-sync">
+# 06 â€” Synchronisation local â†’ serveur
+
+Le systÃ¨me de synchronisation permet d'envoyer **toutes les donnÃ©es** d'une instance locale vers une instance distante :
+- Base de donnÃ©es complÃ¨te (articles, commentaires, utilisateurs, settings, etc.)
+- Fichiers du dossier `uploads/` (images attachÃ©es aux articles)
+
+C'est complÃ©mentaire du dÃ©ploiement GitHub Actions :
+- **GitHub Actions** = dÃ©ploie le **code**
+- **Sync** = dÃ©ploie les **donnÃ©es**
+
+## ModÃ¨le de sÃ©curitÃ©
+
+Le dÃ©fi : permettre Ã  un local d'Ã©craser entiÃ¨rement une BDD prod, **sans** stocker un secret partagÃ© permanent quelque part (parce que ce secret deviendrait une cible Ã©vidente).
+
+Solution choisie : **clÃ©s Ã  usage unique gÃ©nÃ©rÃ©es sur le serveur**.
+
+```
+1. Admin se connecte sur le serveur            â”
+2. GÃ©nÃ¨re une clÃ© sur sync_keys.php (serveur)  â”‚  Action humaine
+3. Copie/colle la clÃ© sur le local             â”‚  intentionnelle
+4. Envoie depuis sync_push.php (local)         â”˜
+5. Serveur consomme la clÃ©, traite, OK ou KO
+```
+
+PropriÃ©tÃ©s :
+- Aucune clÃ© permanente en `config.php` (donc pas de fuite via Git ou backup)
+- Chaque sync nÃ©cessite une intervention manuelle cÃ´tÃ© serveur
+- ClÃ©s Ã  usage unique : utilisÃ©e â†’ invalidÃ©e
+- Expiration courte (5 min Ã  24 h max)
+- StockÃ©es **en dehors** de la BDD pour qu'une sync ne puisse pas s'auto-rÃ©voquer
+
+## Fichiers impliquÃ©s
+
+```
+blog/
+â”œâ”€â”€ includes/
+â”‚   â”œâ”€â”€ sync_keys.php       (gestion fichier-stockage des clÃ©s)
+â”‚   â””â”€â”€ sync_dump.php       (dump SQL + zip uploads + import JSON)
+â”‚
+â”œâ”€â”€ pages/
+â”‚   â”œâ”€â”€ sync_keys.php       (page admin â€” gÃ©nÃ©ration de clÃ©s, cÃ´tÃ© serveur)
+â”‚   â”œâ”€â”€ sync_push.php       (page admin â€” envoi des donnÃ©es, cÃ´tÃ© local)
+â”‚   â””â”€â”€ sync_json.php       (export/import JSON manuel)
+â”‚
+â”œâ”€â”€ api/
+â”‚   â””â”€â”€ sync_receive.php    (endpoint qui reÃ§oit le dump)
+â”‚
+â””â”€â”€ config/
+    â””â”€â”€ sync_keys.json      (storage, gitignored + FTP-excluded)
+```
+
+## Cheminement complet d'une sync
+
+### Ã‰tape 1 â€” GÃ©nÃ©ration de la clÃ© (cÃ´tÃ© serveur)
+
+```
+admin loggÃ© â†’ https://blog.mariondelval.com/pages/sync_keys.php
+```
+
+L'admin choisit une durÃ©e de validitÃ© (5 min Ã  24 h) et clique **GÃ©nÃ©rer une nouvelle clÃ©**.
+
+**Code derriÃ¨re** (`pages/sync_keys.php`) :
+
+```php
+$newKey = sync_key_generate($ttl);  // includes/sync_keys.php
+```
+
+Ce qui se passe dans `sync_key_generate()` :
+
+```php
+function sync_key_generate(int $ttlSeconds = 3600): array {
+    $keys = _sync_keys_read();         // lit config/sync_keys.json
+    // Purge les clÃ©s expirÃ©es ou consommÃ©es
+    $keys = array_filter($keys, function ($k) use ($now) {
+        return empty($k['used_at']) && ($k['expires_at'] ?? 0) > $now;
+    });
+
+    $token = bin2hex(random_bytes(32));  // 64 hex chars
+    $entry = [
+        'token'      => $token,
+        'created_at' => date('Y-m-d H:i:s'),
+        'expires_at' => $now + $ttlSeconds,
+        'used_at'    => null,
+    ];
+    $keys[] = $entry;
+    _sync_keys_write($keys);             // rÃ©Ã©crit config/sync_keys.json
+    return $entry;
+}
+```
+
+Le fichier `blog/config/sync_keys.json` ressemble Ã  :
+
+```json
+[
+  {
+    "token": "78f83005679570476774cdfdb6c8c65f9c88252e44e678b6565129a5d35d694d",
+    "created_at": "2026-05-27 21:42:13",
+    "expires_at": 1748382133,
+    "used_at": null
+  }
+]
+```
+
+La page affiche la clÃ© en clair une seule fois avec un bouton **ðŸ“‹ Copier**.
+
+### Ã‰tape 2 â€” Envoi des donnÃ©es (cÃ´tÃ© local)
+
+```
+admin loggÃ© â†’ http://localhost/Blog/blog/pages/sync_push.php
+```
+
+L'admin colle la clÃ©, vÃ©rifie l'URL de destination, coche la case de confirmation, clique **Envoyer maintenant**.
+
+**Code derriÃ¨re** (`pages/sync_push.php`) :
+
+```php
+// 1. GÃ©nÃ¨re le dump SQL dans un fichier temporaire
+sync_build_sql_dump($pdo, $sqlFile);
+
+// 2. GÃ©nÃ¨re un ZIP du dossier uploads/
+$nbFiles = sync_build_uploads_zip($uploadsDir, $zipFile);
+
+// 3. POST en multipart/form-data
+$ch = curl_init($remoteUrl);
+curl_setopt_array($ch, [
+    CURLOPT_POST           => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT        => 900,
+    CURLOPT_SSL_VERIFYPEER => true,
+    CURLOPT_POSTFIELDS     => [
+        'token'        => $token,
+        'sql_dump'     => new CURLFile($sqlFile, 'application/sql', 'dump.sql'),
+        'uploads_zip'  => new CURLFile($zipFile, 'application/zip', 'uploads.zip'),
+    ],
+]);
+$response = curl_exec($ch);
+```
+
+Pendant l'opÃ©ration, un **overlay plein Ã©cran avec spinner** s'affiche pour indiquer que le travail est en cours.
+
+#### Format du dump SQL gÃ©nÃ©rÃ©
+
+`sync_build_sql_dump($pdo, $outputFile)` produit un fichier SQL avec ce format :
+
+```sql
+-- Sync dump genere le 2026-05-27T21:50:00+00:00
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Table settings
+TRUNCATE TABLE `settings`;
+INSERT INTO `settings` (`key`,`value`) VALUES ('site_name','Mon Blog');
+INSERT INTO `settings` (`key`,`value`) VALUES ('tagline','Le blog');
+...
+
+-- Table users
+TRUNCATE TABLE `users`;
+INSERT INTO `users` (`id`,`nom`,`prenom`,`email`,`password_hash`,`is_admin`,`created_at`) VALUES (1,'Delval','Marion','admin@...','$2y$10$...',1,'2026-01-01 12:00:00');
+...
+
+-- (autres tables)
+
+SET FOREIGN_KEY_CHECKS=1;
+```
+
+Les valeurs sont quotÃ©es via `$pdo->quote()`, ce qui Ã©chappe les caractÃ¨res spÃ©ciaux et les apostrophes.
+
+#### Format du ZIP des uploads
+
+`sync_build_uploads_zip($uploadsDir, $outputFile)` crÃ©e un ZIP qui contient le contenu de `blog/uploads/` Ã  plat :
+
+```
+uploads.zip
+â”œâ”€â”€ img-abc123.jpg
+â”œâ”€â”€ gallery-xyz.png
+â””â”€â”€ ...
+```
+
+Le `.gitkeep` est exclu, les sous-dossiers Ã©ventuels sont prÃ©servÃ©s.
+
+### Ã‰tape 3 â€” RÃ©ception serveur
+
+```
+POST /api/sync_receive.php
+multipart/form-data:
+  - token = "78f83..."
+  - sql_dump = <fichier .sql>
+  - uploads_zip = <fichier .zip>
+```
+
+**Code derriÃ¨re** (`api/sync_receive.php`) :
+
+```php
+// 1. Validation de la clÃ©
+if (!sync_key_consume($token)) {
+    json_error('Cle invalide, expiree ou deja utilisee', 403);
+}
+
+// 2. Application du dump SQL
+sync_apply_sql_dump($pdo, $_FILES['sql_dump']['tmp_name']);
+
+// 3. Extraction du zip uploads
+$count = sync_apply_uploads_zip($_FILES['uploads_zip']['tmp_name'], $uploadsDir);
+
+json_response(['ok' => true, 'message' => 'Synchronisation terminee', 'uploads' => $count]);
+```
+
+`sync_key_consume()` :
+
+```php
+function sync_key_consume(string $token): bool {
+    $keys = _sync_keys_read();
+    foreach ($keys as $i => $k) {
+        if (!empty($k['used_at'])) continue;
+        if (($k['expires_at'] ?? 0) <= time()) continue;
+        if (hash_equals((string)$k['token'], $token)) {
+            $keys[$i]['used_at'] = date('Y-m-d H:i:s');
+            _sync_keys_write($keys);
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+Utilise `hash_equals` (comparaison timing-safe) pour Ã©viter les attaques par timing.
+
+`sync_apply_sql_dump()` :
+
+```php
+function sync_apply_sql_dump(PDO $pdo, string $sqlFile): void {
+    $sql = file_get_contents($sqlFile);
+    $statements = preg_split("/;\s*\n/", $sql);
+    foreach ($statements as $stmt) {
+        $stmt = trim($stmt);
+        if ($stmt === '' || preg_match('/^--/', $stmt)) continue;
+        $pdo->exec($stmt);
+    }
+}
+```
+
+Pas de transaction PDO ici : `TRUNCATE TABLE` est une DDL MySQL qui provoque un **commit implicite**, ce qui invaliderait un `rollBack` ultÃ©rieur. Les erreurs remontent telles quelles.
+
+`sync_apply_uploads_zip()` :
+
+```php
+function sync_apply_uploads_zip(string $zipFile, string $uploadsDir): int {
+    // Vide le dossier existant (sauf .gitkeep)
+    $iter = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($uploadsDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    foreach ($iter as $f) {
+        if ($f->getFilename() === '.gitkeep') continue;
+        $f->isDir() ? @rmdir($f->getPathname()) : @unlink($f->getPathname());
+    }
+    // Extrait le ZIP
+    $zip = new ZipArchive();
+    $zip->open($zipFile);
+    $zip->extractTo($uploadsDir);
+    $zip->close();
+}
+```
+
+### Ã‰tape 4 â€” Retour au local
+
+Le local reÃ§oit la rÃ©ponse JSON et affiche le rÃ©sultat :
+
+- âœ… "Synchronisation rÃ©ussie (42 fichiers uploads transmis)"
+- âŒ "Cle invalide, expiree ou deja utilisee (HTTP 403)"
+
+## Import / Export JSON (alternative manuelle)
+
+`pages/sync_json.php` propose deux opÃ©rations sans clÃ© / sans serveur distant :
+
+### Export
+
+```php
+$data = sync_export_json($pdo);
+// â†’ array avec toutes les tables au format
+//   ['_meta' => [...], 'settings' => [...], 'users' => [...], ...]
+header('Content-Disposition: attachment; filename="blog-export-2026-05-27.json"');
+echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+```
+
+Le navigateur tÃ©lÃ©charge le fichier `.json`.
+
+### Import
+
+L'admin glisse-dÃ©pose un `.json` dans la dropzone. PHP fait :
+
+```php
+$data = json_decode(file_get_contents($_FILES['json_file']['tmp_name']), true);
+$imported = sync_import_json($pdo, $data);
+```
+
+`sync_import_json()` :
+
+```php
+function sync_import_json(PDO $pdo, array $data): array {
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+    foreach (SYNC_TABLES as $table) {
+        if (!isset($data[$table])) continue;
+        try {
+            $pdo->exec("TRUNCATE TABLE `{$table}`");
+            foreach ($data[$table] as $row) {
+                $cols = '`' . implode('`,`', array_keys($row)) . '`';
+                $placeholders = implode(',', array_fill(0, count($row), '?'));
+                $stmt = $pdo->prepare("INSERT INTO `{$table}` ({$cols}) VALUES ({$placeholders})");
+                $stmt->execute(array_values($row));
+            }
+            $imported[$table] = count($data[$table]);
+        } catch (Throwable $e) {
+            $errors[$table] = $e->getMessage();
+        }
+    }
+    return $imported;
+}
+```
+
+Try/catch par table : une table foireuse ne casse plus l'import des autres.
+
+âš ï¸ Le JSON export contient les **hashes de mots de passe** : ne jamais commit, ne jamais partager sans prÃ©caution. Le pattern `blog-export-*.json` est dans `.gitignore`.
+
+## Cas d'usage typique
+
+```
+SEMAINE 1
+  Lundi    â†’ tu Ã©cris 3 articles en local
+  Mercredi â†’ tu retouches une image
+  Vendredi â†’ tu pousses tout sur le serveur :
+             1. Sur le serveur : gÃ©nÃ¨re une clÃ© (1h)
+             2. Sur le local : sync_push.php avec la clÃ©
+             3. VÃ©rification : visite blog.mariondelval.com
+
+SEMAINE 2
+  â†’ recommence
+```
+
+## Limites du systÃ¨me
+
+- Pas de **fusion** : c'est toujours un **remplacement total** du distant par le local. Si quelqu'un commente en ligne, il sera perdu Ã  la prochaine sync.
+- La taille du POST peut atteindre plusieurs Mo (toutes les images). Le `CURLOPT_TIMEOUT` est Ã  900s (15 min) pour permettre Ã§a.
+- Sur Hostinger shared, `upload_max_filesize` et `post_max_size` peuvent limiter. Si tu as beaucoup d'images, peut nÃ©cessiter de tuner `.htaccess`.
+
+## Diagnostic
+
+Pour vÃ©rifier l'Ã©tat des clÃ©s actives sur le serveur, va sur `pages/sync_keys.php` :
+- Liste des clÃ©s actives avec compte Ã  rebours en temps rÃ©el
+- Historique des 15 derniÃ¨res clÃ©s (utilisÃ©es ou expirÃ©es)
+- Bouton "RÃ©voquer toutes les clÃ©s actives"
+
+Pour debug l'endpoint, ajoute temporairement en haut de `api/sync_receive.php` :
+
+```php
+file_put_contents('/tmp/sync_debug.log', date('c').' '.print_r($_POST,true).PHP_EOL, FILE_APPEND);
+```
+
+Et regarde le log via FTP.
+
+    </script>
+    <script type="text/markdown" data-doc="07-mobile-app">
+# 07 â€” App mobile (PWA)
+
+## Vue d'ensemble
+
+L'app mobile est une **Progressive Web App** entiÃ¨rement HTML + JavaScript, sans framework, autonome dans `blog/mobile-app/`. Elle communique avec le blog via l'API JSON.
+
+```
+blog/mobile-app/
+â”œâ”€â”€ index.html              <- shell HTML (toutes les vues)
+â”œâ”€â”€ app.js                  <- logique : state, routing, API calls
+â”œâ”€â”€ style.css               <- styles
+â”œâ”€â”€ manifest.json           <- manifeste PWA (icÃ´nes, theme, etc.)
+â”œâ”€â”€ sw.js                   <- service worker (kill-switch dÃ©sactivÃ©)
+â”œâ”€â”€ offline.html            <- page affichÃ©e si rÃ©seau coupÃ©
+â”œâ”€â”€ icon-192.png            <- icÃ´ne standard
+â”œâ”€â”€ icon-512.png            <- icÃ´ne grande
+â”œâ”€â”€ widget-template.json    <- gabarit du widget Adaptive Card (Windows 11)
+â”œâ”€â”€ widget-data.json        <- donnÃ©es dynamiques du widget
+â””â”€â”€ generate-icons.ps1      <- script PowerShell pour rÃ©gÃ©nÃ©rer les icÃ´nes
+```
+
+## Architecture interne (app.js)
+
+```
+APP_VERSION                  â†’ constante incrÃ©mentÃ©e Ã  chaque release
+API_BASE                     â†’ calculÃ© dynamiquement depuis window.location
+
+state                        â†’ objet en mÃ©moire (token, user, vue courante, historique)
+                               + localStorage pour persistance
+
+safeReadUser / safeReadToken â†’ lecture sÃ©curisÃ©e de localStorage
+
+api(path, options)           â†’ wrapper fetch() qui ajoute le Bearer token
+
+showView('login' | 'list' | 'detail' | 'new' | ...)
+                             â†’ affiche une seule vue, cache les autres
+                             â†’ met Ã  jour l'historique
+
+renderList()                 â†’ appel GET /api/articles.php, gÃ©nÃ¨re le HTML
+
+renderDetail(id)             â†’ appel GET /api/article.php?id=X
+
+submitArticle()              â†’ POST /api/article.php multipart
+
+forceUpdate()                â†’ dÃ©sinscrit SW, vide caches, refetch tout, reload
+
+checkForUpdate()             â†’ compare APP_VERSION avec /api/version.php
+                               â†’ affiche la banniÃ¨re "Mise Ã  jour dispo"
+```
+
+### API_BASE auto-adaptatif
+
+```javascript
+const API_BASE = (() => {
+    const here = window.location.href;
+    const root = here.replace(/\/mobile-app\/.*$/, '/');
+    return root + 'api';
+})();
+```
+
+| URL d'accÃ¨s | `API_BASE` devient |
+|---|---|
+| `https://blog.mariondelval.com/mobile-app/` | `https://blog.mariondelval.com/api` |
+| `http://localhost/Blog/blog/mobile-app/` | `http://localhost/Blog/blog/api` |
+
+â†’ L'app marche partout oÃ¹ elle est servie, sans hardcoder le domaine.
+
+### SystÃ¨me de vues
+
+`index.html` contient toutes les vues dans des `<section id="view-X" hidden>`. Le JS bascule entre elles en jouant sur l'attribut `hidden` :
+
+- `view-login` : Ã©cran de connexion
+- `view-list` : liste des articles
+- `view-detail` : dÃ©tail d'un article + commentaires
+- `view-new` : formulaire de crÃ©ation
+- `view-edit` : Ã©dition
+- `view-profile` : profil utilisateur
+
+Pas de router URL â†’ l'app reste sur `index.html` quelle que soit la vue. Bouton "retour" gÃ©rÃ© par un `state.history` en mÃ©moire.
+
+## Manifest PWA (`manifest.json`)
+
+```json
+{
+  "id": "/mobile-app/",
+  "name": "Mon Blog",
+  "short_name": "Blog",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#2e7d32",
+  "background_color": "#2e7d32",
+  "icons": [
+    { "src": "icon-192.png?v=16", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=16", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png?v=16", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png?v=16", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [...],
+  "share_target": {...},
+  "protocol_handlers": [...],
+  "widgets": [...]
+}
+```
+
+Points clÃ©s :
+- `display: standalone` â†’ l'app s'ouvre sans la barre du navigateur (look natif)
+- `?v=16` sur les icÃ´nes â†’ cache-busting quand on change l'icÃ´ne
+- `maskable` purpose â†’ permet Ã  Android d'appliquer un masque circulaire / squircle
+- `shortcuts` â†’ accÃ¨s rapide depuis le long-press sur l'icÃ´ne
+- `share_target` â†’ l'app reÃ§oit les partages depuis d'autres apps
+- `widgets` â†’ widget Windows 11 (Adaptive Card)
+
+## Service Worker (`sw.js`)
+
+**Volontairement minimal** : c'est un kill-switch dÃ©sinstallation.
+
+```javascript
+self.addEventListener('install', () => self.skipWaiting());
+
+self.addEventListener('activate', (e) => {
+    e.waitUntil((async () => {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+        await self.registration.unregister();
+        const clients = await self.clients.matchAll();
+        clients.forEach(c => c.navigate(c.url));
+    })());
+});
+
+// Aucune interception fetch : le SW est inerte
+```
+
+Pourquoi ? Une version prÃ©cÃ©dente du SW cachait agressivement les fichiers, ce qui provoquait des bugs de dÃ©synchronisation (utilisateurs bloquÃ©s sur une version cachÃ©e). Le SW actuel sert juste Ã  **vider l'ancien cache et se dÃ©sinstaller** s'il Ã©tait installÃ©.
+
+L'app fonctionne donc en mode **online-only**, ce qui simplifie tout :
+- Pas de logique de queue offline
+- Pas de problÃ¨me de stale cache
+- Les mises Ã  jour sont immÃ©diates
+
+## SystÃ¨me de mise Ã  jour
+
+### Ã€ 3 niveaux
+
+```
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Niveau 1 : api/version.php                        â”‚
+â”‚  â†’ renvoie la version courante de l'app           â”‚
+â”‚  â†’ bumper Ã  chaque release de mobile-app/         â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â–²
+                       â”‚ comparaison
+                       â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Niveau 2 : APP_VERSION dans app.js               â”‚
+â”‚  â†’ const APP_VERSION = 'v16';                     â”‚
+â”‚  â†’ cette valeur arrive dans le navigateur         â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â–²
+                       â”‚ dÃ©tecte diffÃ©rence
+                       â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Niveau 3 : bouton "Mise Ã  jour disponible"        â”‚
+â”‚  â†’ affiche une banniÃ¨re en haut                   â”‚
+â”‚  â†’ utilisateur clique â†’ forceUpdate()             â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+```
+
+### `checkForUpdate()`
+
+```javascript
+async function checkForUpdate() {
+    const res = await fetch(API_BASE + '/version.php?_=' + Date.now(), {
+        cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.version && data.version !== APP_VERSION) {
+        document.getElementById('update-banner').hidden = false;
+    }
+}
+```
+
+AppelÃ©e au dÃ©marrage. Si la version du serveur diffÃ¨re, banniÃ¨re jaune en haut "ðŸš€ Nouvelle version disponible !".
+
+### `forceUpdate()`
+
+```javascript
+async function forceUpdate() {
+    // 1. DÃ©sinscrit tous les service workers
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+
+    // 2. Vide tous les caches HTTP
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+
+    // 3. Refetch les fichiers critiques sans cache
+    const ts = Date.now();
+    const base = window.location.href.replace(/\/index\.html.*$/, '/');
+    await Promise.all([
+        fetch(base + 'index.html?_=' + ts,    { cache: 'reload' }),
+        fetch(base + 'app.js?_=' + ts,        { cache: 'reload' }),
+        fetch(base + 'style.css?_=' + ts,     { cache: 'reload' }),
+        fetch(base + 'manifest.json?_=' + ts, { cache: 'reload' }),
+        fetch(base + 'icon-192.png?_=' + ts,  { cache: 'reload' }),
+        fetch(base + 'icon-512.png?_=' + ts,  { cache: 'reload' }),
+    ]);
+
+    // 4. Reload la page avec un timestamp pour Ã©viter le cache HTTP
+    window.location.replace(window.location.href.split('?')[0] + '?_=' + Date.now());
+}
+```
+
+### ProcÃ©dure de release mobile-app
+
+Ã€ chaque modification de `mobile-app/`, bump 3 endroits :
+
+1. `mobile-app/app.js` : `const APP_VERSION = 'v17';`
+2. `api/version.php` : `const MOBILE_APP_VERSION = 'v17';`
+3. `mobile-app/manifest.json` : remplacer `?v=16` par `?v=17` (toutes occurrences)
+
+Optionnel : `mobile-app/index.html` favicon `href="icon-192.png?v=17"`.
+
+Puis `git push` â†’ le dÃ©ploiement se fait â†’ la banniÃ¨re apparaÃ®t chez les utilisateurs lors de leur prochaine ouverture.
+
+## IcÃ´nes
+
+### GÃ©nÃ©ration
+
+`mobile-app/generate-icons.ps1` (PowerShell, Windows) gÃ©nÃ¨re `icon-192.png` et `icon-512.png` programmatiquement avec `System.Drawing` :
+
+```powershell
+.\mobile-app\generate-icons.ps1
+```
+
+Le script dessine actuellement un **arbre stylisÃ©** (3 cercles foliaires + tronc + fruits) sur fond vert dÃ©gradÃ©.
+
+Pour modifier le design, ouvre le `.ps1` et adapte la fonction `New-TreeIcon`.
+
+âš ï¸ Le script est **exclu** du dÃ©ploiement FTP (uniquement local). Le rÃ©sultat (les PNG) est commitÃ© et dÃ©ployÃ©.
+
+### Cache OS
+
+Quand une PWA est installÃ©e sur Android/iOS, le systÃ¨me **met l'icÃ´ne en cache**. MÃªme si tu changes le manifest, l'icÃ´ne installÃ©e ne se met pas Ã  jour. Pour la rafraÃ®chir :
+
+- **DÃ©sinstaller / rÃ©installer** la PWA
+- Ou attendre que Chrome dÃ©tecte le changement de manifest (~24h)
+
+## Login / Auth API
+
+```javascript
+const res = await fetch(API_BASE + '/login.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+});
+const data = await res.json();
+state.token = data.token;
+state.user  = data.user;
+localStorage.setItem('token', data.token);
+localStorage.setItem('user',  JSON.stringify(data.user));
+```
+
+Le token reste dans `localStorage` et est utilisÃ© pour toutes les requÃªtes suivantes :
+
+```javascript
+async function api(path, options = {}) {
+    const headers = Object.assign({}, options.headers || {});
+    if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+    const res = await fetch(API_BASE + path, { ...options, headers });
+    if (res.status === 401) {
+        logoutSilently();
+        showView('login');
+        throw { status: 401 };
+    }
+    return res.json();
+}
+```
+
+Si le token expire ou est rÃ©voquÃ©, le serveur renvoie 401 â†’ l'app dÃ©connecte silencieusement et bascule sur l'Ã©cran de login.
+
+## Installation sur les diffÃ©rents OS
+
+| OS | ProcÃ©dure |
+|---|---|
+| **Android (Chrome)** | Visite `.../mobile-app/` â†’ menu â‹® â†’ "Installer l'application" |
+| **iOS (Safari)** | Visite la page â†’ bouton Partager â†’ "Sur l'Ã©cran d'accueil" |
+| **Windows 11 (Edge/Chrome)** | Visite la page â†’ icÃ´ne d'installation dans la barre d'URL |
+| **macOS (Chrome/Safari)** | Idem Windows |
+
+Sur Android, aprÃ¨s installation, l'app apparaÃ®t dans le tiroir d'apps comme une vraie app, avec son icÃ´ne et son label.
+
+## Limites connues
+
+- **iOS** : pas de notifications push avant iOS 16.4. Pas de `vibration`, `getBattery`.
+- **Pas de mode offline** (par choix). L'app affiche `offline.html` si pas de rÃ©seau.
+- **Pas d'Ã©diteur WYSIWYG** : le contenu d'article est entrÃ© en texte brut (avec markdown si l'utilisateur veut).
+- **Pas de Push notifications** non plus cÃ´tÃ© serveur â€” l'archi pour Ã§a reste Ã  construire (VAPID + table `push_subscriptions`).
+
+    </script>
+    <script type="text/markdown" data-doc="08-admin">
+# 08 â€” Panel d'administration
+
+## AccÃ¨s
+
+Le panel admin est accessible Ã  `<blog>/pages/admin.php`. Il faut Ãªtre connectÃ© avec un compte qui a `is_admin = 1` dans la table `users`.
+
+La fonction `require_admin()` (dans `includes/auth.php`) bloque l'accÃ¨s aux non-admins :
+
+```php
+function require_admin() {
+    if (!is_logged_in() || empty($_SESSION['user']['is_admin'])) {
+        redirect(base_url('pages/login.php'));
+    }
+}
+```
+
+## Dashboard (`pages/admin.php`)
+
+Le dashboard affiche :
+
+1. **Grille de 6 cartes d'action** (raccourcis vers les sous-pages)
+2. **Stats globales** : Utilisateurs / Articles / Commentaires / RÃ©seaux sociaux
+3. **Tableau des utilisateurs**
+4. **Tableau des 50 articles rÃ©cents** (Ã©dition + suppression)
+5. **Tableau des 50 commentaires rÃ©cents** (suppression)
+
+### Les 6 cartes
+
+| Carte | Page | RÃ´le |
+|---|---|---|
+| ðŸŽ¨ **Apparence accueil** | `landing_settings.php` | Personnalise la landing publique |
+| âš™ï¸ **ParamÃ¨tres du site** | `settings.php` | Nom, slogan, baseline, "Ã  propos" |
+| ðŸ”— **RÃ©seaux sociaux** | `social.php` | Ajout / Ã©dition des liens sociaux |
+| ðŸ“¤ **Envoyer vers serveur** | `sync_push.php` | Sync local â†’ prod (clÃ© requise) |
+| ðŸ”‘ **ClÃ©s sync (serveur)** | `sync_keys.php` | GÃ©nÃ¨re les clÃ©s d'autorisation |
+| ðŸ“¦ **Import / Export JSON** | `sync_json.php` | Sauvegarde / restauration JSON |
+
+Chaque carte est un `<a class="admin-action <couleur>">` avec une icÃ´ne colorÃ©e Ã  gauche, un titre et une description. Hover â†’ soulÃ¨vement avec ombre.
+
+## ParamÃ¨tres du site (`pages/settings.php`)
+
+Ã‰dition des settings gÃ©nÃ©raux stockÃ©s dans la table `settings` :
+
+| ClÃ© | Type | Limite |
+|---|---|---|
+| `site_name` | text | 100 |
+| `tagline` | text | 100 |
+| `header_baseline` | text | 200 |
+| `about_text` | textarea | 500 |
+
+Formulaire CSRF-protÃ©gÃ©. Ã€ la soumission :
+
+```php
+foreach ($fields as $key => $_) {
+    set_setting($key, $current[$key]);
+}
+flash_set('success', 'ParamÃ¨tres enregistrÃ©s.');
+redirect(base_url('pages/settings.php'));
+```
+
+Ces valeurs sont utilisÃ©es partout dans le site via `get_setting($key)`.
+
+## Apparence accueil (`pages/landing_settings.php`)
+
+C'est la page la plus riche en UX. Elle personnalise la landing publique (`/public_html/index.html`).
+
+### Disposition
+
+Layout en grille 2 colonnes :
+- **Gauche** : formulaire avec sections (Textes / Comportement / Couleurs principales / Couleurs d'ambiance)
+- **Droite** : **aperÃ§u en temps rÃ©el** (sticky en haut de l'Ã©cran lors du scroll)
+
+### Champs disponibles
+
+```
+Section Textes :
+  - landing_eyebrow     (badge texte, vide = masquÃ©)
+  - landing_title       (override site_name)
+  - landing_subtitle    (override tagline)
+  - landing_cta_text    (texte bouton)
+  - landing_cta_url     (URL bouton, dÃ©faut "blog/")
+  - landing_footer_text (texte du lien bas)
+  - landing_footer_url  (URL du lien bas)
+
+Section Comportement :
+  - landing_show_pulse  (point vert pulsant Ã  cÃ´tÃ© du badge)
+
+Section Couleurs principales :
+  - landing_bg_color
+  - landing_text_color
+  - landing_muted_color
+  - landing_accent_color (bouton clair)
+  - landing_accent_dark  (bouton foncÃ© pour dÃ©gradÃ©)
+
+Section Couleurs d'ambiance :
+  - landing_blob_1  (top-left)
+  - landing_blob_2  (bottom-right)
+  - landing_blob_3  (center)
+```
+
+### Palettes prÃ©rÃ©glÃ©es
+
+5 boutons "swatch" appliquent une palette complÃ¨te :
+
+- **Sombre** (dÃ©faut) : navy + vert
+- **Clair** : blanc + teal + rose
+- **Sunset** : violet sombre + orange + rouge
+- **ForÃªt** : vert trÃ¨s sombre + vert vif
+- **Minimal** : noir + gris
+
+Plus un bouton **â†º Tout rÃ©initialiser** qui restaure les valeurs par dÃ©faut de tous les champs (textes + couleurs).
+
+### AperÃ§u live
+
+Une `<div class="lp-preview">` mime la landing Ã  petite Ã©chelle (aspect 16:11) :
+- 3 blobs flous animÃ©s
+- Eyebrow avec pulse
+- Titre en dÃ©gradÃ© typo Playfair
+- Sous-titre
+- Bouton CTA
+- Lien footer
+
+Un script JavaScript Ã©coute tous les `<input data-field="...">` du formulaire. Au moindre changement :
+
+```javascript
+const apply = () => {
+    setOrHide(elPreview.eyebrow, getVal('landing_eyebrow'));
+    elPreview.cta.textContent = getVal('landing_cta_text');
+    style.setProperty('--bg-1', getVal('landing_bg_color'));
+    style.setProperty('--accent', getVal('landing_accent_color'));
+    // ... etc
+};
+```
+
+â†’ Aucune sauvegarde n'a lieu tant qu'on ne clique pas sur **Enregistrer**. C'est purement visuel.
+
+### CÃ´tÃ© landing (index.html Ã  la racine)
+
+Quand la landing publique se charge, elle fait :
+
+```javascript
+const res = await fetch('blog/api/site_info.php', { cache: 'no-store' });
+const data = await res.json();
+const l = data.landing;
+
+// Applique les couleurs
+document.documentElement.style.setProperty('--bg-1', l.bg_color);
+document.documentElement.style.setProperty('--accent-color', l.accent_color);
+// ... etc
+
+// Applique les textes
+document.getElementById('site-name').textContent = l.title || data.site_name;
+document.getElementById('cta-label').textContent = l.cta_text;
+// ... etc
+```
+
+Si l'API Ã©choue (rÃ©seau coupÃ©, blog dÃ©placÃ©), le bouton CTA reste affichÃ© mais sans titre / sans badge â†’ la landing reste utilisable.
+
+## RÃ©seaux sociaux (`pages/social.php`)
+
+CRUD simple des liens sociaux affichÃ©s en haut du blog.
+
+- Liste des liens existants avec icÃ´ne FontAwesome
+- Formulaire d'ajout : plateforme, URL, icÃ´ne
+- Bouton "Supprimer" par ligne
+
+StockÃ© dans la table `social_links`.
+
+## Sync (`pages/sync_keys.php`, `pages/sync_push.php`, `pages/sync_json.php`)
+
+DÃ©taillÃ© dans [06-sync.md](06-sync.md). UX :
+
+### `sync_keys.php` (cÃ´tÃ© serveur)
+
+- Bouton "GÃ©nÃ©rer une clÃ©" avec sÃ©lecteur de durÃ©e (5 min - 24 h)
+- La clÃ© apparaÃ®t dans une zone avec bouton **ðŸ“‹ Copier**
+- Tableau des clÃ©s actives avec **countdown** en temps rÃ©el (mis Ã  jour chaque seconde)
+- Tableau de l'historique (15 derniÃ¨res clÃ©s, utilisÃ©es ou expirÃ©es)
+- Bouton "RÃ©voquer toutes les clÃ©s actives"
+
+### `sync_push.php` (cÃ´tÃ© local)
+
+- Formulaire : URL distante (prÃ©-rempli) + clÃ© Ã  coller + checkbox de confirmation
+- Au submit : **overlay plein Ã©cran avec spinner** indiquant que le travail est en cours
+- RÃ©sultat affichÃ© dans une flash bar (vert ou rouge)
+
+### `sync_json.php` (export/import)
+
+- **Stats** en haut : Articles, Utilisateurs, Commentaires, Images BDD
+- Bouton "TÃ©lÃ©charger l'export JSON" (dÃ©clenche le tÃ©lÃ©chargement)
+- Section import avec **dropzone drag-and-drop** :
+  - Highlight au survol
+  - Affichage du nom + taille du fichier choisi
+  - Validation au submit
+
+## Ã‰dition d'article (`pages/article_edit.php`)
+
+L'Ã©diteur d'article inclut :
+- Champ titre
+- Editor de contenu (textarea, peut Ãªtre Ã©tendu en WYSIWYG)
+- SÃ©lecteur d'image de couverture
+- Galerie multi-images (ajout/suppression/rÃ©ordonnement)
+- Champ "Sources" (rÃ©fÃ©rences bibliographiques)
+- Bouton "AperÃ§u" qui appelle `assets/js/preview.js`
+
+## CSS partagÃ© pour l'admin
+
+Toutes les pages admin partagent un style cohÃ©rent dÃ©fini dans `blog/assets/css/styles.css`, section "ADMIN UX" :
+
+```css
+.admin-actions       /* grille de cartes du dashboard */
+.admin-action        /* une carte individuelle, variants .green .blue .amber .purple .rose .slate */
+.section-block       /* groupe de champs encadrÃ© */
+.section-block .section-head .ico + h3   /* en-tÃªte avec icÃ´ne */
+.copy-btn            /* bouton copier-coller, avec Ã©tat .copied */
+.pill                /* pastille de statut, variants .pill-ok .pill-warn .pill-danger */
+.dropzone            /* zone drag-and-drop, Ã©tat .dragover */
+.mini-stats          /* grille de petites stats inline */
+.busy-overlay        /* Ã©cran d'attente avec spinner */
+.swatch              /* bouton de preset couleur */
+```
+
+Ces classes peuvent Ãªtre rÃ©utilisÃ©es dans toute nouvelle page admin.
+
+## Ajouter une nouvelle page admin
+
+1. CrÃ©e `blog/pages/ma_nouvelle_page.php` :
+
+```php
+<?php
+require_once __DIR__ . '/../includes/bootstrap.php';
+require_admin();
+
+// ... logique POST ici ...
+
+$pageTitle = 'Mon titre';
+include __DIR__ . '/../includes/header.php';
+?>
+<div class="auth-card auth-card-wide">
+    <h1>Ma page</h1>
+    <!-- contenu -->
+</div>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
+```
+
+2. Ajoute une carte dans `pages/admin.php` :
+
+```php
+<a class="admin-action purple" href="<?= e(base_url('pages/ma_nouvelle_page.php')) ?>">
+    <span class="ico">ðŸš€</span>
+    <span class="body">
+        <h3>Ma nouvelle action</h3>
+        <p>Description en une ligne.</p>
+    </span>
+</a>
+```
+
+3. BÃ©nÃ©ficies des classes `.section-block`, `.dropzone`, `.copy-btn`, etc. pour rester cohÃ©rent.
+
+    </script>
+    <script type="text/markdown" data-doc="09-security">
+# 09 â€” SÃ©curitÃ©
+
+Vue d'ensemble du modÃ¨le de sÃ©curitÃ© du projet, des protections en place, et des points d'attention.
+
+## Surfaces d'attaque
+
+| Surface | Risque | Mitigation |
+|---|---|---|
+| Login web (sessions) | Brute-force, vol de cookie | bcrypt + HTTPS + cookies httponly |
+| Login API (mobile) | Brute-force, vol de token | bcrypt + tokens 30j rÃ©vocables |
+| Formulaires POST | CSRF | Token CSRF obligatoire |
+| Uploads images | Upload de PHP exÃ©cutable | Validation MIME + extension + max 12 Mo + nom random |
+| SQL | Injection | Prepared statements PDO partout |
+| Sync endpoint | Vol de donnÃ©es / Ã©crasement BDD | ClÃ©s Ã  usage unique, expiration courte, HTTPS |
+| BDD credentials | Vol via Git | `config.php` gitignore, jamais commitÃ© |
+| ClÃ©s sync | Vol via Git ou backup | StockÃ©es hors BDD, gitignore, FTP-exclues |
+| Export JSON | Hashes mots de passe en clair | `.gitignore` `blog-export-*.json` |
+| APK signing key | Vol â†’ attaquant peut signer des MAJ malveillantes | Jamais commitÃ©, conservÃ©e localement |
+
+## Authentification web (sessions)
+
+ImplÃ©mentÃ©e dans `blog/includes/auth.php` + sessions PHP natives.
+
+### Login
+
+```php
+$user = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+            ->execute([strtolower($email)])
+            ->fetch();
+if (!$user || !password_verify($password, $user['password_hash'])) {
+    return false; // identifiants invalides
+}
+session_regenerate_id(true);   // anti session-fixation
+$_SESSION['user'] = $user;
+```
+
+- `password_verify` est timing-safe
+- `session_regenerate_id(true)` rÃ©gÃ©nÃ¨re l'ID de session pour empÃªcher la fixation de session
+
+### Logout
+
+```php
+$_SESSION = [];
+session_destroy();
+// DÃ©truit aussi le cookie cÃ´tÃ© client
+setcookie(session_name(), '', time() - 3600, '/');
+```
+
+### Cookies session
+
+PHP utilise par dÃ©faut `PHPSESSID`. Le projet ajoute :
+
+```php
+// blog/.htaccess (prod)
+php_value session.cookie_httponly 1
+php_value session.cookie_secure 1
+php_value session.cookie_samesite Lax
+```
+
+- `httponly` : pas accessible en JavaScript (anti-XSS volÃ©)
+- `secure` : transmis uniquement sur HTTPS
+- `samesite=Lax` : pas envoyÃ© sur les cross-site POST (anti-CSRF de base)
+
+## Authentification API (tokens Bearer)
+
+ImplÃ©mentÃ©e dans `blog/api/login.php` + `blog/api/_auth.php`.
+
+### GÃ©nÃ©ration du token
+
+```php
+$token = bin2hex(random_bytes(32));   // 64 hex chars = 256 bits d'entropie
+$expires = (new DateTime('+30 days'))->format('Y-m-d H:i:s');
+$pdo->prepare('INSERT INTO api_tokens (token, user_id, expires_at) VALUES (?,?,?)')
+    ->execute([$token, $user['id'], $expires]);
+```
+
+### VÃ©rification
+
+```php
+// api/_auth.php
+function require_api_token(PDO $pdo): array {
+    $hdr = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (!preg_match('/^Bearer\s+([a-f0-9]{64})$/', $hdr, $m)) {
+        json_error('Token manquant', 401);
+    }
+    $row = $pdo->prepare(
+        'SELECT u.* FROM api_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ? AND t.expires_at > NOW()'
+    )->execute([$m[1]])->fetch();
+    if (!$row) json_error('Token invalide ou expire', 401);
+    return $row;
+}
+```
+
+- Pas de timing-safe explicit ici car la regex filtre dÃ©jÃ  la forme exacte â†’ moins d'utilitÃ©
+- Si tu veux durcir : faire `hash_equals($row['token'], $given)` mais Ã§a coÃ»te un SELECT all
+
+### RÃ©vocation
+
+Suppression de la ligne dans `api_tokens`. Ã€ implÃ©menter sur logout API et sur changement de mot de passe.
+
+## CSRF
+
+ImplÃ©mentÃ© dans `blog/includes/helpers.php` :
+
+```php
+function csrf_token() {
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf'];
+}
+
+function csrf_check($token) {
+    return !empty($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], (string)$token);
+}
+```
+
+Tous les formulaires POST inclus :
+
+```html
+<input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+```
+
+Et la page de traitement :
+
+```php
+if (!csrf_check($_POST['csrf'] ?? '')) {
+    $errors[] = 'Jeton CSRF invalide, recharge la page.';
+}
+```
+
+`hash_equals` est timing-safe.
+
+## Uploads d'images
+
+`blog/includes/upload.php` valide :
+
+```php
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_EXTS  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+const MAX_SIZE_MB   = 12;
+```
+
+Ã€ l'upload :
+
+1. VÃ©rifie `$file['error']` (UPLOAD_ERR_OK)
+2. VÃ©rifie `$file['size']` â‰¤ 12 Mo
+3. VÃ©rifie `mime_content_type()` (lecture du contenu, pas confiance au header client)
+4. VÃ©rifie l'extension dans le whitelist
+5. GÃ©nÃ¨re un nom random : `bin2hex(random_bytes(8)) . '.' . $ext`
+6. Sauvegarde dans `blog/uploads/`
+
+ConsÃ©quence : impossible d'uploader un fichier `.php` ou `.htaccess`.
+
+### Bonus prod : `.htaccess` dans uploads/
+
+Ajouter dans `blog/uploads/.htaccess` (Ã  crÃ©er si pas dÃ©jÃ ) :
+
+```apache
+# Refuse d'exÃ©cuter du PHP dans uploads/
+<FilesMatch "\.(php|phtml|phar|inc|pl|py|rb|sh)$">
+    Require all denied
+</FilesMatch>
+# Pas de listing
+Options -Indexes
+```
+
+â†’ MÃªme si un attaquant arrive Ã  uploader un `.php`, Apache refuse de l'exÃ©cuter.
+
+## SQL Injection
+
+Tout passe par `PDO::prepare()` + `execute([$params])`. **Aucune concatÃ©nation directe** de variable dans une requÃªte SQL.
+
+Ã€ vÃ©rifier rÃ©guliÃ¨rement avec :
+
+```bash
+grep -rn "query.*\$" blog/  # toute query avec interpolation directe = Ã  corriger
+```
+
+## Synchronisation locale â†’ serveur
+
+DÃ©taillÃ© dans [06-sync.md](06-sync.md). RÃ©cap sÃ©curitÃ© :
+
+- **ClÃ©s Ã  usage unique** : 64 hex chars (256 bits), random_bytes
+- **Expiration courte** : 5 min - 24 h max
+- **Stockage hors BDD** : `blog/config/sync_keys.json` (gitignore, FTP-exclu)
+- **Validation timing-safe** : `hash_equals`
+- **Admin requis** sur les 2 instances pour gÃ©nÃ©rer et consommer
+- **CSRF** sur les formulaires de gÃ©nÃ©ration/consommation
+- **HTTPS forcÃ©** sur le POST (CURLOPT_SSL_VERIFYPEER = true)
+
+Point d'attention : `sync_apply_sql_dump()` exÃ©cute du SQL en direct. Si une clÃ© est compromise, l'attaquant peut injecter ce qu'il veut. Mitigation : il faut **aussi** avoir un compte admin sur l'instance source ET sur l'instance cible. Et l'expiration limite la fenÃªtre.
+
+## Secrets jamais commitÃ©s
+
+VÃ©rifiÃ© par `.gitignore` Ã  plusieurs niveaux :
+
+`Blog/.gitignore` :
+```
+blog-export-*.json
+*.bak
+```
+
+`Blog/blog/.gitignore` :
+```
+config/config.php
+config/sync_keys.json
+uploads/*
+!uploads/.gitkeep
+_diagnostic.php
+_fix_db.php
+APK/
+*.apk
+*.aab
+*.keystore
+signing-key-info.txt
+```
+
+Pour vÃ©rifier qu'un fichier sensible n'est jamais entrÃ© dans git :
+
+```bash
+git log --all --full-history -- "blog/config/config.php"
+# Si vide : ok, jamais commitÃ©
+```
+
+## Hashing des mots de passe
+
+Algorithme : **bcrypt** via `password_hash($plain, PASSWORD_BCRYPT)`.
+- Salt gÃ©nÃ©rÃ© automatiquement par PHP
+- Cost factor par dÃ©faut (10) â†’ ~50 ms par hash sur du matÃ©riel normal
+- `password_verify` est timing-safe
+
+Pour renforcer (matÃ©riel rÃ©cent) :
+```php
+password_hash($plain, PASSWORD_BCRYPT, ['cost' => 12]);
+```
+
+## Headers HTTP de sÃ©curitÃ©
+
+Ã€ ajouter dans `blog/.htaccess` (prod) :
+
+```apache
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "geolocation=(), camera=(), microphone=()"
+# Content-Security-Policy : Ã  adapter selon ce qu'on charge
+# Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+```
+
+## Audit rÃ©gulier Ã  faire
+
+| Quoi | FrÃ©quence | Comment |
+|---|---|---|
+| Liste des admins | Mensuel | `SELECT id, email FROM users WHERE is_admin = 1` |
+| Tokens API actifs | Trimestriel | `SELECT user_id, expires_at FROM api_tokens` |
+| ClÃ©s sync persistantes | Mensuel | Inspecter `config/sync_keys.json` |
+| Logs Apache | Hebdomadaire | RepÃ©rer brute-force, IPs anormales |
+| Mises Ã  jour PHP | Quand Hostinger en propose | hPanel â†’ version PHP |
+
+## Incidents documentÃ©s
+
+Aucun Ã  ce jour. Si compromission :
+
+1. **DÃ©sactiver** le site en mettant un `.htaccess` qui retourne 503
+2. **RÃ©gÃ©nÃ©rer** les credentials BDD via hPanel
+3. **Faire pivoter** les mots de passe de tous les admins
+4. **RÃ©gÃ©nÃ©rer** tous les tokens API : `TRUNCATE TABLE api_tokens`
+5. **Auditer** les fichiers de la racine `/public_html/blog/` pour shells PHP (`shell.php`, `cmd.php`, fichiers anormaux rÃ©cents)
+6. **Restaurer** depuis le dernier export JSON connu propre
+7. **Examiner** les logs Apache de la pÃ©riode suspecte
+
+    </script>
+    <script type="text/markdown" data-doc="10-troubleshooting">
+# 10 â€” DÃ©pannage (FAQ)
+
+## DÃ©ploiement GitHub Actions
+
+### âŒ "Cannot connect to FTP server" / EHOSTUNREACH
+
+**Causes possibles** :
+1. `FTP_HOST` mal renseignÃ© dans les secrets GitHub
+2. Hostinger bloque temporairement la rÃ©gion du runner
+3. Le compte FTP a Ã©tÃ© dÃ©sactivÃ© / mot de passe changÃ©
+
+**Solutions** :
+- Recopie exactement le hostname depuis hPanel â†’ Fichiers â†’ Comptes FTP
+- Essaie de basculer `FTP_PROTOCOL` de `ftps` Ã  `ftp`
+- Teste les credentials avec FileZilla pour confirmer qu'ils marchent en dehors d'Actions
+
+### âŒ "EAI_AGAIN" (DNS temporaire)
+
+RÃ©essaie le workflow (onglet Actions â†’ bouton "Re-run all jobs").
+
+### âŒ Le workflow termine en succÃ¨s mais le site ne change pas
+
+Causes possibles :
+1. Le cache navigateur affiche encore l'ancienne version â†’ Ctrl+F5
+2. Le fichier dÃ©ployÃ© est dans le mauvais dossier serveur
+3. Tu regardes le mauvais domaine (`mariondelval.com` vs `blog.mariondelval.com`)
+
+**VÃ©rification** : connecte-toi en FTP via FileZilla et regarde directement le timestamp du fichier. Doit correspondre Ã  l'heure du push.
+
+### âŒ Plusieurs dÃ©ploiements simultanÃ©s
+
+GitHub Actions peut parallÃ©liser les pushes rapides. Pour Ã©viter les conflits FTP, ajoute en haut du workflow :
+
+```yaml
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+```
+
+â†’ Si un dÃ©ploiement tourne, le suivant attend la fin avant de dÃ©marrer.
+
+## Synchronisation
+
+### âŒ "Cle invalide, expiree ou deja utilisee" (HTTP 403)
+
+**Causes** :
+1. La clÃ© a dÃ©jÃ  Ã©tÃ© utilisÃ©e â†’ gÃ©nÃ¨re-en une nouvelle
+2. La clÃ© a expirÃ© (durÃ©e TTL dÃ©passÃ©e) â†’ gÃ©nÃ¨re-en une nouvelle
+3. Tu colles dans le mauvais champ (typo)
+4. Tu cibles la mauvaise URL distante
+
+**Solutions** :
+- Va sur le serveur â†’ `pages/sync_keys.php` â†’ vÃ©rifie l'historique pour voir si la clÃ© a `used_at` rempli
+- Recopie la clÃ© sans espace ni saut de ligne
+
+### âŒ "There is no active transaction" sur l'import JSON
+
+**Cause** : version obsolÃ¨te du code. CorrigÃ© dans le commit `8115f0f` â€” `TRUNCATE TABLE` provoquait un commit implicite MySQL qui invalidait le `rollBack()` PHP.
+
+**Solution** : `git pull` la derniÃ¨re version, redÃ©ploie.
+
+### âŒ Le sync POST Ã©choue avec timeout
+
+**Causes** :
+- Beaucoup d'images dans `uploads/`, le ZIP devient gros (>50 Mo)
+- Connexion lente entre ton local et Hostinger
+
+**Solutions** :
+- Augmente `CURLOPT_TIMEOUT` dans `pages/sync_push.php` (dÃ©jÃ  Ã  900s = 15 min)
+- Sur Hostinger, vÃ©rifie `post_max_size` et `upload_max_filesize` dans `php.ini` (via hPanel). Doivent Ãªtre â‰¥ taille du ZIP.
+
+### âŒ "Body too large" / 413 du serveur
+
+Hostinger limite la taille des uploads. Augmente via :
+
+```apache
+# blog/.htaccess (prod)
+php_value upload_max_filesize 256M
+php_value post_max_size 256M
+php_value max_input_time 900
+php_value max_execution_time 900
+```
+
+## App mobile PWA
+
+### âŒ La nouvelle icÃ´ne ne s'affiche pas aprÃ¨s mise Ã  jour
+
+**Cause** : l'OS (Android/iOS/Windows) met en cache l'icÃ´ne Ã  l'installation. Le manifest peut changer, l'icÃ´ne ne se rafraÃ®chit pas automatiquement.
+
+**Solutions** :
+- **Sur l'appareil** : dÃ©sinstaller la PWA, puis rÃ©installer depuis le navigateur
+- **Patience** : Chrome dÃ©tecte les changements de manifest toutes les ~24 h
+
+### âŒ La banniÃ¨re "Mise Ã  jour disponible" ne s'affiche jamais
+
+**Cause** : `APP_VERSION` cÃ´tÃ© client = `MOBILE_APP_VERSION` cÃ´tÃ© serveur. Il faut **les deux** diffÃ©rentes pour que la banniÃ¨re apparaisse.
+
+**VÃ©rification** :
+- Console JS de l'app : `console.log(APP_VERSION)` â†’ doit Ãªtre < Ã  la valeur du serveur
+- CÃ´tÃ© serveur : `curl https://blog.mariondelval.com/api/version.php`
+
+### âŒ L'app affiche `offline.html` mÃªme en ligne
+
+**Cause** : le service worker n'a pas Ã©tÃ© dÃ©sinscrit, ou le sw.js du serveur est encore une ancienne version qui interceptait les fetch.
+
+**Solution** :
+1. F12 â†’ Application â†’ Service Workers â†’ Unregister
+2. F12 â†’ Application â†’ Storage â†’ Clear site data
+3. Ctrl+Shift+R
+
+### âŒ Le login API ne marche pas (toujours 401)
+
+**VÃ©rifications** :
+- Le serveur a-t-il bien une BDD installÃ©e ? Curl `/api/login.php` doit donner un 400 sur un POST vide, pas un 503
+- `Authorization: Bearer <token>` est-il bien envoyÃ© ? F12 â†’ Network â†’ onglet Headers
+- Le token est-il expirÃ© ? La table `api_tokens` a un champ `expires_at`
+
+## Landing page
+
+### âŒ Le titre n'apparaÃ®t pas / la landing reste vide
+
+**Cause habituelle** : l'API `blog/api/site_info.php` est inaccessible (404 ou 503).
+
+**VÃ©rifications** :
+- Curl `https://mariondelval.com/blog/api/site_info.php` â†’ doit renvoyer du JSON
+- Si 503 "Blog non installÃ©" â†’ il faut faire `install.php` sur le sous-domaine
+- Si 404 â†’ le sous-domaine pointe au mauvais endroit (hPanel â†’ Sous-domaines)
+
+### âŒ Les couleurs ne s'appliquent pas
+
+**Cause** : les CSS custom properties ne sont pas Ã©crites au bon endroit.
+
+Inspecte la page :
+```javascript
+getComputedStyle(document.documentElement).getPropertyValue('--bg-1')
+```
+
+Si Ã§a retourne du vide, le JS n'a pas tournÃ© (regarde la console pour des erreurs).
+
+### âŒ Le bouton CTA pointe vers le mauvais endroit
+
+Va dans `Admin â†’ Apparence accueil â†’ Lien du bouton principal`. VÃ©rifie que c'est un chemin **relatif** (`blog/`) et non absolu (`/blog/`).
+
+| Avec `blog/` | Avec `/blog/` |
+|---|---|
+| Marche partout (local + prod) | Marche seulement si servi Ã  la racine |
+
+## Base de donnÃ©es
+
+### âŒ "SQLSTATE[HY000] [2002] Connection refused"
+
+MySQL n'est pas accessible :
+- Sur XAMPP : MySQL pas dÃ©marrÃ© â†’ ouvre XAMPP Control â†’ Start
+- Sur Hostinger : credentials erronÃ©s dans `config.php` â†’ vÃ©rifier hPanel
+
+### âŒ "Table 'blog.users' doesn't exist"
+
+Les tables n'ont pas Ã©tÃ© crÃ©Ã©es :
+- Visite `/install.php` pour relancer l'installeur
+- Ou exÃ©cute manuellement `blog/sql/schema.sql` dans phpMyAdmin
+
+### âŒ CaractÃ¨res franÃ§ais qui s'affichent en "ÃƒÂ©"
+
+ProblÃ¨me d'encodage. VÃ©rifie :
+- La base est en `utf8mb4_unicode_ci`
+- La connexion PDO a bien `charset=utf8mb4`
+- Les fichiers PHP sont sauvegardÃ©s en UTF-8 sans BOM
+
+## XAMPP local
+
+### âŒ Apache refuse de dÃ©marrer (port 80 occupÃ©)
+
+Cause : Skype, IIS, ou un autre service utilise le port 80.
+
+Solutions :
+- Couper l'autre service
+- Changer le port d'Apache dans `xampp/apache/conf/httpd.conf` : `Listen 80` â†’ `Listen 8080`. Puis accÃ©der via `http://localhost:8080/Blog/`
+
+### âŒ Erreur 500 sur le blog en local mais pas de message
+
+Active l'affichage des erreurs PHP. Dans `xampp/php/php.ini` :
+
+```ini
+display_errors = On
+error_reporting = E_ALL
+```
+
+RedÃ©marre Apache. L'erreur exacte apparaÃ®tra dans la page.
+
+## Cache navigateur
+
+### âŒ "Mes changements CSS ne s'appliquent pas"
+
+Forcer le rafraÃ®chissement complet :
+- **Chrome/Edge/Firefox** : `Ctrl+Shift+R` (Windows) ou `Cmd+Shift+R` (Mac)
+- **Outil de dev** : F12 â†’ onglet Network â†’ coche "Disable cache" (tant que F12 est ouvert)
+- **Nuke total** : F12 â†’ Application â†’ Storage â†’ Clear site data
+
+### âŒ Le favicon reste l'ancien
+
+Solutions :
+- Ajoute `?v=N` Ã  la fin du href dans `header.php` et incrÃ©mente
+- Ou vide totalement le cache via F12 â†’ Application â†’ Storage â†’ Clear site data
+- Sur la PWA installÃ©e : dÃ©sinstalle / rÃ©installe
+
+## Git / GitHub
+
+### âŒ "fatal: not a git repository"
+
+Tu n'es pas dans le bon dossier. VÃ©rifie avec `pwd` et `ls -la` (le dossier `.git` doit exister Ã  la racine).
+
+### âŒ "Push rejected" / branch protection
+
+GitHub bloque le push direct sur `master`. Solutions :
+- DÃ©sactiver la branch protection dans Settings â†’ Branches
+- Ou crÃ©er une PR depuis une branche feature
+
+### âŒ Push aprÃ¨s modification du sous-module / .git mal placÃ©
+
+C'est arrivÃ© lors du restructure dans `blog/`. Si tu as dÃ©placÃ© `.git` par erreur :
+
+```bash
+cd C:\xampp\htdocs\Blog
+mv blog/.git .git
+mv blog/.github .github
+mv blog/empty-root empty-root  # si applicable
+git status   # vÃ©rifie que tout est OK
+```
+
+## Erreurs "weird" Ã  diagnostiquer
+
+### Page blanche, aucun message d'erreur
+
+Cause habituelle : erreur fatale PHP en mode prod (display_errors off).
+
+Solution rapide en local :
+```php
+// Tout en haut du script
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+```
+
+### "Headers already sent"
+
+Cause : du `echo` ou du whitespace avant un `header()` ou `setcookie()`.
+
+Solution : vÃ©rifie qu'aucun caractÃ¨re n'est envoyÃ© avant les headers. Souvent un BOM UTF-8 ou des espaces avant `<?php`.
+
+## Quand vraiment rien ne marche
+
+1. RÃ©cupÃ¨re le **dernier export JSON** propre depuis l'admin
+2. Sauvegarde le contenu de `blog/uploads/` en local (via FTP)
+3. Fais un `git pull` propre
+4. RÃ©installe proprement (locale + serveur) avec `install.php`
+5. Importe l'export JSON
+6. RÃ©uploade les images dans `uploads/`
+
+Si mÃªme Ã§a Ã©choue : crÃ©e une issue GitHub avec :
+- Le message d'erreur complet
+- L'URL exacte qui pose problÃ¨me
+- Le navigateur utilisÃ©
+- Une capture d'Ã©cran si pertinent
+
+    </script>

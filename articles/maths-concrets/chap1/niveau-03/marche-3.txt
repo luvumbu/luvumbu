@@ -1,0 +1,95 @@
+TITRE : Chapitre 1 · Niveau 3 · Marche 3 — Combien il en manque ?
+---
+Le sac d'Ilo dit « il manque un mouton ».
+
+Mais il dit encore mieux que ça.
+
+Il dit COMBIEN il en manque.
+
+
+UN AUTRE SOIR
+
+Un soir, les moutons rentrent. Ilo enlève ses cailloux, un par un.
+
+Le dernier mouton passe. Ilo regarde dans le sac.
+
+Il reste deux cailloux.
+
+Deux cailloux, ça veut dire quoi ?
+
+Chaque caillou attend son mouton. Deux cailloux attendent deux moutons.
+
+Il manque deux moutons !
+
+Ilo repart avec son bâton. Et il sait qu'il doit en chercher deux. Pas un. Deux.
+
+C'est très utile : s'il en trouve un et qu'il rentre content, il en oublie un dehors. Le sac l'empêche de faire cette erreur.
+
+
+LA RÈGLE
+
+C'est simple, et ça marche toujours :
+
+Le sac est vide → tout va bien.
+1 caillou reste → il manque 1 mouton.
+2 cailloux restent → il manque 2 moutons.
+3 cailloux restent → il manque 3 moutons.
+
+Le nombre de cailloux qui restent est le nombre de moutons qui manquent.
+
+Toujours le même nombre. Jamais un autre. Parce que chaque caillou est collé à un mouton.
+
+
+UN PEU PLUS DUR
+
+Voici un vrai problème d'Ilo. Prends ton temps.
+
+Le matin, Ilo a mis 8 cailloux dans son sac.
+
+Le soir, 6 moutons sont rentrés.
+
+Combien de cailloux restent dans le sac ?
+
+Ne lis pas la suite. Cherche.
+
+Tu peux prendre 8 objets et en enlever 6 pour voir. C'est ce que ferait Ilo.
+
+...
+
+Il reste 2 cailloux.
+
+Et donc, combien de moutons manquent ?
+
+2 aussi.
+
+Les deux réponses sont pareilles. Ce n'est pas un hasard, et maintenant tu sais pourquoi.
+
+
+TU VIENS DE FAIRE UN CALCUL
+
+Tu ne l'as peut-être pas remarqué.
+
+Tu es parti de 8. Tu as enlevé 6. Tu as trouvé 2.
+
+Ça a un nom. Ça s'appelle une soustraction.
+
+Tu l'as faite sans le savoir, avec des objets dans tes mains, sans aucune règle et sans aucun signe bizarre.
+
+C'est comme ça qu'on fait des maths pour de vrai : d'abord avec les mains, ensuite avec les mots.
+
+Le marchand du chapitre 2 t'apprendra tout ça. Mais tu as déjà commencé.
+
+
+À TOI DE JOUER
+
+Trois problèmes d'Ilo. Prends des objets pour t'aider, c'est permis, c'est même conseillé.
+
+1. Ilo a mis 5 cailloux. 4 moutons sont rentrés. Combien il en manque ?
+
+2. Ilo a mis 7 cailloux. 7 moutons sont rentrés. Combien il en manque ?
+
+3. Ilo a mis 9 cailloux. 6 moutons sont rentrés. Combien il en manque ?
+
+Réponses : 1 mouton — aucun, tout va bien, le sac est vide — 3 moutons.
+
+Le deuxième était un piège gentil. Quand le sac est vide, il ne manque rien du tout.

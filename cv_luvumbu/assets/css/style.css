@@ -1,0 +1,309 @@
+/* =====================================================================
+   CV Luvumbu — thème sombre unifié (cohérent avec Architecture / Mes CV).
+   Les noms de classes sont conservés : toutes les pages liées à ce fichier
+   (tableau de bord, paramètres, connexion, installation) adoptent ce style.
+   ===================================================================== */
+:root {
+    --bg: #0b1220;
+    --panel: #111c33;
+    --panel2: #0e1830;
+    --line: #22304f;
+    --ink: #e6edf7;
+    --muted: #8da2c0;
+    --primary: #4f8cff;
+    --primary-dark: #3b73e0;
+    --accent2: #22d3ee;
+    --violet: #a78bfa;
+    --text: #e6edf7;
+    --border: #22304f;
+    --error-bg: rgba(248, 113, 113, .14);
+    --error-text: #fecaca;
+    --success-bg: rgba(52, 211, 153, .15);
+    --success-text: #bbf7d0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:
+        radial-gradient(1200px 600px at 10% -10%, #1b2c52 0%, transparent 55%),
+        radial-gradient(900px 500px at 110% 10%, #143042 0%, transparent 50%),
+        var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    padding-top: 88px;
+}
+
+.card {
+    background: linear-gradient(160deg, var(--panel), var(--panel2));
+    width: 100%;
+    max-width: 440px;
+    padding: 30px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+}
+.card-wide { max-width: 940px; }
+
+h1 { margin: 0 0 4px; font-size: 1.6rem; }
+
+.subtitle { margin: 0 0 24px; color: var(--muted); font-size: .95rem; }
+
+fieldset {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 0 0 18px;
+    background: rgba(10, 17, 36, .4);
+}
+legend { padding: 0 8px; font-weight: 700; color: var(--accent2); }
+
+label { display: block; margin-bottom: 14px; font-size: .88rem; font-weight: 600; color: #cbd8ef; }
+
+input, textarea, select {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 11px 13px;
+    background: #0a1124;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--ink);
+    transition: border-color .15s, box-shadow .15s;
+}
+textarea { resize: vertical; }
+input::placeholder, textarea::placeholder { color: #5f7196; }
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 140, 255, .22);
+}
+
+.btn {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    border: none;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--primary), var(--violet));
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: filter .15s;
+}
+.btn:hover { filter: brightness(1.12); }
+
+.alert {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: .9rem;
+    border: 1px solid transparent;
+}
+.alert-error   { background: var(--error-bg);   color: var(--error-text);   border-color: rgba(248, 113, 113, .35); }
+.alert-success { background: var(--success-bg); color: var(--success-text); border-color: rgba(52, 211, 153, .35); }
+
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 26px;
+    background: rgba(8, 14, 28, .8);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    color: #fff;
+    font-weight: 700;
+    z-index: 10;
+}
+.topbar a { color: #bcd0ef; text-decoration: none; }
+.topbar a:hover { text-decoration: underline; }
+.topbar .brand { font-weight: 800; letter-spacing: .02em; color: #fff; }
+.topbar .brand span { color: var(--accent2); }
+.topbar nav a { margin-left: 18px; font-size: .92rem; }
+
+/* Logo pour les pages centrées (connexion, installation) */
+.brand-logo {
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: .02em;
+    color: #fff;
+    margin-bottom: 18px;
+}
+.brand-logo span { color: var(--accent2); }
+
+/* ---- Pages larges ---- */
+h2.section {
+    margin: 28px 0 14px;
+    font-size: 1.1rem;
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+}
+
+.muted { color: var(--muted); }
+
+.inline-form { display: flex; align-items: flex-end; gap: 12px; }
+.inline-form .grow { flex: 1; margin-bottom: 0; }
+.btn-auto { width: auto; white-space: nowrap; padding: 11px 18px; }
+
+.key-reveal {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    background: #060b18;
+    color: #4ade80;
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+    border-radius: 10px;
+    word-break: break-all;
+    margin-bottom: 16px;
+    user-select: all;
+}
+
+table.keys { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table.keys th, table.keys td {
+    text-align: left;
+    padding: 11px 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+table.keys th { color: var(--muted); font-weight: 600; }
+table.keys tr.revoked { opacity: .5; }
+table.keys code {
+    font-family: ui-monospace, Consolas, monospace;
+    background: #0a1124;
+    border: 1px solid var(--line);
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: #cdd9ef;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+}
+.badge-on   { background: rgba(52, 211, 153, .16); color: #6ee7b7; }
+.badge-off  { background: rgba(248, 113, 113, .16); color: #fca5a5; }
+.badge-wait { background: #1e2c4b;                  color: #aebfde; }
+.badge-warn { background: rgba(251, 191, 36, .16);  color: #fcd34d; }
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: .85rem;
+    padding: 0;
+    text-decoration: underline;
+}
+.btn-link.danger { color: #fca5a5; }
+
+/* Cases à cocher des permissions */
+label.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+    margin-bottom: 8px;
+}
+label.check input { width: auto; margin: 0; }
+label.check code,
+table.keys .chip {
+    font-family: ui-monospace, Consolas, monospace;
+    background: #0a1124;
+    color: var(--muted);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: .78rem;
+}
+table.keys .chip {
+    display: inline-block;
+    margin: 1px 2px;
+    background: #16264a;
+    color: #9fc0ff;
+    border: 1px solid var(--line);
+}
+
+td.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+/* ---- Tableau de bord : sélecteur compact, stats, relances ---- */
+.select-mini {
+    display: inline-block;
+    width: auto;
+    margin: 0;
+    padding: 5px 8px;
+    font-size: .82rem;
+}
+td.actions form { margin: 0; }
+
+.stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.stats .stat {
+    background: #0f1c36;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 11px;
+    padding: 9px 13px;
+    font-size: .85rem;
+}
+.stats .stat strong { color: var(--ink); font-size: 1.05rem; }
+.stats .stat.ok   { background: rgba(52, 211, 153, .14);  color: #6ee7b7; }
+.stats .stat.no   { background: rgba(248, 113, 113, .14); color: #fca5a5; }
+.stats .stat.warn { background: rgba(251, 191, 36, .14);  color: #fcd34d; }
+.stats .stat.ok strong, .stats .stat.no strong, .stats .stat.warn strong { color: inherit; }
+
+table.keys tr.to-followup { background: rgba(251, 191, 36, .08); }
+
+.followup-form { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.followup-form input[type="date"] { margin: 0; }
+
+/* Fiche CV (vue détail générique) */
+.cv-sheet {
+    background: linear-gradient(160deg, var(--panel), var(--panel2));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 14px;
+}
+.cv-name { margin: 0; font-size: 1.7rem; }
+.cv-title { margin: 2px 0 0; color: var(--accent2); font-weight: 600; }
+.cv-contact { margin: 6px 0 18px; color: var(--muted); font-size: .9rem; }
+.cv-sheet section { margin-bottom: 16px; }
+.cv-sheet h3 {
+    margin: 0 0 6px;
+    font-size: .9rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--accent2);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 5px;
+}
+.cv-sheet p { margin: 0; line-height: 1.55; color: #cdd9ef; }

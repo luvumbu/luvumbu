@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4B400"/>
+      <stop offset="0.55" stop-color="#E8772E"/>
+      <stop offset="1" stop-color="#5A2E12"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Cheveux afro -->
+  <g fill="#181818">
+    <circle cx="32" cy="26" r="13"/>
+    <circle cx="32" cy="14" r="5.5"/>
+    <circle cx="21" cy="17" r="5.5"/>
+    <circle cx="43" cy="17" r="5.5"/>
+    <circle cx="18" cy="27" r="5.5"/>
+    <circle cx="46" cy="27" r="5.5"/>
+  </g>
+  <!-- Épaules -->
+  <circle cx="32" cy="58" r="15" fill="#E8772E"/>
+  <!-- Cou -->
+  <rect x="28.5" y="34" width="7" height="9" fill="#7A4A2A"/>
+  <!-- Visage -->
+  <circle cx="32" cy="29" r="9" fill="#8A5A33"/>
+  <!-- Yeux -->
+  <circle cx="29" cy="28" r="1.2" fill="#181818"/>
+  <circle cx="35" cy="28" r="1.2" fill="#181818"/>
+  <!-- Sourire -->
+  <path d="M29 32 q3 3 6 0" stroke="#3A2113" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <!-- Boucles d'oreilles -->
+  <circle cx="23.5" cy="35" r="1.8" fill="#F4C20D"/>
+  <circle cx="40.5" cy="35" r="1.8" fill="#F4C20D"/>
+</svg>

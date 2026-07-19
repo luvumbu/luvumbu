@@ -1,0 +1,95 @@
+TITRE : Chapitre 1 · Niveau 5 — Lire un nombre : les paquets et les restes
+---
+Ilo a maintenant deux sortes de cailloux.
+
+Les gros cailloux blancs : chacun vaut 10 moutons.
+Les petits cailloux : chacun vaut 1 mouton.
+
+Mais Ilo a un nouveau problème. Il veut envoyer un message à Nara pour lui dire combien il a de moutons.
+
+Il ne peut pas lui envoyer son sac. Il doit l'écrire.
+
+
+LA RÈGLE DES DEUX COLONNES
+
+Ilo trace deux colonnes sur une planche.
+
+Dans la colonne de droite, il pose ses petits cailloux.
+Dans la colonne de gauche, il pose ses gros cailloux blancs.
+
+Colonne de gauche : les paquets de 10. On dit les dizaines.
+Colonne de droite : les moutons tout seuls. On dit les unités.
+
+Ilo pose 4 gros cailloux à gauche, et 7 petits à droite.
+
+Il écrit : 47.
+
+Le 4 est le nombre de paquets. Le 7 est le reste.
+
+
+LA RÈGLE LA PLUS IMPORTANTE
+
+Ilo a une règle très stricte. Écoute bien, parce que tout le chapitre repose dessus.
+
+Jamais plus de 9 cailloux dans une colonne.
+
+Jamais. Pas 10, pas 11, pas 12. Neuf au maximum.
+
+Pourquoi ? Parce que dès qu'il y en a 10, Ilo les échange contre un caillou de la colonne d'à côté. C'est sa loi.
+
+Alors le nombre le plus grand qu'il peut écrire avec deux colonnes, c'est 9 paquets et 9 restes.
+
+9 dizaines et 9 unités. 99.
+
+Après 99, ça déborde. On verra ça au niveau 6.
+
+
+LIS CES NOMBRES COMME ILO
+
+Quand tu vois un nombre à deux chiffres, ne lis pas deux chiffres. Lis un sac.
+
+62, c'est 6 paquets de 10, et 2 tout seuls.
+Vingt-cinq, 25, c'est 2 paquets et 5 tout seuls.
+80, c'est 8 paquets et... rien du tout à côté. Le sac de restes est vide.
+
+Essaie avec 91. Combien de paquets ? 9. Combien de restes ? 1.
+
+
+ATTENTION AU PIÈGE
+
+Voici deux nombres : 47 et 74.
+
+Ce sont les mêmes chiffres ! Un 4 et un 7. Mais ce ne sont pas les mêmes nombres du tout.
+
+47, c'est 4 paquets et 7 restes. Donc 40 + 7.
+74, c'est 7 paquets et 4 restes. Donc 70 + 4.
+
+Ilo avec 47 moutons est un berger normal. Ilo avec 74 moutons est presque deux fois plus riche !
+
+Alors qu'est-ce qui a changé ? Pas les chiffres. La place des chiffres.
+
+Retiens cette phrase, elle est le cœur de tout : un chiffre ne vaut rien tout seul. Il vaut ce que sa place lui donne.
+
+
+UN MOT SUR LES NOMS BIZARRES
+
+Tu as remarqué que certains noms de nombres sont bizarres en français ?
+
+Soixante-dix, c'est 70. Mais on dit « soixante-dix », c'est-à-dire 60 + 10. Quatre-vingts, c'est 80, mais on dit « quatre fois vingt ».
+
+Ce n'est pas ta faute si c'est compliqué. C'est juste le français qui a gardé de vieux souvenirs, du temps où certains groupaient par 20.
+
+Les Belges et les Suisses disent « septante » pour 70 et « nonante » pour 90. C'est bien plus logique. Ils ont raison.
+
+
+À TOI DE JOUER
+
+Prends 56 objets. Oui, 56, c'est beaucoup — c'est fait exprès.
+
+Fais des paquets de 10. Utilise des sacs, des assiettes, des tas.
+
+Combien de paquets complets ? Combien de restes ?
+
+Maintenant écris le nombre : le nombre de paquets d'abord, le reste après.
+
+Puis regarde tes tas et le nombre 56 côte à côte. C'est la même chose. Le nombre écrit est une photo de tes tas.

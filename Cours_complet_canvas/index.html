@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cours complet — HTML5 Canvas</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <h1>🎨 Canvas</h1>
+    <div class="tag">Cours complet &amp; progressif</div>
+    <nav>
+      <a class="section-title">Les bases</a>
+      <a href="#intro">1 · Introduction</a>
+      <a href="#coord">2 · Le repère</a>
+      <a href="#rect">3 · Rectangles</a>
+      <a href="#path">4 · Chemins &amp; lignes</a>
+      <a href="#linestyle">5 · Styles de ligne</a>
+      <a href="#arc">6 · Cercles &amp; arcs</a>
+      <a href="#curve">7 · Courbes</a>
+
+      <a class="section-title">Apparence</a>
+      <a href="#color">8 · Couleurs &amp; alpha</a>
+      <a href="#gradient">9 · Dégradés</a>
+      <a href="#pattern">10 · Motifs</a>
+      <a href="#shadow">11 · Ombres</a>
+      <a href="#text">12 · Texte</a>
+      <a href="#image">13 · Images &amp; sprites</a>
+
+      <a class="section-title">Aller plus loin</a>
+      <a href="#transform">14 · Transformations</a>
+      <a href="#composite">15 · Composition</a>
+      <a href="#pixels">16 · Pixels &amp; filtres</a>
+      <a href="#anim">17 · Animation</a>
+      <a href="#events">18 · Interactivité</a>
+
+      <a class="section-title">Techniques avancées</a>
+      <a href="#clip">19 · Détourage (clip)</a>
+      <a href="#round">20 · Coins arrondis</a>
+      <a href="#poly">21 · Polygones &amp; étoiles</a>
+      <a href="#hit">22 · Clic sur formes</a>
+      <a href="#spriteanim">23 · Animation de sprite</a>
+      <a href="#filter">24 · Filtres (ctx.filter)</a>
+      <a href="#easing">25 · Mouvement fluide</a>
+
+      <a class="section-title">Cas concrets</a>
+      <a href="#p-horloge">A · Horloge analogique</a>
+      <a href="#p-barres">B · Graphique en barres</a>
+      <a href="#p-dessin">C · Bloc de dessin</a>
+      <a href="#p-particules">D · Particules</a>
+      <a href="#p-jauge">E · Jauge animée</a>
+      <a href="#p-jeu">F · Casse-briques</a>
+
+      <a class="section-title">Projets avancés</a>
+      <a href="#p-matrix">G · Pluie de Matrix</a>
+      <a href="#p-solaire">H · Système solaire</a>
+      <a href="#p-feu">I · Feu d'artifice</a>
+      <a href="#p-billes">J · Bac à billes</a>
+      <a href="#p-spiro">K · Spirographe</a>
+      <a href="#p-snake">L · Jeu Snake</a>
+
+      <a class="section-title">Annexe</a>
+      <a href="#memo">📋 Mémo des méthodes</a>
+    </nav>
+  </aside>
+
+  <!-- ============ CONTENU ============ -->
+  <main class="content">
+
+    <div class="hero">
+      <h1>HTML5 Canvas — étape par étape</h1>
+      <p class="lead">Chaque exemple se construit progressivement : on démarre avec très peu de code (Étape 1), puis on ajoute quelques lignes à chaque étape (repérées par <code class="inline">✦ nouveau</code>) jusqu'au résultat final.</p>
+    </div>
+
+    <div class="tip">
+      <b>Comment lire le cours ?</b> Suis les étapes dans l'ordre. Chaque étape est un exemple complet, exécutable seul. Modifie le code puis clique <b>▶ Exécuter</b> (ou <code class="inline">Ctrl + Entrée</code>) ; <b>↺</b> restaure le code.
+      <br>Déjà disponibles dans le code&nbsp;: <code class="inline">canvas</code>, <code class="inline">ctx</code> (le contexte), <code class="inline">loop(fn)</code> (animation), <code class="inline">on(cible, type, fn)</code> (événements), <code class="inline">helpers.photo</code> / <code class="inline">helpers.sprite</code>.
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 1. INTRODUCTION -->
+    <!-- ====================================================== -->
+    <h2 id="intro"><span class="num">1</span> Introduction</h2>
+    <p>La balise <code class="inline">&lt;canvas&gt;</code> est une zone de dessin vide. Tout se fait en JavaScript via le <b>contexte 2D</b> (<code class="inline">ctx</code>), déjà prêt ici. Construisons un premier dessin, ligne par ligne.</p>
+    <div class="warn-box"><b>Règle d'or :</b> la taille se fixe avec les attributs <code class="inline">width</code>/<code class="inline">height</code> du canvas, jamais en CSS (sinon le dessin est déformé).</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un rectangle plein</div>
+        <p>On choisit une couleur, on dessine un rectangle : <code class="inline">fillRect(x, y, largeur, hauteur)</code>. 2 lignes suffisent.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#3498db';
+ctx.fillRect(20, 20, 160, 90);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Une 2ᵉ forme</div>
+        <p>On change la couleur et on ajoute un second rectangle plus bas.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#3498db';
+ctx.fillRect(20, 20, 160, 90);
+
+ctx.fillStyle = '#2ecc71';   // ✦ nouveau
+ctx.fillRect(60, 120, 160, 60);  // ✦ nouveau</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> On ajoute du texte</div>
+        <p>Dernière touche : une police, une couleur, et <code class="inline">fillText(texte, x, y)</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#3498db';
+ctx.fillRect(20, 20, 160, 90);
+
+ctx.fillStyle = '#2ecc71';
+ctx.fillRect(60, 120, 160, 60);
+
+ctx.fillStyle = '#fff';                  // ✦ nouveau
+ctx.font = '20px Segoe UI, sans-serif';  // ✦ nouveau
+ctx.fillText('Bonjour Canvas !', 32, 72);// ✦ nouveau</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 2. REPERE -->
+    <!-- ====================================================== -->
+    <h2 id="coord"><span class="num">2</span> Le repère (coordonnées)</h2>
+    <p>Origine <b>(0,0) en haut à gauche</b>, x vers la droite, <b>y vers le bas</b>. Visualisons-le en construisant une grille.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un point</div>
+        <p>On place juste un point rouge en (120, 80) avec un petit cercle.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = 'crimson';
+ctx.beginPath();
+ctx.arc(120, 80, 6, 0, Math.PI * 2);
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Les lignes verticales</div>
+        <p>On trace une ligne verticale tous les 20 px avec une boucle.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.strokeStyle = '#e0e0e0';            // ✦ nouveau
+for (let x = 0; x <= 320; x += 20) {     // ✦ nouveau
+  ctx.beginPath();
+  ctx.moveTo(x, 0); ctx.lineTo(x, 200);
+  ctx.stroke();
+}
+
+ctx.fillStyle = 'crimson';
+ctx.beginPath(); ctx.arc(120, 80, 6, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Grille complète + étiquette</div>
+        <p>On ajoute les lignes horizontales et on écrit les coordonnées du point.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.strokeStyle = '#e0e0e0';
+for (let x = 0; x <= 320; x += 20) {
+  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 200); ctx.stroke();
+}
+for (let y = 0; y <= 200; y += 20) {     // ✦ nouveau (horizontales)
+  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(320, y); ctx.stroke();
+}
+
+const px = 120, py = 80;
+ctx.fillStyle = 'crimson';
+ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+
+ctx.fillStyle = '#333'; ctx.font = '13px monospace';     // ✦ nouveau
+ctx.fillText('(' + px + ', ' + py + ')', px + 10, py - 8);// ✦ nouveau</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 3. RECTANGLES -->
+    <!-- ====================================================== -->
+    <h2 id="rect"><span class="num">3</span> Rectangles</h2>
+    <p>Trois fonctions directes. On les découvre une par une.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> <code>fillRect</code> — plein</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#2ecc71';
+ctx.fillRect(20, 30, 110, 120);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> <code>strokeRect</code> — contour</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#2ecc71';
+ctx.fillRect(20, 30, 110, 120);
+
+ctx.strokeStyle = '#e74c3c';   // ✦ nouveau
+ctx.lineWidth = 6;             // ✦ nouveau
+ctx.strokeRect(150, 30, 110, 120); // ✦ nouveau</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> <code>clearRect</code> — efface</div>
+        <p>On perce un trou transparent dans le rectangle vert.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#2ecc71';
+ctx.fillRect(20, 30, 110, 120);
+
+ctx.strokeStyle = '#e74c3c';
+ctx.lineWidth = 6;
+ctx.strokeRect(150, 30, 110, 120);
+
+ctx.clearRect(45, 55, 60, 60);  // ✦ nouveau (efface)</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 4. CHEMINS -->
+    <!-- ====================================================== -->
+    <h2 id="path"><span class="num">4</span> Chemins &amp; lignes</h2>
+    <p>Le crayon : <code class="inline">beginPath</code> → <code class="inline">moveTo</code> → <code class="inline">lineTo</code> → <code class="inline">stroke</code>/<code class="inline">fill</code>. On part d'une ligne et on arrive à un triangle plein.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une ligne</div>
+        <p>On pose le crayon (<code class="inline">moveTo</code>), on trace jusqu'à un point (<code class="inline">lineTo</code>), on encre (<code class="inline">stroke</code>).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(30, 40);
+ctx.lineTo(290, 40);
+ctx.strokeStyle = '#34495e';
+ctx.lineWidth = 3;
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Plusieurs segments</div>
+        <p>Plusieurs <code class="inline">lineTo</code> à la suite forment une ligne brisée (ici 2 côtés d'un triangle).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(160, 70);
+ctx.lineTo(250, 170);   // ✦ nouveau
+ctx.lineTo(70, 170);    // ✦ nouveau
+ctx.strokeStyle = '#9b59b6';
+ctx.lineWidth = 3;
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Fermer &amp; remplir</div>
+        <p><code class="inline">closePath</code> relie le dernier point au premier, et <code class="inline">fill</code> remplit.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(160, 70);
+ctx.lineTo(250, 170);
+ctx.lineTo(70, 170);
+ctx.closePath();              // ✦ nouveau (referme le triangle)
+ctx.fillStyle = '#9b59b6';   // ✦ nouveau
+ctx.fill();                  // ✦ nouveau (remplissage)
+ctx.strokeStyle = '#6c3483';
+ctx.lineWidth = 3;
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+    <div class="note"><b>Toujours</b> appeler <code class="inline">beginPath()</code> avant une nouvelle forme, sinon les anciens tracés se ré-encrent.</div>
+
+
+    <!-- ====================================================== -->
+    <!-- 5. STYLES DE LIGNE -->
+    <!-- ====================================================== -->
+    <h2 id="linestyle"><span class="num">5</span> Styles de ligne</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Épaisseur</div>
+        <p>Une grosse ligne avec <code class="inline">lineWidth</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.lineWidth = 14;
+ctx.strokeStyle = '#2980b9';
+ctx.beginPath();
+ctx.moveTo(60, 60); ctx.lineTo(260, 60);
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Les bouts (<code>lineCap</code>)</div>
+        <p>On compare les 3 types d'extrémités sur 3 lignes.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.lineWidth = 14;
+ctx.strokeStyle = '#2980b9';
+const caps = ['butt', 'round', 'square']; // ✦ nouveau
+caps.forEach((cap, i) => {                 // ✦ nouveau
+  ctx.lineCap = cap;
+  ctx.beginPath();
+  ctx.moveTo(60, 40 + i * 40); ctx.lineTo(220, 40 + i * 40);
+  ctx.stroke();
+  ctx.fillStyle = '#333'; ctx.font = '12px monospace';
+  ctx.fillText(cap, 235, 44 + i * 40);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Pointillés</div>
+        <p><code class="inline">setLineDash([trait, espace])</code>. On le remet à <code class="inline">[]</code> pour revenir au trait plein.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.lineWidth = 14;
+ctx.strokeStyle = '#2980b9';
+const caps = ['butt', 'round', 'square'];
+caps.forEach((cap, i) => {
+  ctx.lineCap = cap;
+  ctx.beginPath();
+  ctx.moveTo(60, 35 + i * 35); ctx.lineTo(220, 35 + i * 35);
+  ctx.stroke();
+});
+
+ctx.setLineDash([14, 8]);     // ✦ nouveau
+ctx.lineWidth = 4; ctx.lineCap = 'butt';
+ctx.strokeStyle = '#e67e22';
+ctx.beginPath(); ctx.moveTo(40, 165); ctx.lineTo(280, 165); ctx.stroke();
+ctx.setLineDash([]);          // ✦ on réactive le trait plein</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 6. ARCS -->
+    <!-- ====================================================== -->
+    <h2 id="arc"><span class="num">6</span> Cercles &amp; arcs</h2>
+    <p><code class="inline">arc(x, y, rayon, début, fin)</code> en <b>radians</b> (<code class="inline">Math.PI</code> = 180°). On part du cercle complet, puis on n'en garde qu'une portion.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Cercle complet</div>
+        <p>De l'angle <code class="inline">0</code> à <code class="inline">2 × Math.PI</code> = tour complet.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.arc(160, 100, 50, 0, Math.PI * 2);
+ctx.fillStyle = '#1abc9c';
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Une portion (camembert)</div>
+        <p>On limite l'arc (0 → 120°) et on relie au centre pour une « part de tarte ».</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(160, 100);                          // ✦ on part du centre
+ctx.arc(160, 100, 50, 0, 120 * Math.PI / 180); // ✦ arc partiel
+ctx.closePath();                               // ✦ retour au centre
+ctx.fillStyle = '#f39c12';
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Pac-Man</div>
+        <p>Même principe, mais on laisse un « coin » ouvert pour la bouche.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(160, 100);
+ctx.arc(160, 100, 55, 0.25 * Math.PI, 1.75 * Math.PI); // ✦ bouche ouverte
+ctx.closePath();
+ctx.fillStyle = '#f1c40f';
+ctx.fill();
+
+ctx.fillStyle = '#222';   // ✦ un œil
+ctx.beginPath(); ctx.arc(155, 65, 6, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 7. COURBES -->
+    <!-- ====================================================== -->
+    <h2 id="curve"><span class="num">7</span> Courbes (Bézier)</h2>
+    <p>Le point de contrôle « attire » la courbe. On part d'une ligne droite pour bien voir la différence.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une droite (référence)</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(30, 160);
+ctx.lineTo(290, 160);
+ctx.strokeStyle = '#8e44ad';
+ctx.lineWidth = 4;
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> On courbe</div>
+        <p><code class="inline">quadraticCurveTo(cpx, cpy, x, y)</code> : le 1ᵉʳ couple est le point de contrôle.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.moveTo(30, 160);
+ctx.quadraticCurveTo(160, 10, 290, 160); // ✦ contrôle en (160,10)
+ctx.strokeStyle = '#8e44ad';
+ctx.lineWidth = 4;
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Montrer le point de contrôle</div>
+        <p>On affiche en pointillés les tangentes et le point de contrôle (en rouge) pour comprendre.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const s = [30, 160], cp = [160, 10], e = [290, 160];
+ctx.beginPath();
+ctx.moveTo(s[0], s[1]);
+ctx.quadraticCurveTo(cp[0], cp[1], e[0], e[1]);
+ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 4; ctx.stroke();
+
+// guides ✦ nouveau
+ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.strokeStyle = '#bbb';
+ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(cp[0], cp[1]); ctx.lineTo(e[0], e[1]); ctx.stroke();
+ctx.setLineDash([]);
+ctx.fillStyle = 'crimson';
+ctx.beginPath(); ctx.arc(cp[0], cp[1], 5, 0, 7); ctx.fill();
+ctx.fillText('point de contrôle', cp[0] - 40, cp[1] - 10);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 8. COULEURS -->
+    <!-- ====================================================== -->
+    <h2 id="color"><span class="num">8</span> Couleurs &amp; transparence</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un cercle opaque</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#e74c3c';
+ctx.beginPath();
+ctx.arc(130, 90, 55, 0, Math.PI * 2);
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Transparence (<code>globalAlpha</code>)</div>
+        <p>On baisse l'opacité : les cercles se mélangent là où ils se superposent.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.globalAlpha = 0.6;   // ✦ nouveau
+const cols = ['#e74c3c', '#2ecc71', '#3498db'];
+const pos = [[130, 80], [190, 80], [160, 130]];
+cols.forEach((c, i) => {
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.arc(pos[i][0], pos[i][1], 55, 0, Math.PI * 2);
+  ctx.fill();
+});
+ctx.globalAlpha = 1;     // ✦ on remet à fond</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Teintes avec <code>hsl()</code></div>
+        <p>On ajoute une bande de couleurs en faisant varier la teinte (0–360°).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.globalAlpha = 0.6;
+const cols = ['#e74c3c', '#2ecc71', '#3498db'];
+const pos = [[130, 100], [190, 100], [160, 150]];
+cols.forEach((c, i) => {
+  ctx.fillStyle = c;
+  ctx.beginPath(); ctx.arc(pos[i][0], pos[i][1], 50, 0, Math.PI * 2); ctx.fill();
+});
+ctx.globalAlpha = 1;
+
+for (let i = 0; i < 12; i++) {                        // ✦ nouveau
+  ctx.fillStyle = 'hsl(' + (i * 30) + ', 80%, 55%)';
+  ctx.fillRect(10 + i * 25, 10, 24, 24);
+}</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 9. DEGRADES -->
+    <!-- ====================================================== -->
+    <h2 id="gradient"><span class="num">9</span> Dégradés</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Dégradé linéaire à 2 couleurs</div>
+        <p>On crée le dégradé, on ajoute 2 étapes de couleur, on l'utilise comme <code class="inline">fillStyle</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const lin = ctx.createLinearGradient(0, 0, 0, 110);
+lin.addColorStop(0, '#ff7e5f');
+lin.addColorStop(1, '#feb47b');
+ctx.fillStyle = lin;
+ctx.fillRect(10, 10, 300, 90);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Une étape intermédiaire</div>
+        <p>On ajoute une couleur au milieu (position 0.5).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const lin = ctx.createLinearGradient(0, 0, 0, 110);
+lin.addColorStop(0,   '#ff7e5f');
+lin.addColorStop(0.5, '#ffd86b');  // ✦ nouveau (milieu)
+lin.addColorStop(1,   '#feb47b');
+ctx.fillStyle = lin;
+ctx.fillRect(10, 10, 300, 90);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Dégradé radial (boule 3D)</div>
+        <p><code class="inline">createRadialGradient</code> part d'un petit cercle clair vers un grand cercle foncé.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const lin = ctx.createLinearGradient(0, 0, 0, 90);
+lin.addColorStop(0, '#ff7e5f'); lin.addColorStop(1, '#feb47b');
+ctx.fillStyle = lin; ctx.fillRect(10, 10, 300, 70);
+
+const rad = ctx.createRadialGradient(150, 135, 5, 160, 145, 45); // ✦ nouveau
+rad.addColorStop(0, '#ffffff');
+rad.addColorStop(1, '#2980b9');
+ctx.fillStyle = rad;
+ctx.beginPath(); ctx.arc(160, 145, 40, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 10. MOTIFS -->
+    <!-- ====================================================== -->
+    <h2 id="pattern"><span class="num">10</span> Motifs (patterns)</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Fabriquer une tuile</div>
+        <p>On dessine un petit motif 20×20 dans un canvas séparé, puis on l'affiche une fois pour vérifier.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const tuile = document.createElement('canvas');
+tuile.width = tuile.height = 20;
+const t = tuile.getContext('2d');
+t.fillStyle = '#34495e'; t.fillRect(0, 0, 20, 20);
+t.fillStyle = '#f1c40f';
+t.beginPath(); t.arc(10, 10, 6, 0, Math.PI * 2); t.fill();
+
+// aperçu agrandi de la tuile
+ctx.imageSmoothingEnabled = false;
+ctx.drawImage(tuile, 120, 60, 80, 80);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Répéter la tuile</div>
+        <p><code class="inline">createPattern(tuile, 'repeat')</code> la répète comme un papier peint.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const tuile = document.createElement('canvas');
+tuile.width = tuile.height = 20;
+const t = tuile.getContext('2d');
+t.fillStyle = '#34495e'; t.fillRect(0, 0, 20, 20);
+t.fillStyle = '#f1c40f';
+t.beginPath(); t.arc(10, 10, 6, 0, Math.PI * 2); t.fill();
+
+const motif = ctx.createPattern(tuile, 'repeat'); // ✦ nouveau
+ctx.fillStyle = motif;
+ctx.fillRect(20, 20, 280, 160);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 11. OMBRES -->
+    <!-- ====================================================== -->
+    <h2 id="shadow"><span class="num">11</span> Ombres</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Sans ombre</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#e74c3c';
+ctx.fillRect(60, 50, 100, 100);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Couleur + flou</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.shadowColor = 'rgba(0,0,0,0.4)'; // ✦ nouveau
+ctx.shadowBlur = 15;                 // ✦ nouveau
+ctx.fillStyle = '#e74c3c';
+ctx.fillRect(60, 50, 100, 100);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Décalage + désactivation</div>
+        <p>On décale l'ombre, puis on la coupe (<code class="inline">shadowColor = 'transparent'</code>) pour le texte.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.shadowColor = 'rgba(0,0,0,0.4)';
+ctx.shadowBlur = 15;
+ctx.shadowOffsetX = 6;  // ✦ nouveau
+ctx.shadowOffsetY = 8;  // ✦ nouveau
+ctx.fillStyle = '#e74c3c';
+ctx.fillRect(40, 40, 90, 90);
+ctx.fillStyle = '#3498db';
+ctx.beginPath(); ctx.arc(230, 85, 45, 0, Math.PI * 2); ctx.fill();
+
+ctx.shadowColor = 'transparent';  // ✦ coupe l'ombre
+ctx.fillStyle = '#333'; ctx.font = '16px sans-serif';
+ctx.fillText('Sans ombre ici', 95, 185);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 12. TEXTE -->
+    <!-- ====================================================== -->
+    <h2 id="text"><span class="num">12</span> Texte</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Écrire</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#2c3e50';
+ctx.font = '30px Georgia';
+ctx.fillText('Canvas', 90, 110);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Centrer (<code>textAlign</code>)</div>
+        <p>Avec <code class="inline">textAlign='center'</code>, le x devient le <b>milieu</b> du texte.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.font = 'bold 30px Georgia';
+ctx.textAlign = 'center';     // ✦ nouveau
+ctx.textBaseline = 'middle';  // ✦ nouveau
+ctx.fillStyle = '#2c3e50';
+ctx.fillText('Canvas', 160, 70);  // 160 = milieu du canvas
+
+ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 1.5;  // ✦ texte contour
+ctx.strokeText('Contour', 160, 120);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Mesurer (<code>measureText</code>)</div>
+        <p>On encadre le texte pile à sa largeur grâce à <code class="inline">measureText(t).width</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.font = 'bold 30px Georgia';
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ctx.fillStyle = '#2c3e50';
+ctx.fillText('Canvas', 160, 70);
+
+const txt = 'mesuré !';
+ctx.font = '22px sans-serif';
+const w = ctx.measureText(txt).width;   // ✦ nouveau
+ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2;
+ctx.strokeRect(160 - w / 2 - 8, 130, w + 16, 36);
+ctx.fillStyle = '#3498db';
+ctx.fillText(txt, 160, 148);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 13. IMAGES -->
+    <!-- ====================================================== -->
+    <h2 id="image"><span class="num">13</span> Images &amp; sprites</h2>
+    <p>On utilise <code class="inline">helpers.photo</code> (image de test 320×200). En vrai : <code class="inline">const img = new Image(); img.src='...'; img.onload = () =&gt; ctx.drawImage(img,0,0);</code></p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Afficher</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 0, 0);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Redimensionner</div>
+        <p>4 arguments = position + nouvelle taille.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 10, 10, 140, 88); // ✦ réduit</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Découper (sprite)</div>
+        <p>8 arguments : on prélève un morceau de la source (le soleil) et on l'agrandit.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 10, 10, 140, 88);
+
+// source (sx,sy,sl,sh) → destination (dx,dy,dl,dh)  ✦ nouveau
+ctx.drawImage(helpers.photo, 230, 20, 70, 70,  175, 20, 130, 130);
+ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+ctx.strokeRect(175, 20, 130, 130);
+ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+ctx.fillText('zoom découpé', 188, 168);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 14. TRANSFORMATIONS -->
+    <!-- ====================================================== -->
+    <h2 id="transform"><span class="num">14</span> Transformations</h2>
+    <p>On déplace/tourne le repère. <code class="inline">save()</code>/<code class="inline">restore()</code> permettent d'annuler une transformation.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un rectangle normal</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#3498db';
+ctx.fillRect(160, 94, 80, 12);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Déplacer + tourner</div>
+        <p>On met l'origine au centre (<code class="inline">translate</code>), on pivote (<code class="inline">rotate</code>), puis on dessine à partir de (0,0).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.translate(160, 100);        // ✦ origine au centre
+ctx.rotate(30 * Math.PI / 180); // ✦ pivote de 30°
+ctx.fillStyle = '#3498db';
+ctx.fillRect(0, -6, 80, 12);    // ✦ part du centre (0,0)</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Un éventail (boucle + save/restore)</div>
+        <p>On répète 12 fois en tournant un peu plus à chaque tour. <code class="inline">save</code>/<code class="inline">restore</code> évitent que les rotations s'accumulent.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 100;
+for (let i = 0; i < 12; i++) {
+  ctx.save();                       // ✦ sauve l'état
+  ctx.translate(cx, cy);
+  ctx.rotate(i * Math.PI / 6);      // 30° × i
+  ctx.fillStyle = 'hsl(' + (i * 30) + ', 70%, 55%)';
+  ctx.fillRect(0, -6, 80, 12);
+  ctx.restore();                    // ✦ restaure (annule)
+}
+ctx.fillStyle = '#222';
+ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 15. COMPOSITION -->
+    <!-- ====================================================== -->
+    <h2 id="composite"><span class="num">15</span> Composition</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Mode normal</div>
+        <p>Par défaut (<code class="inline">source-over</code>), le 2ᵉ cercle recouvre le 1ᵉʳ.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#e74c3c';
+ctx.beginPath(); ctx.arc(130, 100, 60, 0, Math.PI * 2); ctx.fill();
+ctx.fillStyle = '#3498db';
+ctx.beginPath(); ctx.arc(200, 100, 60, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Mode <code>multiply</code></div>
+        <p>Une seule ligne change tout : les couleurs se multiplient dans la zone commune.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#e74c3c';
+ctx.beginPath(); ctx.arc(130, 100, 60, 0, Math.PI * 2); ctx.fill();
+
+ctx.globalCompositeOperation = 'multiply'; // ✦ nouveau
+ctx.fillStyle = '#3498db';
+ctx.beginPath(); ctx.arc(200, 100, 60, 0, Math.PI * 2); ctx.fill();
+
+ctx.globalCompositeOperation = 'source-over'; // ✦ retour normal</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 16. PIXELS -->
+    <!-- ====================================================== -->
+    <h2 id="pixels"><span class="num">16</span> Pixels &amp; filtres</h2>
+    <p>Chaque pixel = 4 valeurs dans <code class="inline">data</code> : Rouge, Vert, Bleu, Alpha (0–255).</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Lire &amp; réafficher</div>
+        <p>On dessine la photo, on lit les pixels, on les réaffiche tels quels (rien ne change… encore).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 0, 0);
+const img = ctx.getImageData(0, 0, 320, 200);
+ctx.putImageData(img, 0, 0);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Niveaux de gris</div>
+        <p>On parcourt les pixels (pas de 4) et on remplace R, V, B par leur moyenne.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 0, 0);
+const img = ctx.getImageData(0, 0, 320, 200);
+const d = img.data;
+for (let i = 0; i < d.length; i += 4) {        // ✦ nouveau
+  const moy = (d[i] + d[i + 1] + d[i + 2]) / 3;
+  d[i] = d[i + 1] = d[i + 2] = moy;
+}
+ctx.putImageData(img, 0, 0);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Négatif</div>
+        <p>Autre formule : <code class="inline">255 − valeur</code> inverse les couleurs.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.drawImage(helpers.photo, 0, 0);
+const img = ctx.getImageData(0, 0, 320, 200);
+const d = img.data;
+for (let i = 0; i < d.length; i += 4) {
+  d[i]     = 255 - d[i];       // ✦ rouge inversé
+  d[i + 1] = 255 - d[i + 1];   // ✦ vert
+  d[i + 2] = 255 - d[i + 2];   // ✦ bleu
+}
+ctx.putImageData(img, 0, 0);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 17. ANIMATION -->
+    <!-- ====================================================== -->
+    <h2 id="anim"><span class="num">17</span> Animation</h2>
+    <p>Animer = redessiner ~60 fois/seconde. Ici le helper <code class="inline">loop(fn)</code> appelle ta fonction à chaque image. Construisons une balle qui rebondit.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une balle immobile</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let x = 60, y = 100;
+ctx.fillStyle = '#e74c3c';
+ctx.beginPath();
+ctx.arc(x, y, 16, 0, Math.PI * 2);
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> La faire avancer</div>
+        <p>Dans <code class="inline">loop</code> : on efface, on incrémente x, on redessine. Elle file vers la droite et sort.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let x = 60, y = 100;
+loop(() => {                          // ✦ nouveau
+  ctx.clearRect(0, 0, 320, 200);      // 1) effacer
+  x += 2;                             // 2) avancer
+  ctx.fillStyle = '#e74c3c';          // 3) dessiner
+  ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Rebondir sur les bords</div>
+        <p>On ajoute une vitesse verticale et on inverse la vitesse quand on touche un bord.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let x = 60, y = 50;
+let vx = 2.6, vy = 2.0;   // ✦ vitesse en x ET y
+const r = 16;
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  x += vx; y += vy;
+  if (x - r < 0 || x + r > 320) vx = -vx;  // ✦ rebond horizontal
+  if (y - r < 0 || y + r > 200) vy = -vy;  // ✦ rebond vertical
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 18. EVENEMENTS -->
+    <!-- ====================================================== -->
+    <h2 id="events"><span class="num">18</span> Interactivité (souris)</h2>
+    <p>On convertit la position de la souris en coordonnées du canvas avec <code class="inline">getBoundingClientRect()</code>.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Réagir au clic</div>
+        <p>Au clic, on calcule la position et on dessine un point dessus.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#1a212b'; ctx.fillRect(0, 0, 320, 200);
+ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+ctx.fillText('Clique dans le cadre', 160, 100);
+
+on(canvas, 'click', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left;   // ✦ position correcte
+  const y = e.clientY - r.top;
+  ctx.fillStyle = '#2ecc71';
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Suivre le mouvement</div>
+        <p>Même chose mais sur <code class="inline">mousemove</code> : une traînée de couleur suit le curseur.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#1a212b'; ctx.fillRect(0, 0, 320, 200);
+ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+ctx.fillText('Bouge la souris ici', 160, 100);
+
+on(canvas, 'mousemove', (e) => {   // ✦ mousemove
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  ctx.fillStyle = 'hsla(' + (x % 360) + ', 80%, 55%, 0.5)';
+  ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">survole →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 19. CLIP -->
+    <!-- ====================================================== -->
+    <h2 id="clip"><span class="num">19</span> Détourage (<code>clip</code>)</h2>
+    <p>Un chemin peut servir de <b>masque</b> : après <code class="inline">clip()</code>, tout ce qu'on dessine n'apparaît qu'à l'intérieur de cette zone.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> La zone de découpe</div>
+        <p>On visualise d'abord le contour qui servira de masque.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#dfe6ec'; ctx.fillRect(0, 0, 320, 200);
+ctx.beginPath();
+ctx.arc(160, 100, 70, 0, Math.PI * 2);
+ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.stroke();
+ctx.fillStyle = '#333'; ctx.fillText('zone de découpe', 105, 25);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Découper une image</div>
+        <p>On appelle <code class="inline">clip()</code> sur le cercle, puis on dessine la photo : elle est rognée en rond.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.arc(160, 100, 70, 0, Math.PI * 2);
+ctx.clip();                       // ✦ masque circulaire
+ctx.drawImage(helpers.photo, 0, 0);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Projecteur animé</div>
+        <p>On assombrit la photo, puis on redessine net uniquement dans un cercle qui se déplace : un effet « lampe torche ».</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.drawImage(helpers.photo, 0, 0);
+  ctx.fillStyle = 'rgba(0,0,0,0.78)';     // assombri
+  ctx.fillRect(0, 0, 320, 200);
+
+  const x = 160 + Math.cos(t / 700) * 95;
+  const y = 100 + Math.sin(t / 500) * 55;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, 45, 0, Math.PI * 2);
+  ctx.clip();                             // ✦ projecteur mobile
+  ctx.drawImage(helpers.photo, 0, 0);     // redessiné net dans le clip
+  ctx.restore();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 20. ROUND -->
+    <!-- ====================================================== -->
+    <h2 id="round"><span class="num">20</span> Coins arrondis (<code>roundRect</code>)</h2>
+    <p><code class="inline">roundRect(x, y, l, h, rayon)</code> trace un rectangle à coins arrondis. Le rayon peut être un nombre, ou un tableau <code class="inline">[hg, hd, bd, bg]</code> pour des coins différents.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Rectangle normal</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#3498db';
+ctx.fillRect(40, 40, 240, 120);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> On arrondit</div>
+        <p><code class="inline">roundRect</code> définit un chemin → on le remplit ensuite.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.roundRect(40, 40, 240, 120, 24);  // ✦ rayon 24
+ctx.fillStyle = '#3498db';
+ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Une « carte » d'interface</div>
+        <p>Coins arrondis + ombre + bandeau (avec coins arrondis seulement en haut) = composant d'UI moderne.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+ctx.beginPath(); ctx.roundRect(45, 30, 230, 140, 18); ctx.fillStyle = '#fff'; ctx.fill();
+ctx.shadowColor = 'transparent';
+
+ctx.beginPath();
+ctx.roundRect(45, 30, 230, 46, [18, 18, 0, 0]); // ✦ coins du haut seulement
+ctx.fillStyle = '#3498db'; ctx.fill();
+
+ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.fillText('Ma carte', 62, 60);
+ctx.fillStyle = '#555'; ctx.font = '14px sans-serif';
+ctx.fillText('Coins arrondis = UI propre', 62, 105);
+ctx.fillStyle = '#27ae60';
+ctx.beginPath(); ctx.roundRect(62, 125, 90, 28, 14); ctx.fill();
+ctx.fillStyle = '#fff'; ctx.fillText('Valider', 80, 144);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 21. POLYGONES -->
+    <!-- ====================================================== -->
+    <h2 id="poly"><span class="num">21</span> Polygones &amp; étoiles (trigonométrie)</h2>
+    <p>Avec <code class="inline">cos</code>/<code class="inline">sin</code> on place des points sur un cercle. En reliant N points régulièrement espacés, on obtient n'importe quel polygone.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un polygone (fonction)</div>
+        <p>L'angle de chaque sommet = <code class="inline">i × 2π / nombreDeCôtés</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">function polygone(cx, cy, r, cotes) {
+  ctx.beginPath();
+  for (let i = 0; i < cotes; i++) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / cotes;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+polygone(160, 100, 60, 3); // triangle
+ctx.fillStyle = '#1abc9c'; ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Plusieurs formes</div>
+        <p>On change juste le nombre de côtés : 3, 5, 6, 8…</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">function polygone(cx, cy, r, cotes) {
+  ctx.beginPath();
+  for (let i = 0; i < cotes; i++) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / cotes;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+[3, 5, 6, 8].forEach((n, i) => {        // ✦ nouveau
+  polygone(50 + i * 75, 100, 30, n);
+  ctx.fillStyle = 'hsl(' + (i * 60) + ', 70%, 55%)'; ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Une étoile</div>
+        <p>On alterne entre un rayon externe et un rayon interne à chaque sommet.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">function etoile(cx, cy, branches, rExt, rInt) {
+  ctx.beginPath();
+  for (let i = 0; i < branches * 2; i++) {
+    const r = (i % 2 === 0) ? rExt : rInt;     // ✦ alternance
+    const a = -Math.PI / 2 + i * Math.PI / branches;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+etoile(160, 100, 5, 70, 30);
+ctx.fillStyle = '#f1c40f'; ctx.fill();
+ctx.strokeStyle = '#f39c12'; ctx.lineWidth = 3; ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 22. HIT -->
+    <!-- ====================================================== -->
+    <h2 id="hit"><span class="num">22</span> Clic sur formes (<code>isPointInPath</code>)</h2>
+    <p>Le canvas ne mémorise pas les formes, mais <code class="inline">isPointInPath(x, y)</code> teste si un point est dans le <b>dernier chemin tracé</b>. Parfait pour rendre des formes cliquables.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Tester un point</div>
+        <p>On retrace le chemin du cercle puis on demande si le point (160,100) est dedans.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.beginPath();
+ctx.arc(160, 100, 50, 0, Math.PI * 2);
+ctx.fillStyle = '#bdc3c7'; ctx.fill();
+
+const dedans = ctx.isPointInPath(160, 100);
+ctx.fillStyle = '#333';
+ctx.fillText('(160,100) dans le cercle ? ' + dedans, 30, 30);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Cercles cliquables</div>
+        <p>Au clic, on retrace chaque cercle et on teste s'il contient la souris pour l'allumer/éteindre.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cercles = [
+  { x: 90, y: 100, r: 35, on: false },
+  { x: 160, y: 100, r: 35, on: false },
+  { x: 230, y: 100, r: 35, on: false },
+];
+function dessine() {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.fillStyle = '#333'; ctx.fillText('Clique les cercles', 110, 30);
+  cercles.forEach(c => {
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctx.fillStyle = c.on ? '#2ecc71' : '#bdc3c7'; ctx.fill();
+  });
+}
+dessine();
+on(canvas, 'click', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  cercles.forEach(c => {
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    if (ctx.isPointInPath(mx, my)) c.on = !c.on;   // ✦ détection
+  });
+  dessine();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 23. SPRITE ANIM -->
+    <!-- ====================================================== -->
+    <h2 id="spriteanim"><span class="num">23</span> Animation de sprite</h2>
+    <p>Une « feuille de sprites » regroupe plusieurs images. En affichant une case différente à chaque instant, on crée une animation. <code class="inline">helpers.sprite</code> contient 4 images de 48×48.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une image</div>
+        <p>On découpe la 1ʳᵉ case (x de 0 à 48) avec <code class="inline">drawImage</code> à 8 arguments.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.imageSmoothingEnabled = false;
+ctx.drawImage(helpers.sprite, 0, 0, 48, 48,  130, 70, 60, 60);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Faire défiler les cases</div>
+        <p>On calcule l'index de case à partir du temps : <code class="inline">Math.floor(t/150) % 4</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.imageSmoothingEnabled = false;
+loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  const f = Math.floor(t / 150) % 4;   // ✦ case courante
+  ctx.drawImage(helpers.sprite, f * 48, 0, 48, 48,  130, 70, 60, 60);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Le faire marcher</div>
+        <p>On anime les cases ET on déplace le personnage qui traverse l'écran.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.imageSmoothingEnabled = false;
+let x = -60;
+loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.fillStyle = '#ecf0f1'; ctx.fillRect(0, 150, 320, 50); // sol
+  const f = Math.floor(t / 120) % 4;
+  x += 1.6; if (x > 320) x = -60;                            // ✦ déplacement
+  ctx.drawImage(helpers.sprite, f * 48, 0, 48, 48,  x, 96, 56, 56);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 24. FILTER -->
+    <!-- ====================================================== -->
+    <h2 id="filter"><span class="num">24</span> Filtres (<code>ctx.filter</code>)</h2>
+    <p>La propriété <code class="inline">ctx.filter</code> applique des filtres CSS au dessin qui suit : <code class="inline">blur()</code>, <code class="inline">brightness()</code>, <code class="inline">contrast()</code>, <code class="inline">grayscale()</code>, <code class="inline">sepia()</code>, <code class="inline">hue-rotate()</code>… On la remet à <code class="inline">'none'</code> ensuite.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un flou</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.filter = 'blur(4px)';
+ctx.drawImage(helpers.photo, 0, 0);
+ctx.filter = 'none';</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Enchaîner des filtres</div>
+        <p>On combine plusieurs filtres séparés par des espaces.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.filter = 'sepia(0.7) contrast(1.2) brightness(1.1)'; // ✦ chaîne
+ctx.drawImage(helpers.photo, 0, 0);
+ctx.filter = 'none';</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Réglage à la souris</div>
+        <p>X de la souris → intensité du flou, Y → luminosité. Un mini studio photo.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">function rendre(flou, lum) {
+  ctx.filter = 'blur(' + flou.toFixed(1) + 'px) brightness(' + lum.toFixed(2) + ')';
+  ctx.drawImage(helpers.photo, 0, 0);
+  ctx.filter = 'none';
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, 320, 22);
+  ctx.fillStyle = '#fff'; ctx.font = '12px monospace';
+  ctx.fillText('flou ' + flou.toFixed(1) + 'px  ·  lumière ' + lum.toFixed(2), 8, 15);
+}
+rendre(0, 1);
+on(canvas, 'mousemove', (e) => {           // ✦ pilotage souris
+  const r = canvas.getBoundingClientRect();
+  const flou = (e.clientX - r.left) / 320 * 8;
+  const lum = 2 - (e.clientY - r.top) / 200 * 1.8;
+  rendre(flou, lum);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">survole →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- 25. EASING -->
+    <!-- ====================================================== -->
+    <h2 id="easing"><span class="num">25</span> Mouvement fluide (easing)</h2>
+    <p>Un mouvement « naturel » accélère puis ralentit. L'astuce la plus simple : à chaque image, se rapprocher de la cible d'un <b>pourcentage</b> de la distance restante.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Vitesse constante (linéaire)</div>
+        <p>Le carré avance toujours à la même vitesse vers le point cliqué : un peu robotique.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let x = 160, cible = 160;
+on(canvas, 'click', (e) => { const r = canvas.getBoundingClientRect(); cible = e.clientX - r.left; });
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  if (Math.abs(cible - x) > 1) x += Math.sign(cible - x) * 3; // vitesse fixe
+  ctx.fillStyle = '#e74c3c'; ctx.fillRect(x - 15, 85, 30, 30);
+  ctx.fillStyle = '#333'; ctx.fillText('clique : mouvement linéaire', 70, 40);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Avec easing</div>
+        <p>Une seule ligne change : on avance d'une <b>fraction</b> de la distance → départ rapide, arrivée douce.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let x = 160, cible = 160;
+on(canvas, 'click', (e) => { const r = canvas.getBoundingClientRect(); cible = e.clientX - r.left; });
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  x += (cible - x) * 0.08;       // ✦ easing : fraction de la distance
+  ctx.fillStyle = '#2ecc71'; ctx.fillRect(x - 15, 85, 30, 30);
+  ctx.fillStyle = '#333'; ctx.fillText('clique : mouvement fluide', 75, 40);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- ============== CAS CONCRETS / PROJETS ================= -->
+    <!-- ====================================================== -->
+
+    <h2 id="p-horloge"><span class="num">A</span> Cas concret : horloge analogique</h2>
+    <p>On combine arcs, transformations et animation. On construit le cadran, puis les aiguilles une à une, puis on les anime à l'heure réelle.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Le cadran</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 100, R = 80;
+ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+ctx.fill(); ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Les 12 marques</div>
+        <p>On tourne le repère de 30° à chaque heure pour placer un petit trait.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 100, R = 80;
+ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+for (let i = 0; i < 12; i++) {          // ✦ nouveau
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(i * Math.PI / 6);
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(-1.5, -R + 4, 3, 10);
+  ctx.restore();
+}</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 3</span> Une aiguille (fonction)</div>
+        <p>On crée une fonction réutilisable qui dessine une aiguille selon un angle.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 100, R = 80;
+ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+function aiguille(angle, longueur, larg, couleur) {  // ✦ nouveau
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.strokeStyle = couleur; ctx.lineWidth = larg; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, -longueur); ctx.stroke();
+  ctx.restore();
+}
+aiguille(Math.PI / 3, 60, 4, '#2980b9'); // exemple : 60°</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 4</span> Animer à l'heure réelle</div>
+        <p>On lit l'heure avec <code class="inline">new Date()</code> et on redessine tout dans <code class="inline">loop</code>.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 100, R = 80;
+function aiguille(angle, lon, larg, coul) {
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle);
+  ctx.strokeStyle = coul; ctx.lineWidth = larg; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, -lon); ctx.stroke();
+  ctx.restore();
+}
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  for (let i = 0; i < 12; i++) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(i * Math.PI / 6); ctx.fillStyle = '#2c3e50'; ctx.fillRect(-1.5, -R + 4, 3, 10); ctx.restore(); }
+
+  const now = new Date();              // ✦ heure réelle
+  const s = now.getSeconds();
+  const m = now.getMinutes() + s / 60;
+  const h = (now.getHours() % 12) + m / 60;
+  aiguille(h * Math.PI / 6,  42, 6, '#2c3e50');
+  aiguille(m * Math.PI / 30, 62, 4, '#2980b9');
+  aiguille(s * Math.PI / 30, 70, 2, '#e74c3c');
+  ctx.fillStyle = '#2c3e50';
+  ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <h2 id="p-barres"><span class="num">B</span> Cas concret : graphique en barres</h2>
+    <p>Visualiser des données. On pose les axes, puis une barre, puis toutes les barres à l'échelle, puis les étiquettes.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Les axes</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1;
+ctx.beginPath();
+ctx.moveTo(30, 15); ctx.lineTo(30, 175); ctx.lineTo(310, 175);
+ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Une barre</div>
+        <p>Une barre se dessine de bas en haut (donc y = base − hauteur).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.strokeStyle = '#aaa';
+ctx.beginPath(); ctx.moveTo(30, 15); ctx.lineTo(30, 175); ctx.lineTo(310, 175); ctx.stroke();
+
+const base = 175, hauteur = 100;     // ✦ nouveau
+ctx.fillStyle = '#3498db';
+ctx.fillRect(50, base - hauteur, 40, hauteur);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 3</span> Toutes les barres à l'échelle</div>
+        <p>On boucle sur les données et on met chaque barre à l'échelle de la valeur max.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const data = [12, 19, 7, 23, 16];          // ✦ nouveau
+const base = 175, max = Math.max(...data);
+ctx.strokeStyle = '#aaa';
+ctx.beginPath(); ctx.moveTo(30, 15); ctx.lineTo(30, base); ctx.lineTo(310, base); ctx.stroke();
+
+ctx.fillStyle = '#3498db';
+data.forEach((v, i) => {
+  const h = (v / max) * 150;
+  ctx.fillRect(45 + i * 52, base - h, 38, h);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 4</span> Valeurs + étiquettes</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const data = [
+  { label: 'Lun', val: 12 }, { label: 'Mar', val: 19 },
+  { label: 'Mer', val: 7 },  { label: 'Jeu', val: 23 }, { label: 'Ven', val: 16 },
+];
+const base = 175, max = Math.max(...data.map(d => d.val));
+ctx.strokeStyle = '#aaa';
+ctx.beginPath(); ctx.moveTo(30, 15); ctx.lineTo(30, base); ctx.lineTo(310, base); ctx.stroke();
+
+ctx.textAlign = 'center'; ctx.font = '11px sans-serif';
+data.forEach((d, i) => {
+  const h = (d.val / max) * 150, x = 45 + i * 52;
+  ctx.fillStyle = '#3498db'; ctx.fillRect(x, base - h, 38, h);
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillText(d.val, x + 19, base - h - 5);     // ✦ valeur
+  ctx.fillText(d.label, x + 19, base + 14);      // ✦ étiquette
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <h2 id="p-dessin"><span class="num">C</span> Cas concret : bloc de dessin</h2>
+    <p>Un mini-Paint. On ajoute le comportement pièce par pièce.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un point au clic</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 320, 200);
+function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+on(canvas, 'mousedown', (e) => {
+  const p = pos(e);
+  ctx.fillStyle = '#2c3e50';
+  ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Tracer en glissant</div>
+        <p>On garde un drapeau <code class="inline">dessine</code> : vrai entre le clic et le relâchement.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 320, 200);
+ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3;
+function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+let dessine = false;
+on(canvas, 'mousedown', (e) => { dessine = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+on(canvas, 'mousemove', (e) => {        // ✦ nouveau
+  if (!dessine) return;
+  const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+});
+on(window, 'mouseup', () => { dessine = false; }); // ✦ nouveau</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clic + glisser →</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Trait lisse</div>
+        <p>Des bouts/angles arrondis (<code class="inline">round</code>) rendent le trait fluide.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 320, 200);
+ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3;
+ctx.lineCap = 'round'; ctx.lineJoin = 'round';   // ✦ nouveau
+function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+let dessine = false;
+on(canvas, 'mousedown', (e) => { dessine = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+on(canvas, 'mousemove', (e) => { if (!dessine) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+on(window, 'mouseup', () => { dessine = false; });
+
+ctx.fillStyle = '#bbb'; ctx.font = '13px sans-serif';
+ctx.fillText('Signe ici ✍️', 120, 100);</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">dessine →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <h2 id="p-particules"><span class="num">D</span> Cas concret : système de particules</h2>
+    <p>On passe d'une particule à des centaines.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une particule</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let p = { x: 160, y: 100, vx: 2, vy: -1.5 };
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  p.x += p.vx; p.y += p.vy;
+  ctx.fillStyle = '#f1c40f';
+  ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Tout un tableau</div>
+        <p>On crée 80 particules avec des vitesses aléatoires et on les anime toutes.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const parts = [];                       // ✦ nouveau
+for (let i = 0; i < 80; i++) parts.push({
+  x: 160, y: 100,
+  vx: (Math.random() - 0.5) * 5,
+  vy: (Math.random() - 0.5) * 5,
+});
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+  });
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Gravité, vie &amp; traînée</div>
+        <p>On ajoute la gravité, une durée de vie (recyclage), et un effacement semi-transparent pour la traînée.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const parts = [];
+function nouvelle() {
+  return { x: 160, y: 100, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5,
+           r: 1 + Math.random()*3, teinte: Math.random()*360, vie: 1 };
+}
+for (let i = 0; i < 90; i++) parts.push(nouvelle());
+
+loop(() => {
+  ctx.fillStyle = 'rgba(15,20,25,0.18)';   // ✦ traînée
+  ctx.fillRect(0, 0, 320, 200);
+  parts.forEach((p, i) => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.vie -= 0.012; // ✦ gravité + vie
+    if (p.vie <= 0) parts[i] = nouvelle();                  // ✦ recyclage
+    ctx.fillStyle = 'hsla(' + p.teinte + ', 90%, 60%, ' + p.vie + ')';
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+  });
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <h2 id="p-jauge"><span class="num">E</span> Cas concret : jauge animée</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> L'arc de fond</div>
+        <p>Un arc épais ouvert en bas (de 135° à 405°).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 120, R = 70;
+const debut = Math.PI * 0.75, total = Math.PI * 1.5;
+ctx.lineWidth = 16; ctx.lineCap = 'round';
+ctx.strokeStyle = '#e6e6e6';
+ctx.beginPath(); ctx.arc(cx, cy, R, debut, debut + total); ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> La partie remplie</div>
+        <p>On dessine par-dessus un arc qui ne couvre qu'une fraction (ici 72 %).</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cx = 160, cy = 120, R = 70;
+const debut = Math.PI * 0.75, total = Math.PI * 1.5;
+ctx.lineWidth = 16; ctx.lineCap = 'round';
+ctx.strokeStyle = '#e6e6e6';
+ctx.beginPath(); ctx.arc(cx, cy, R, debut, debut + total); ctx.stroke();
+
+const frac = 0.72;                     // ✦ nouveau
+ctx.strokeStyle = '#27ae60';
+ctx.beginPath(); ctx.arc(cx, cy, R, debut, debut + total * frac); ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Animer + couleur + texte</div>
+        <p>La valeur monte doucement vers la cible, la couleur va du rouge au vert, et on affiche le pourcentage.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const cible = 72; let val = 0;            // ✦ animation
+const cx = 160, cy = 120, R = 70;
+const debut = Math.PI * 0.75, total = Math.PI * 1.5;
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  val += (cible - val) * 0.05;            // ✦ approche douce
+  ctx.lineWidth = 16; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#e6e6e6';
+  ctx.beginPath(); ctx.arc(cx, cy, R, debut, debut + total); ctx.stroke();
+
+  const frac = val / 100;
+  ctx.strokeStyle = 'hsl(' + (frac * 120) + ', 75%, 48%)'; // ✦ rouge→vert
+  ctx.beginPath(); ctx.arc(cx, cy, R, debut, debut + total * frac); ctx.stroke();
+
+  ctx.fillStyle = '#2c3e50'; ctx.textAlign = 'center';     // ✦ texte
+  ctx.font = 'bold 32px sans-serif';
+  ctx.fillText(Math.round(val) + '%', cx, cy + 8);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <h2 id="p-jeu"><span class="num">F</span> Cas concret : mini-jeu Casse-briques</h2>
+    <p>Le projet de synthèse, monté en 4 étapes. Chacune est jouable. Utilise <b>← →</b> ou la souris.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Décor : raquette + balle</div>
+        <p>On dessine juste les éléments, immobiles.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const W = 320, H = 220;
+let px = W/2 - 32;                  // raquette
+let bx = W/2, by = H - 40;          // balle
+ctx.fillStyle = '#2c3e50'; ctx.fillRect(px, H - 20, 64, 10);
+ctx.fillStyle = '#e74c3c';
+ctx.beginPath(); ctx.arc(bx, by, 6, 0, Math.PI * 2); ctx.fill();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> La balle bouge &amp; rebondit</div>
+        <p>On l'anime et on la fait rebondir sur les 3 murs + la raquette.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const W = 320, H = 220, pw = 64, br = 6;
+let px = W/2 - 32;
+let bx = W/2, by = H - 40, bvx = 2.4, bvy = -2.4;  // ✦ vitesse
+loop(() => {
+  ctx.clearRect(0, 0, W, H);
+  bx += bvx; by += bvy;
+  if (bx - br < 0 || bx + br > W) bvx = -bvx;       // murs
+  if (by - br < 0) bvy = -bvy;
+  if (by + br > H - 20 && bx > px && bx < px + pw) bvy = -Math.abs(bvy); // raquette
+  if (by - br > H) { bx = W/2; by = H - 40; }       // ressort si perdue
+
+  ctx.fillStyle = '#2c3e50'; ctx.fillRect(px, H - 20, pw, 10);
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 3</span> Contrôler la raquette</div>
+        <p>On écoute le clavier (et la souris) pour déplacer la raquette.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const W = 320, H = 220, pw = 64, br = 6;
+let px = W/2 - 32;
+let bx = W/2, by = H - 40, bvx = 2.4, bvy = -2.4;
+let gauche = false, droite = false;                 // ✦ commandes
+on(window, 'keydown', e => { if (e.key === 'ArrowLeft') gauche = true; if (e.key === 'ArrowRight') droite = true; });
+on(window, 'keyup',   e => { if (e.key === 'ArrowLeft') gauche = false; if (e.key === 'ArrowRight') droite = false; });
+on(canvas, 'mousemove', e => { const r = canvas.getBoundingClientRect(); px = (e.clientX - r.left) - pw/2; });
+loop(() => {
+  ctx.clearRect(0, 0, W, H);
+  if (gauche) px -= 5; if (droite) px += 5;
+  px = Math.max(0, Math.min(W - pw, px));
+  bx += bvx; by += bvy;
+  if (bx - br < 0 || bx + br > W) bvx = -bvx;
+  if (by - br < 0) bvy = -bvy;
+  if (by + br > H - 20 && bx > px && bx < px + pw) bvy = -Math.abs(bvy);
+  if (by - br > H) { bx = W/2; by = H - 40; }
+  ctx.fillStyle = '#2c3e50'; ctx.fillRect(px, H - 20, pw, 10);
+  ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.fill();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">← →</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 4</span> Briques, score &amp; fin de partie</div>
+        <p>On ajoute la grille de briques, la détection de collision, le score et l'écran gagné/perdu.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const W = 320, H = 220, pw = 64, br = 6;
+let px = W/2 - 32, bx = W/2, by = H - 40, bvx = 2.4, bvy = -2.4;
+const cols = 7, rows = 4, bw = 38, bh = 14, pad = 4;
+let briques = [];
+for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+  briques.push({ x: 12 + c*(bw+pad), y: 30 + r*(bh+pad), vivante: true, t: r });
+let score = 0, fini = false;
+let gauche = false, droite = false;
+on(window, 'keydown', e => { if (e.key==='ArrowLeft') gauche=true; if (e.key==='ArrowRight') droite=true; });
+on(window, 'keyup',   e => { if (e.key==='ArrowLeft') gauche=false; if (e.key==='ArrowRight') droite=false; });
+on(canvas, 'mousemove', e => { const r = canvas.getBoundingClientRect(); px = (e.clientX - r.left) - pw/2; });
+loop(() => {
+  ctx.clearRect(0, 0, W, H);
+  if (!fini) {
+    if (gauche) px -= 5; if (droite) px += 5;
+    px = Math.max(0, Math.min(W - pw, px));
+    bx += bvx; by += bvy;
+    if (bx-br<0 || bx+br>W) bvx = -bvx;
+    if (by-br<0) bvy = -bvy;
+    if (by+br>H-20 && bx>px && bx<px+pw) { bvy = -Math.abs(bvy); bvx += (bx-(px+pw/2))*0.04; }
+    if (by-br>H) fini = true;
+    briques.forEach(b => { if (b.vivante && bx>b.x && bx<b.x+bw && by>b.y && by<b.y+bh) { b.vivante=false; bvy=-bvy; score+=10; } });
+    if (briques.every(b => !b.vivante)) fini = true;
+  }
+  briques.forEach(b => { if (!b.vivante) return; ctx.fillStyle = 'hsl(' + (200+b.t*30) + ', 70%, 55%)'; ctx.fillRect(b.x, b.y, bw, bh); });
+  ctx.fillStyle = '#2c3e50'; ctx.fillRect(px, H-20, pw, 10);
+  ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2c3e50'; ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Score : ' + score, 8, 16);
+  if (fini) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 24px sans-serif';
+    ctx.fillText(briques.every(b => !b.vivante) ? 'Gagné ! 🎉' : 'Perdu !', W/2, H/2);
+    ctx.font = '13px sans-serif'; ctx.fillText('Clique ↺ pour rejouer', W/2, H/2 + 26);
+  }
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">← → ou souris</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- G. MATRIX -->
+    <!-- ====================================================== -->
+    <h2 id="p-matrix"><span class="num">G</span> Projet : pluie de Matrix</h2>
+    <p>Des colonnes de caractères qui tombent. On part d'un seul caractère, puis on remplit l'écran.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Un caractère qui tombe</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let y = 0;
+loop(() => {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 320, 200);
+  ctx.fillStyle = '#0f0'; ctx.font = '16px monospace';
+  ctx.fillText('0', 20, y);
+  y += 5; if (y > 200) y = 0;
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Plein de colonnes</div>
+        <p>Un tableau garde la position Y de chaque colonne. L'effacement semi-transparent crée la traînée.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const taille = 14, cols = Math.floor(320 / taille);
+const y = new Array(cols).fill(0);              // ✦ une position par colonne
+const chars = '01アイウエオカキ';
+ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 320, 200);
+loop(() => {
+  ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.fillRect(0, 0, 320, 200); // traînée
+  ctx.fillStyle = '#0f0'; ctx.font = taille + 'px monospace';
+  for (let i = 0; i < cols; i++) {
+    const ch = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(ch, i * taille, y[i]);
+    y[i] += taille;
+    if (y[i] > 200 && Math.random() > 0.975) y[i] = 0; // réapparaît en haut
+  }
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Tête lumineuse</div>
+        <p>On dessine le caractère de tête en blanc pour l'effet « goutte brillante ».</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const taille = 14, cols = Math.floor(320 / taille);
+const y = new Array(cols).fill(0);
+const chars = '01アイウエオカキサシス';
+ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 320, 200);
+loop(() => {
+  ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0, 0, 320, 200);
+  ctx.font = taille + 'px monospace';
+  for (let i = 0; i < cols; i++) {
+    const ch = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = '#cfffcf'; ctx.fillText(ch, i * taille, y[i]);        // ✦ tête claire
+    ctx.fillStyle = '#0a0';   ctx.fillText(ch, i * taille, y[i] - taille); // traîne verte
+    y[i] += taille;
+    if (y[i] > 200 && Math.random() > 0.97) y[i] = 0;
+  }
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- H. SOLAIRE -->
+    <!-- ====================================================== -->
+    <h2 id="p-solaire"><span class="num">H</span> Projet : système solaire</h2>
+    <p>L'exemple roi des transformations imbriquées : une planète tourne autour du soleil, et une lune tourne autour de la planète grâce à un <code class="inline">rotate</code> dans un <code class="inline">rotate</code>.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Soleil + 1 planète</div>
+        <p>On place l'origine au centre, on tourne, on s'éloigne (<code class="inline">translate</code>), on dessine la planète.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.save();
+  ctx.translate(160, 100);
+  ctx.fillStyle = '#f39c12';
+  ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();   // soleil
+  ctx.rotate(t / 1000);          // ✦ rotation orbitale
+  ctx.translate(75, 0);
+  ctx.fillStyle = '#3498db';
+  ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();   // planète
+  ctx.restore();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Plusieurs planètes</div>
+        <p>Un tableau de planètes (distance, taille, couleur, vitesse) + les orbites en gris.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const planetes = [
+  { d: 45, r: 5, c: '#bdc3c7', v: 1 / 600 },
+  { d: 78, r: 9, c: '#3498db', v: 1 / 1100 },
+  { d: 112, r: 7, c: '#e74c3c', v: 1 / 1700 },
+];
+loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.save(); ctx.translate(160, 100);
+  ctx.strokeStyle = '#eee';
+  planetes.forEach(p => { ctx.beginPath(); ctx.arc(0, 0, p.d, 0, Math.PI * 2); ctx.stroke(); });
+  ctx.fillStyle = '#f39c12';
+  ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+  planetes.forEach(p => {
+    ctx.save();
+    ctx.rotate(t * p.v); ctx.translate(p.d, 0);
+    ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  });
+  ctx.restore();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Une lune (rotation imbriquée)</div>
+        <p>Pendant qu'on est dans le repère de la 2ᵉ planète, on tourne encore pour y attacher une lune.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const planetes = [
+  { d: 45, r: 5, c: '#bdc3c7', v: 1 / 600, lune: false },
+  { d: 80, r: 11, c: '#3498db', v: 1 / 1100, lune: true },  // ✦ a une lune
+  { d: 115, r: 7, c: '#e74c3c', v: 1 / 1700, lune: false },
+];
+loop((t) => {
+  ctx.clearRect(0, 0, 320, 200);
+  ctx.save(); ctx.translate(160, 100);
+  ctx.strokeStyle = '#eee';
+  planetes.forEach(p => { ctx.beginPath(); ctx.arc(0, 0, p.d, 0, Math.PI * 2); ctx.stroke(); });
+  ctx.fillStyle = '#f39c12';
+  ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+  planetes.forEach(p => {
+    ctx.save();
+    ctx.rotate(t * p.v); ctx.translate(p.d, 0);
+    ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+    if (p.lune) {                       // ✦ rotation DANS la rotation
+      ctx.rotate(t / 150); ctx.translate(20, 0);
+      ctx.fillStyle = '#ecf0f1';
+      ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- I. FEU D'ARTIFICE -->
+    <!-- ====================================================== -->
+    <h2 id="p-feu"><span class="num">I</span> Projet : feu d'artifice</h2>
+    <p>On réutilise les particules, mais déclenchées au clic et soumises à la gravité.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une explosion</div>
+        <p>40 particules partent dans toutes les directions depuis le centre.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let parts = [];
+function explose(x, y) {
+  const teinte = Math.random() * 360;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * Math.PI * 2, s = Math.random() * 3 + 1;
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, vie: 1, c: teinte });
+  }
+}
+explose(160, 100);
+loop(() => {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(0, 0, 320, 200);
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.vie -= 0.015;
+    ctx.fillStyle = 'hsla(' + p.c + ',90%,60%,' + p.vie + ')';
+    ctx.fillRect(p.x, p.y, 3, 3);
+  });
+  parts = parts.filter(p => p.vie > 0);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Au clic</div>
+        <p>On déclenche une explosion là où on clique.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let parts = [];
+function explose(x, y) {
+  const teinte = Math.random() * 360;
+  for (let i = 0; i < 50; i++) {
+    const a = Math.random() * Math.PI * 2, s = Math.random() * 3 + 1;
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, vie: 1, c: teinte });
+  }
+}
+on(canvas, 'click', (e) => {            // ✦ déclenché au clic
+  const r = canvas.getBoundingClientRect();
+  explose(e.clientX - r.left, e.clientY - r.top);
+});
+loop(() => {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(0, 0, 320, 200);
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.vie -= 0.015;
+    ctx.fillStyle = 'hsla(' + p.c + ',90%,60%,' + p.vie + ')';
+    ctx.fillRect(p.x, p.y, 3, 3);
+  });
+  parts = parts.filter(p => p.vie > 0);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique →</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Fusées automatiques</div>
+        <p>Des fusées montent du bas et explosent à leur sommet — plus le clic qui marche toujours.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">let parts = [], fusees = [];
+function explose(x, y) {
+  const teinte = Math.random() * 360;
+  for (let i = 0; i < 55; i++) {
+    const a = Math.random() * Math.PI * 2, s = Math.random() * 3.2 + 1;
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, vie: 1, c: teinte });
+  }
+}
+function lance() { fusees.push({ x: 40 + Math.random() * 240, y: 200, cible: 40 + Math.random() * 80 }); }
+on(canvas, 'click', (e) => { const r = canvas.getBoundingClientRect(); explose(e.clientX - r.left, e.clientY - r.top); });
+let last = 0;
+loop((t) => {
+  ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(0, 0, 320, 200);
+  if (t - last > 900) { last = t; lance(); }            // ✦ fusée régulière
+  fusees.forEach((f, i) => {
+    f.y -= 3;
+    ctx.fillStyle = '#fff'; ctx.fillRect(f.x, f.y, 2, 6);
+    if (f.y <= f.cible) { explose(f.x, f.y); fusees.splice(i, 1); }
+  });
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.vie -= 0.014;
+    ctx.fillStyle = 'hsla(' + p.c + ',90%,62%,' + p.vie + ')';
+    ctx.fillRect(p.x, p.y, 3, 3);
+  });
+  parts = parts.filter(p => p.vie > 0);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">clique aussi →</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- J. BILLES -->
+    <!-- ====================================================== -->
+    <h2 id="p-billes"><span class="num">J</span> Projet : bac à billes (collisions)</h2>
+    <p>De vraies collisions entre billes : détection par distance, séparation, puis échange des vitesses le long de la normale (physique élastique, masses égales).</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Des billes rebondissent sur les murs</div>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const balls = [];
+for (let i = 0; i < 8; i++) balls.push({
+  x: 40 + Math.random() * 240, y: 40 + Math.random() * 120,
+  vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+  r: 12 + Math.random() * 8, c: 'hsl(' + (Math.random() * 360) + ',70%,55%)',
+});
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  balls.forEach(b => {
+    b.x += b.vx; b.y += b.vy;
+    if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
+    if (b.x + b.r > 320) { b.x = 320 - b.r; b.vx *= -1; }
+    if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
+    if (b.y + b.r > 200) { b.y = 200 - b.r; b.vy *= -1; }
+    ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+  });
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Elles se cognent entre elles</div>
+        <p>Pour chaque paire : si la distance &lt; somme des rayons, on les sépare et on échange la composante de vitesse le long de la normale.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">const balls = [];
+for (let i = 0; i < 8; i++) balls.push({
+  x: 40 + Math.random() * 240, y: 40 + Math.random() * 120,
+  vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+  r: 12 + Math.random() * 8, c: 'hsl(' + (Math.random() * 360) + ',70%,55%)',
+});
+loop(() => {
+  ctx.clearRect(0, 0, 320, 200);
+  balls.forEach(b => {
+    b.x += b.vx; b.y += b.vy;
+    if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
+    if (b.x + b.r > 320) { b.x = 320 - b.r; b.vx *= -1; }
+    if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
+    if (b.y + b.r > 200) { b.y = 200 - b.r; b.vy *= -1; }
+  });
+  for (let i = 0; i < balls.length; i++)        // ✦ collisions entre billes
+    for (let j = i + 1; j < balls.length; j++) {
+      const a = balls[i], b = balls[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy), min = a.r + b.r;
+      if (dist < min && dist > 0) {
+        const nx = dx / dist, ny = dy / dist, chev = (min - dist) / 2;
+        a.x -= nx * chev; a.y -= ny * chev; b.x += nx * chev; b.y += ny * chev;
+        const p = (a.vx * nx + a.vy * ny) - (b.vx * nx + b.vy * ny);
+        a.vx -= p * nx; a.vy -= p * ny; b.vx += p * nx; b.vy += p * ny;
+      }
+    }
+  balls.forEach(b => { ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill(); });
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- K. SPIROGRAPHE -->
+    <!-- ====================================================== -->
+    <h2 id="p-spiro"><span class="num">K</span> Projet : spirographe</h2>
+    <p>De l'art mathématique : des équations paramétriques (cos/sin combinés) tracent des courbes hypnotiques.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Une rosace</div>
+        <p>Le rayon varie selon l'angle : <code class="inline">r = 80·cos(5·a)</code> donne une fleur à 5 pétales.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.translate(160, 100);
+ctx.beginPath();
+for (let a = 0; a < Math.PI * 2; a += 0.01) {
+  const r = 85 * Math.cos(5 * a);
+  ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+}
+ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 1.5; ctx.stroke();</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 2</span> Tracé animé (hypotrochoïde)</div>
+        <p>On ne nettoie jamais le canvas : la courbe se dessine progressivement, couleur changeante.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="200"></canvas></div><div class="code">
+<textarea spellcheck="false">ctx.translate(160, 100);
+ctx.lineWidth = 1;
+const R = 65, r = 23, d = 50;     // rayons de l'engrenage
+let theta = 0, premier = true, px = 0, py = 0; // px/py persistent entre les images
+loop(() => {
+  for (let k = 0; k < 25; k++) {  // plusieurs points par image
+    const x = (R - r) * Math.cos(theta) + d * Math.cos((R - r) / r * theta);
+    const y = (R - r) * Math.sin(theta) - d * Math.sin((R - r) / r * theta);
+    ctx.strokeStyle = 'hsl(' + (theta * 25 % 360) + ', 80%, 55%)';
+    ctx.beginPath();
+    if (premier) { ctx.moveTo(x, y); premier = false; }
+    else { ctx.moveTo(px, py); ctx.lineTo(x, y); }
+    ctx.stroke();
+    px = x; py = y;
+    theta += 0.04;
+  }
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- L. SNAKE -->
+    <!-- ====================================================== -->
+    <h2 id="p-snake"><span class="num">L</span> Projet : jeu Snake</h2>
+    <p>Le classique, monté en 3 étapes. La logique tourne sur une <b>grille</b> de cases, à un rythme plus lent que l'affichage.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 1</span> Plateau, serpent &amp; pomme</div>
+        <p>On dessine la grille en cases, le serpent (vert) et la pomme (rouge), immobiles.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const cell = 16, cols = 20, rows = 12;
+const snake = [{ x: 5, y: 6 }, { x: 4, y: 6 }, { x: 3, y: 6 }];
+const food = { x: 12, y: 6 };
+
+ctx.fillStyle = '#1a212b'; ctx.fillRect(0, 0, 320, rows * cell);
+ctx.fillStyle = '#e74c3c'; ctx.fillRect(food.x * cell, food.y * cell, cell, cell);
+ctx.fillStyle = '#2ecc71';
+snake.forEach(s => ctx.fillRect(s.x * cell + 1, s.y * cell + 1, cell - 2, cell - 2));</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button></div></div></div>
+      </div>
+      <div class="step">
+        <div class="step-head"><span class="step-num">Étape 2</span> Il bouge &amp; mange</div>
+        <p>Toutes les 140 ms, on ajoute une tête dans la direction courante ; on retire la queue, sauf si on mange (le serpent grandit). Flèches pour diriger.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const cell = 16, cols = 20, rows = 12;
+let snake = [{ x: 5, y: 6 }, { x: 4, y: 6 }, { x: 3, y: 6 }];
+let dir = { x: 1, y: 0 }, nextDir = dir;
+let food = { x: 12, y: 6 }, score = 0, last = 0;
+on(window, 'keydown', e => {
+  if (e.key === 'ArrowUp' && dir.y === 0) nextDir = { x: 0, y: -1 };
+  if (e.key === 'ArrowDown' && dir.y === 0) nextDir = { x: 0, y: 1 };
+  if (e.key === 'ArrowLeft' && dir.x === 0) nextDir = { x: -1, y: 0 };
+  if (e.key === 'ArrowRight' && dir.x === 0) nextDir = { x: 1, y: 0 };
+});
+function poser() { food = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) }; }
+loop((t) => {
+  if (t - last > 140) {                       // ✦ tic de jeu
+    last = t; dir = nextDir;
+    let head = { x: (snake[0].x + dir.x + cols) % cols, y: (snake[0].y + dir.y + rows) % rows };
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) { score += 10; poser(); }
+    else snake.pop();
+  }
+  ctx.fillStyle = '#1a212b'; ctx.fillRect(0, 0, 320, rows * cell);
+  ctx.fillStyle = '#e74c3c'; ctx.fillRect(food.x * cell, food.y * cell, cell, cell);
+  ctx.fillStyle = '#2ecc71';
+  snake.forEach(s => ctx.fillRect(s.x * cell + 1, s.y * cell + 1, cell - 2, cell - 2));
+  ctx.fillStyle = '#fff'; ctx.font = '13px sans-serif'; ctx.fillText('Score : ' + score, 6, rows * cell + 18);
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">flèches ↑↓←→</span></div></div></div>
+      </div>
+      <div class="step final">
+        <div class="step-head"><span class="step-num">Étape 3</span> Murs, collision &amp; game over</div>
+        <p>Plus de traversée : toucher un mur ou se mordre = perdu. On affiche l'écran de fin.</p>
+        <div class="demo"><div class="stage"><canvas width="320" height="220"></canvas></div><div class="code">
+<textarea spellcheck="false">const cell = 16, cols = 20, rows = 12;
+let snake = [{ x: 5, y: 6 }, { x: 4, y: 6 }, { x: 3, y: 6 }];
+let dir = { x: 1, y: 0 }, nextDir = dir;
+let food = { x: 12, y: 6 }, score = 0, last = 0, mort = false;
+on(window, 'keydown', e => {
+  if (e.key === 'ArrowUp' && dir.y === 0) nextDir = { x: 0, y: -1 };
+  if (e.key === 'ArrowDown' && dir.y === 0) nextDir = { x: 0, y: 1 };
+  if (e.key === 'ArrowLeft' && dir.x === 0) nextDir = { x: -1, y: 0 };
+  if (e.key === 'ArrowRight' && dir.x === 0) nextDir = { x: 1, y: 0 };
+});
+function poser() { food = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) }; }
+loop((t) => {
+  if (t - last > 140 && !mort) {
+    last = t; dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows ||  // ✦ mur
+        snake.some(s => s.x === head.x && s.y === head.y)) {             // ✦ morsure
+      mort = true;
+    } else {
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) { score += 10; poser(); }
+      else snake.pop();
+    }
+  }
+  ctx.fillStyle = '#1a212b'; ctx.fillRect(0, 0, 320, rows * cell);
+  ctx.fillStyle = '#e74c3c'; ctx.fillRect(food.x * cell, food.y * cell, cell, cell);
+  ctx.fillStyle = '#2ecc71';
+  snake.forEach(s => ctx.fillRect(s.x * cell + 1, s.y * cell + 1, cell - 2, cell - 2));
+  ctx.fillStyle = '#fff'; ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Score : ' + score, 6, rows * cell + 18);
+  if (mort) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, 320, rows * cell);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('Perdu ! Score ' + score, 160, 90);
+    ctx.font = '13px sans-serif'; ctx.fillText('Clique ↺ pour rejouer', 160, 116);
+  }
+});</textarea>
+        <div class="bar"><button class="run">▶ Exécuter</button><button class="reset">↺</button><span class="hint">flèches ↑↓←→</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- MEMO -->
+    <!-- ====================================================== -->
+    <h2 id="memo"><span class="num">📋</span> Mémo des méthodes principales</h2>
+    <table class="api">
+      <tr><th>Catégorie</th><th>Méthodes / propriétés</th></tr>
+      <tr><td>Contexte</td><td><code>canvas.getContext('2d')</code></td></tr>
+      <tr><td>Rectangles</td><td><code>fillRect</code>, <code>strokeRect</code>, <code>clearRect</code></td></tr>
+      <tr><td>Chemins</td><td><code>beginPath</code>, <code>moveTo</code>, <code>lineTo</code>, <code>closePath</code>, <code>fill</code>, <code>stroke</code></td></tr>
+      <tr><td>Courbes</td><td><code>arc</code>, <code>arcTo</code>, <code>quadraticCurveTo</code>, <code>bezierCurveTo</code></td></tr>
+      <tr><td>Styles</td><td><code>fillStyle</code>, <code>strokeStyle</code>, <code>lineWidth</code>, <code>lineCap</code>, <code>lineJoin</code>, <code>setLineDash</code>, <code>globalAlpha</code></td></tr>
+      <tr><td>Dégradés/motifs</td><td><code>createLinearGradient</code>, <code>createRadialGradient</code>, <code>addColorStop</code>, <code>createPattern</code></td></tr>
+      <tr><td>Ombres</td><td><code>shadowColor</code>, <code>shadowBlur</code>, <code>shadowOffsetX/Y</code></td></tr>
+      <tr><td>Texte</td><td><code>fillText</code>, <code>strokeText</code>, <code>font</code>, <code>textAlign</code>, <code>textBaseline</code>, <code>measureText</code></td></tr>
+      <tr><td>Images</td><td><code>drawImage</code> (3 formes)</td></tr>
+      <tr><td>Transformations</td><td><code>translate</code>, <code>rotate</code>, <code>scale</code>, <code>save</code>, <code>restore</code>, <code>setTransform</code></td></tr>
+      <tr><td>Composition</td><td><code>globalCompositeOperation</code></td></tr>
+      <tr><td>Détourage</td><td><code>clip</code>, <code>roundRect</code>, <code>isPointInPath</code></td></tr>
+      <tr><td>Filtres</td><td><code>ctx.filter</code> (blur, brightness, sepia, grayscale, hue-rotate…)</td></tr>
+      <tr><td>Pixels</td><td><code>getImageData</code>, <code>putImageData</code>, <code>createImageData</code></td></tr>
+      <tr><td>Animation</td><td><code>requestAnimationFrame</code>, <code>cancelAnimationFrame</code></td></tr>
+    </table>
+
+    <footer>
+      Cours complet HTML5 Canvas · progression par étapes · tous les exemples s'exécutent en local (hors-ligne).<br>
+      Via XAMPP : <code class="inline">http://localhost/Cours_complet_canvas/</code>
+    </footer>
+
+  </main>
+</div>
+
+<script src="assets/runner.js"></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+TITRE : Chapitre 1 · Niveau 8 — Qui est le plus grand ?
+---
+Ilo et Nara sont assis au bord de la rivière. Ils se disputent gentiment.
+
+Ilo dit : « J'ai plus de moutons que toi. »
+Nara dit : « Sûrement pas. »
+
+Ilo a 623 moutons. Nara en a 512.
+
+Comment savoir qui a raison, sans compter les moutons un par un ?
+
+
+LA MÉTHODE DES DÉBUTANTS
+
+Certains regardent tous les chiffres et essaient de tout comparer en même temps. Ça donne mal à la tête.
+
+D'autres regardent le plus gros chiffre du nombre. Dans 623, ils voient le 6... mais dans 512, ils voient le 5 et le 2 et le 1, et ils s'embrouillent.
+
+Il y a beaucoup plus simple. Et Ilo la connaît, cette méthode, parce qu'il pense à son sac.
+
+
+LA MÉTHODE D'ILO
+
+« Regarde d'abord mes cailloux noirs », dit Ilo.
+
+Un caillou noir vaut 100 moutons. C'est le plus gros caillou du sac.
+
+Ilo a 6 cailloux noirs. Nara en a 5.
+
+Ilo a gagné. C'est déjà fini.
+
+Nara demande : « Mais tu n'as même pas regardé les autres cailloux ! »
+
+Ilo répond : « Je n'en ai pas besoin. Réfléchis. »
+
+Nara réfléchit. Et elle comprend.
+
+Même si Nara remplissait complètement ses deux autres colonnes — 9 cailloux blancs et 9 petits cailloux, le maximum autorisé par la loi — elle aurait 599 moutons.
+
+599, c'est moins que 600. Et Ilo a déjà 600 moutons rien qu'avec ses cailloux noirs.
+
+Les petites colonnes ne peuvent jamais rattraper une grosse colonne. Jamais.
+
+
+LA RÈGLE
+
+Pour comparer deux nombres :
+
+1. Compte les chiffres de chaque nombre. Celui qui a le plus de chiffres est le plus grand. C'est fini.
+2. S'ils ont le même nombre de chiffres, regarde le chiffre le plus à gauche. Le plus grand gagne. C'est fini.
+3. Si ces chiffres sont égaux, passe au chiffre suivant vers la droite. Et ainsi de suite.
+
+Tu commences toujours par la gauche. Toujours.
+
+C'est l'inverse du calcul ! Quand tu poses une addition, tu commences par la droite. Quand tu compares, tu commences par la gauche.
+
+Pourquoi ? Parce que la colonne de gauche est la plus puissante. C'est celle qui décide.
+
+
+DEUX EXEMPLES
+
+98 et 100 : lequel est le plus grand ?
+
+98 a deux chiffres. 100 en a trois. Donc 100 gagne, tout de suite.
+
+Et pourtant le 9 de 98 est plus grand que le 1 de 100 ! Ça n'a aucune importance. Un 9 dans la colonne des dizaines vaut 90. Un 1 dans la colonne des centaines vaut 100. La colonne est plus forte que le chiffre.
+
+47 et 43 : même nombre de chiffres. On regarde à gauche : 4 et 4. Égalité. On passe au suivant : 7 et 3. 7 gagne. Donc 47 est le plus grand.
+
+
+POURQUOI C'EST UTILE, MÊME AUJOURD'HUI
+
+Cette règle ne sert pas qu'aux moutons.
+
+Imagine deux prix : 1 250 et 12 500.
+
+Ce sont presque les mêmes chiffres : un 1, un 2, un 5. Mais compte les colonnes. Le premier a 4 chiffres, le second en a 5.
+
+Le second est dix fois plus cher. Dix fois !
+
+Alors quand tu regardes un nombre important, ne lis pas les chiffres. Compte les colonnes d'abord. C'est le réflexe qui évite les grosses erreurs — les vraies, celles qui coûtent cher.
+
+
+À TOI DE JOUER
+
+Range ces nombres du plus petit au plus grand, sans calculer, juste avec la méthode d'Ilo :
+
+89 — 900 — 98 — 809 — 90
+
+Fais-le vraiment avant de lire la suite.
+
+La réponse : 89, 90, 98, 809, 900.
+
+As-tu commencé par compter les chiffres ? 89, 98 et 90 ont deux chiffres : ils sont forcément plus petits que 809 et 900, qui en ont trois. Le travail était presque fini avant de commencer.

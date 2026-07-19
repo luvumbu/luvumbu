@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhotoSync — Documentation technique d'installation</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#16213a; --panel2:#111c33; --line:#22304f;
+    --ink:#e6edf7; --muted:#8da2c0; --accent:#E8772E; --accent2:#1565C0;
+    --green:#16a34a; --amber:#fbbf24; --red:#f87171;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:30px;margin:0 0 4px;}
+  h2{font-size:22px;margin:38px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);}
+  h3{font-size:17px;margin:24px 0 8px;color:var(--accent);}
+  .sub{color:var(--muted);margin:0 0 24px;}
+  code,kbd{background:#0b1220;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-family:"Cascadia Code",Consolas,monospace;font-size:.9em;}
+  pre{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-family:"Cascadia Code",Consolas,monospace;font-size:.86em;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0;}
+  .step{counter-increment:step;position:relative;padding-left:46px;}
+  .step::before{content:counter(step);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  ol.steps{counter-reset:step;list-style:none;padding:0;}
+  ol.steps>li{margin:18px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.92em;}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78em;font-weight:700;}
+  .t-srv{background:rgba(232,119,46,.18);color:#f6a86a;}
+  .t-app{background:rgba(21,101,192,.22);color:#7fb0ff;}
+  .warn{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);border-radius:12px;padding:14px 16px;margin:14px 0;}
+  .ok{background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.5);border-radius:12px;padding:14px 16px;margin:14px 0;}
+  .note{background:rgba(251,191,36,.10);border:1px solid rgba(251,191,36,.45);border-radius:12px;padding:14px 16px;margin:14px 0;}
+  a{color:#7fb0ff;}
+  .toc a{display:block;padding:3px 0;text-decoration:none;}
+  .pill{font-size:.8em;color:var(--muted);}
+  hr{border:0;border-top:1px solid var(--line);margin:30px 0;}
+  footer{color:var(--muted);font-size:.85em;margin-top:40px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📸 PhotoSync — Documentation technique d'installation</h1>
+  <p class="sub">Application Android + serveur PHP/MySQL multi-comptes (photos &amp; vidéos).
+  Version app : <strong>v2.4</strong> · Déploiement : <code>https://luvumbu.com/dropbox</code></p>
+
+  <div class="card toc">
+    <strong>Sommaire</strong>
+    <a href="#archi">1. Architecture &amp; prérequis</a>
+    <a href="#db">2. Base de données MySQL</a>
+    <a href="#ftp">3. Téléversement des fichiers (FTP)</a>
+    <a href="#install">4. Assistant d'installation</a>
+    <a href="#config">5. Configuration (Google, admin)</a>
+    <a href="#app">6. Application Android (APK)</a>
+    <a href="#maj">7. Mise à jour / déploiement</a>
+    <a href="#nojamais">8. Fichiers à NE JAMAIS écraser</a>
+    <a href="#tables">9. Tables de base de données</a>
+    <a href="#depannage">10. Dépannage</a>
+  </div>
+
+  <h2 id="archi">1. Architecture &amp; prérequis</h2>
+  <div class="card">
+    <h3>Composants</h3>
+    <table>
+      <tr><th>Élément</th><th>Rôle</th></tr>
+      <tr><td><span class="tag t-srv">Serveur</span> <code>public_html/</code></td><td>Site PHP : endpoints de l'app (<code>api/</code>), pages web (<code>web/</code>), librairies (<code>lib/</code>), stockage (<code>uploads/</code>).</td></tr>
+      <tr><td><span class="tag t-app">App</span> <code>android/</code></td><td>Application Android (Kotlin) — installée via l'APK.</td></tr>
+    </table>
+    <h3>Prérequis serveur</h3>
+    <ul>
+      <li>Hébergement <strong>PHP 8.0+</strong> avec extensions <code>pdo_mysql</code>, <code>gd</code> (miniatures), <code>mime_content_type</code>.</li>
+      <li>Base <strong>MySQL / MariaDB</strong>.</li>
+      <li>Accès <strong>FTP</strong> (FileZilla, WinSCP…) ou gestionnaire de fichiers de l'hébergeur.</li>
+      <li>HTTPS recommandé (les vidéos et l'app passent par le réseau).</li>
+    </ul>
+    <h3>Prérequis pour (re)compiler l'app</h3>
+    <ul>
+      <li><strong>JDK 17</strong> (fourni par Android Studio : <code>jbr/</code>).</li>
+      <li><strong>SDK Android</strong> (API 35) et <strong>Gradle 8.x</strong>.</li>
+    </ul>
+  </div>
+
+  <h2 id="db">2. Base de données MySQL</h2>
+  <ol class="steps">
+    <li class="step">Dans le panneau de l'hébergeur (hPanel Hostinger, cPanel…), section <em>Bases de données MySQL</em>, créer une <strong>base</strong> et un <strong>utilisateur</strong>.</li>
+    <li class="step">Noter précisément : <strong>nom de la base</strong>, <strong>utilisateur</strong>, <strong>mot de passe</strong>, <strong>hôte</strong> (souvent <code>localhost</code>).</li>
+    <li class="step">Les tables sont créées <strong>automatiquement</strong> par l'assistant et par <code>Auth::ensureSchema()</code> — aucun import SQL manuel nécessaire (le fichier <code>sql/db.sql</code> est fourni à titre de référence).</li>
+  </ol>
+
+  <h2 id="ftp">3. Téléversement des fichiers (FTP)</h2>
+  <div class="note">
+    ⚠️ <strong>Important :</strong> on envoie le <strong>contenu</strong> du dossier <code>public_html/</code>
+    (donc <code>index.php</code>, <code>install.php</code>, <code>lib/</code>, <code>api/</code>, <code>web/</code>,
+    <code>sql/</code>, <code>uploads/</code>) <strong>dans le dossier <code>dropbox/</code></strong> de l'hébergement —
+    et <em>non</em> le dossier <code>public_html</code> lui-même.
+  </div>
+  <div class="card">
+    <h3>Copie de référence</h3>
+    <p>La version <strong>en ligne</strong> utilise la connexion <strong>« Se connecter avec Google »</strong>.
+    C'est la copie <code>public_html/</code> (racine du projet) qui correspond — <strong>déployer depuis celle-ci</strong>.</p>
+    <p>Résultat attendu sur le serveur :</p>
+    <pre>luvumbu.com/dropbox/
+├── index.php
+├── install.php
+├── lib/      (config.php, db.config.php, Auth.php, Db.php, Api.php, Photos.php, bootstrap.php)
+├── api/      (upload.php, feed.php, media.php, login.php, names.php, setup.php, …)
+├── web/      (gallery.php, upload_web.php, admin.php, …)
+├── sql/      (db.sql)
+└── uploads/  (créé/rempli automatiquement — NE PAS écraser)</pre>
+  </div>
+
+  <h2 id="install">4. Assistant d'installation</h2>
+  <ol class="steps">
+    <li class="step">Ouvrir <code>https://luvumbu.com/dropbox/install.php</code>.</li>
+    <li class="step">Au 1<sup>er</sup> accès, un <strong>formulaire</strong> apparaît (la base n'est pas encore configurée) → saisir <strong>nom de base / utilisateur / mot de passe / hôte</strong> → <em>Enregistrer et vérifier</em>.</li>
+    <li class="step">L'assistant écrit <code>lib/db.config.php</code> (identifiants) et crée les tables.</li>
+    <li class="step"><strong>Sécurité</strong> : une fois l'installation réussie, <strong>supprimer <code>install.php</code></strong> du serveur.</li>
+  </ol>
+  <div class="ok">✅ Vérification : ouvrir <code>https://luvumbu.com/dropbox/web/gallery.php</code> → la page de connexion Google doit s'afficher.</div>
+
+  <h2 id="config">5. Configuration (Google, admin)</h2>
+  <div class="card">
+    <table>
+      <tr><th>Fichier</th><th>Constante</th><th>Rôle</th></tr>
+      <tr><td><code>lib/config.php</code></td><td><code>GOOGLE_CLIENT_ID</code></td><td>Identifiant <strong>Web</strong> OAuth Google (connexion site + app).</td></tr>
+      <tr><td><code>lib/config.php</code></td><td><code>ADMIN_EMAILS</code></td><td>E-mails Google promus <strong>administrateurs</strong> automatiquement.</td></tr>
+      <tr><td><code>lib/config.php</code></td><td><code>UPLOAD_DIR</code> / <code>MAX_BYTES</code></td><td>Dossier de stockage / taille max (<code>0</code> = illimité, pour les vidéos).</td></tr>
+      <tr><td><code>lib/db.config.php</code></td><td>—</td><td><strong>Généré</strong> par <code>install.php</code> : identifiants BDD. Propre à chaque environnement.</td></tr>
+    </table>
+  </div>
+
+  <h2 id="app">6. Application Android (APK)</h2>
+  <ol class="steps">
+    <li class="step">Récupérer le dernier APK : <code>PhotoSync-2.4.apk</code> (ou <code>android/app/build/outputs/apk/debug/app-debug.apk</code>).</li>
+    <li class="step">Sur le téléphone : autoriser l'installation depuis « sources inconnues », puis ouvrir l'APK.</li>
+    <li class="step">Dans l'app : régler le <strong>domaine</strong> = <code>luvumbu.com</code> et le <strong>sous-dossier</strong> = <code>dropbox</code>, puis se connecter avec Google.</li>
+    <li class="step"><strong>Recompiler</strong> si besoin :</li>
+  </ol>
+  <pre># JAVA_HOME = JDK 17 (jbr d'Android Studio)
+gradle -p android assembleDebug
+# sortie : android/app/build/outputs/apk/debug/app-debug.apk</pre>
+
+  <h2 id="maj">7. Mise à jour / déploiement</h2>
+  <p>Pour livrer les corrections (vidéo, origine, filtres, déconnexion…), déposer par FTP les
+  fichiers serveur modifiés depuis <code>public_html/</code> vers <code>dropbox/</code> en respectant l'arborescence :</p>
+  <div class="card">
+    <table>
+      <tr><th>Fichier (local → serveur)</th><th>Apporte</th></tr>
+      <tr><td><code>lib/Auth.php</code></td><td>Colonne <code>source</code> + déconnexion fiable (efface le cookie).</td></tr>
+      <tr><td><code>api/upload.php</code></td><td>Origine <code>phone/computer/web</code> + rangement <code>photos/</code>·<code>videos/</code>.</td></tr>
+      <tr><td><code>api/feed.php</code></td><td>Type photo/vidéo fiable (champ <code>video</code>) + origine.</td></tr>
+      <tr><td><code>api/media.php</code></td><td>Lecture vidéo en streaming (support <strong>HTTP Range</strong>).</td></tr>
+      <tr><td><code>web/gallery.php</code></td><td>Barre fixe, envoi direct, filtre « Afficher » par origine, couleurs.</td></tr>
+      <tr><td><code>web/upload_web.php</code></td><td>Envoi tout-type + bouton « Choisir un fichier ».</td></tr>
+    </table>
+  </div>
+  <div class="note">La colonne <code>source</code> est <strong>créée automatiquement</strong> au déploiement (filet dans <code>feed.php</code>/<code>upload.php</code> + <code>ensureSchema()</code>) — aucune migration SQL manuelle.</div>
+
+  <h2 id="nojamais">8. Fichiers à NE JAMAIS écraser</h2>
+  <div class="warn">
+    <ul style="margin:0;">
+      <li><code>lib/db.config.php</code> — identifiants de la base <strong>propres au serveur en ligne</strong> (les écraser = erreur 500).</li>
+      <li><code>uploads/</code> — toutes les photos et vidéos stockées.</li>
+    </ul>
+  </div>
+
+  <h2 id="tables">9. Tables de base de données</h2>
+  <div class="card">
+    <table>
+      <tr><th>Table</th><th>Colonnes notables</th></tr>
+      <tr><td><code>photosync_users</code></td><td><code>id, username, google_sub, email, is_admin, api_token, hidden_pass_hash</code></td></tr>
+      <tr><td><code>photosync_photos</code></td><td><code>id, user_id, sha256, original_name, stored_path, size_bytes, taken_at, uploaded_at, deleted_at, hidden, <strong>source</strong></code></td></tr>
+      <tr><td><code>photosync_albums</code> / <code>_album_photos</code></td><td>Albums partageables (selon version).</td></tr>
+      <tr><td><code>photosync_login_attempts</code></td><td>Anti-force-brute (IP, échecs, blocage).</td></tr>
+    </table>
+    <p class="pill">Toutes créées/complétées automatiquement par <code>install.php</code> et <code>Auth::ensureSchema()</code>.</p>
+  </div>
+
+  <h2 id="depannage">10. Dépannage</h2>
+  <div class="card">
+    <table>
+      <tr><th>Symptôme</th><th>Cause / solution</th></tr>
+      <tr><td><strong>Erreur 500</strong> « Access denied for user »</td><td><code>lib/db.config.php</code> contient de mauvais identifiants BDD. Relancer <code>install.php</code> ou corriger le fichier sur le serveur (ne jamais y mettre les identifiants d'une autre machine).</td></tr>
+      <tr><td><strong>Vidéo qui ne se lit pas</strong></td><td><code>api/media.php</code> sans support <em>Range</em> non déployé. Déposer la version corrigée. Secours dans l'app : bouton « Ouvrir en ligne ».</td></tr>
+      <tr><td><strong>Photos web invisibles dans l'app</strong></td><td>La galerie n'était pas rechargée → bouton <strong>🔄 Actualiser</strong> (les nouveautés sont en haut, « Charger plus » ne les montre pas).</td></tr>
+      <tr><td><strong>Tout s'affiche « téléphone » (bleu)</strong></td><td><code>api/feed.php</code> / <code>api/upload.php</code> (origine) pas encore déployés.</td></tr>
+      <tr><td><strong>Déconnexion qui ne déconnecte pas</strong></td><td><code>lib/Auth.php</code> (effacement du cookie) pas encore déployé.</td></tr>
+    </table>
+  </div>
+
+  <footer>
+    PhotoSync — Documentation technique d'installation · généré le 2026-06-25 ·
+    voir aussi <code>README.md</code> et <code>MODIFICATIONS.md</code>.
+  </footer>
+</div>
+</body>
+</html>

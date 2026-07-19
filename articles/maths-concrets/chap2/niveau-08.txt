@@ -1,0 +1,94 @@
+TITRE : Chapitre 2 · Niveau 8 — Additionner les grands nombres
+---
+Jusqu'ici, on est resté petit. Des nombres jusqu'à 10.
+
+Maintenant, Tomo a beaucoup de pommes. Il faut additionner des grands nombres.
+
+Et pour ça, on va rappeler Ilo et ses paquets de dix.
+
+
+TOMO A DEUX CAISSES
+
+Dans la première caisse : 23 pommes.
+Dans la deuxième caisse : 14 pommes.
+
+Il veut tout mettre ensemble. Combien de pommes ?
+
+Tu ne vas pas compter une par une jusqu'à 37 ! Tu vas être malin. Tu vas séparer les paquets et les restes.
+
+
+RANGE COMME ILO
+
+Souviens-toi du chapitre 1 : un nombre, c'est des paquets de 10 et des restes.
+
+23, c'est 2 paquets et 3 restes.
+14, c'est 1 paquet et 4 restes.
+
+Maintenant, additionne chaque colonne à part.
+
+Les restes avec les restes : 3 + 4 = 7.
+Les paquets avec les paquets : 2 + 1 = 3.
+
+Résultat : 3 paquets et 7 restes. C'est-à-dire 37.
+
+23 + 14 = 37.
+
+
+LA RÈGLE D'OR
+
+On n'additionne jamais les paquets avec les restes.
+
+Les paquets de 10 vont avec les paquets de 10.
+Les restes vont avec les restes.
+
+C'est comme Ilo qui ne mélangeait jamais ses gros cailloux et ses petits cailloux. Chacun sa colonne.
+
+C'est pour ça qu'à l'école, on pose les additions bien alignées, les unités sous les unités. Ce n'est pas pour faire joli. C'est pour que chaque colonne rencontre sa semblable.
+
+
+POSER L'ADDITION
+
+Voilà pourquoi on écrit les additions comme ça :
+
+  23
++ 14
+----
+
+Les 3 et 4 (les restes) sont l'un sur l'autre.
+Les 2 et 1 (les paquets) sont l'un sur l'autre.
+
+On additionne d'abord la colonne de droite : 3 + 4 = 7.
+Puis la colonne de gauche : 2 + 1 = 3.
+
+Résultat : 37.
+
+On commence toujours par la droite. Toujours. (Tu verras pourquoi vraiment au niveau 9.)
+
+
+UN AUTRE
+
+  45
++ 32
+----
+
+Droite : 5 + 2 = 7.
+Gauche : 4 + 3 = 7.
+Résultat : 77.
+
+Tu vois ? Un grand calcul, c'est juste plusieurs petits calculs, colonne par colonne. Tu sais déjà faire les petits. Donc tu sais faire les grands.
+
+
+À TOI DE JOUER
+
+Additionne en séparant paquets et restes. Aucun de ces calculs ne dépasse 9 dans une colonne, donc c'est tranquille.
+
+  31 + 26
+  52 + 14
+  40 + 35
+  63 + 24
+
+Réponses : 57, 66, 75, 87.
+
+Pour 40 + 35 : les restes, 0 + 5 = 5. Les paquets, 4 + 3 = 7. Donc 75. Le 0 des restes ne fait rien — il n'y a rien à ajouter — mais il garde sa place, comme le zéro du chapitre 1.
+
+Attention : dans tous ces calculs, aucune colonne ne dépasse 9. Mais que se passe-t-il si une colonne fait 10 ou plus ? Là, ça déborde. Et c'est le niveau 9.

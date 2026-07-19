@@ -1,0 +1,68 @@
+name: Deploy to Hostinger via FTP
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    name: Sync files to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1) Deploy blog/ folder (the actual project) to subdomain target /public_html/blog/
+      - name: FTP Deploy blog (subdomain blog.mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: /public_html/blog/
+          local-dir: ./blog/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config/config.php
+            config/sync_keys.json
+            uploads/**
+            APK/**
+            *.apk
+            *.aab
+            *.keystore
+            signing-key-info.txt
+            _diagnostic.php
+            _fix_db.php
+            mobile-app/generate-icons.ps1
+            generate-site-icons.ps1
+            **/.htaccess.local
+            README.md
+
+      # 2) Deploy landing page (index.html at repo root) to /public_html/
+      - name: FTP Deploy landing page (mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: /public_html/
+          local-dir: ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            blog/**
+            doc/**
+            README.md
+            .gitignore
+            *.ps1
+            *.md

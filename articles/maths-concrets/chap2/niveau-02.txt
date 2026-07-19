@@ -1,0 +1,91 @@
+TITRE : Chapitre 2 · Niveau 2 — Ne recompte pas tout
+---
+Tomo a 6 pommes dans une caisse.
+
+Un livreur arrive et en pose 2 de plus dans la caisse.
+
+Combien y a-t-il de pommes maintenant ?
+
+
+LA MÉTHODE LENTE
+
+Tu peux tout recompter depuis le début.
+
+Tu sors toutes les pommes, et tu comptes : un, deux, trois, quatre, cinq, six, sept, huit.
+
+Huit pommes. C'est juste ! Mais c'est long.
+
+Et si Tomo avait 50 pommes ? Tu recomptes 50 pommes à chaque livraison ? Toute la journée ?
+
+
+LA MÉTHODE DE TOMO
+
+Tomo ne recompte jamais.
+
+Il sait déjà qu'il a 6 pommes dans sa caisse. Pourquoi refaire un travail déjà fait ?
+
+Alors il part de 6. Et il continue.
+
+Le livreur pose une pomme : « sept ».
+Le livreur pose l'autre pomme : « huit ».
+
+Fini. Huit pommes.
+
+Il n'a compté que 2 choses au lieu de 8.
+
+
+ESSAIE, TU VAS SENTIR LA DIFFÉRENCE
+
+Fais 7 + 2 en recomptant tout : un, deux, trois, quatre, cinq, six, sept, huit, neuf.
+
+Maintenant fais-le à la façon de Tomo : tu pars de sept... huit, neuf.
+
+Beaucoup plus rapide, non ?
+
+Et surtout : beaucoup moins fatigant. Moins tu comptes, moins tu risques de te tromper.
+
+
+LA RÈGLE : PARS DU PLUS GRAND
+
+Voici l'astuce importante du niveau.
+
+Pour faire 2 + 7, ne pars pas de 2.
+
+Pars de 7, et ajoute 2 : huit, neuf.
+
+Deux petits pas au lieu de sept.
+
+Regarde bien : tu as le droit de commencer par le nombre que tu veux. On verra pourquoi au niveau 3. Pour l'instant, retiens juste que c'est permis, et que c'est malin.
+
+Le plus grand nombre, tu le gardes dans ta tête. Le plus petit, tu le comptes avec tes doigts.
+
+
+ATTENTION AU PIÈGE
+
+C'est le piège où tout le monde tombe une fois.
+
+Tu fais 6 + 2. Tu pars de 6, et tu comptes : « six, sept ». Tu réponds sept.
+
+C'est faux ! La bonne réponse est huit.
+
+Pourquoi ? Parce que tu as compté le 6 comme s'il était le premier pas. Mais le 6, tu l'as déjà. C'est ton point de départ, ce n'est pas un pas.
+
+Le premier pas, c'est SEPT.
+
+Dis-le comme ça : « je pars de six... sept, huit. » Le premier mot que tu prononces après « je pars de six », c'est déjà un pas.
+
+
+À TOI DE JOUER
+
+Fais ces additions à la façon de Tomo. Pars du plus grand, et compte le petit sur tes doigts.
+
+8 + 2
+9 + 3
+2 + 6 (attention : pars de 6 !)
+1 + 9 (pars de 9)
+
+Réponses : 10, 12, 8, 10.
+
+Tu vois ? Sur le dernier, tu n'as fait qu'un seul pas : « je pars de neuf... dix ». Alors que si tu étais parti de 1, tu aurais fait neuf pas.
+
+Neuf pas au lieu d'un. C'est ça, la différence entre compter beaucoup et compter malin.

@@ -1,0 +1,4 @@
+[30-May-2026 12:26:08 Europe/Berlin] [EXCEPTION] test du gestionnaire @ C:\xampp\htdocs\direct_file\api\_boom.php:3
+[30-May-2026 12:26:08 Europe/Berlin] [EXCEPTION] test du gestionnaire @ C:\xampp\htdocs\direct_file\api\_boom.php:3
+[30-May-2026 20:21:24 UTC] [EXCEPTION] Identifiants MySQL incorrects. Ouvre config/database.php et mets ton mot de passe MySQL dans 'pass'. @ /home/u489596434/domains/mariondelval.com/public_html/direct_file/app/Core/Database.php:45
+[30-May-2026 20:21:28 UTC] [EXCEPTION] Identifiants MySQL incorrects. Ouvre config/database.php et mets ton mot de passe MySQL dans 'pass'. @ /home/u489596434/domains/mariondelval.com/public_html/direct_file/app/Core/Database.php:45

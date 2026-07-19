@@ -1,0 +1,122 @@
+TITRE : Chapitre 1 · Niveau 10 — Ce qu'il y a après la virgule
+---
+Dernier niveau. C'est le plus difficile, et c'est celui où tu vas dépasser beaucoup de gens.
+
+Ilo est très vieux. Il ne garde plus les moutons : il vend leur laine.
+
+Un jour, il pèse un sac de laine. La balance affiche quelque chose qu'Ilo n'a jamais vu :
+
+2,5 kg
+
+Ilo regarde ce signe entre le 2 et le 5. Cette petite virgule. Il ne comprend pas.
+
+
+LE PROBLÈME D'ILO
+
+Ilo sait écrire 2 kg. Il sait écrire 3 kg.
+
+Mais son sac n'est ni 2 kg ni 3 kg. Il est entre les deux.
+
+Toute sa vie, Ilo a compté des moutons. Un mouton, c'est un mouton entier. On ne peut pas avoir la moitié d'un mouton — enfin, pas un mouton vivant.
+
+Mais la laine, ce n'est pas des moutons. La laine, on peut en couper autant qu'on veut. Un peu, un tout petit peu, un tout petit tout petit peu.
+
+Ilo a besoin de colonnes plus petites que la colonne des unités.
+
+
+LA RÉPONSE EST DÉJÀ DANS SON SAC
+
+Nara arrive. Elle regarde la balance et elle rit.
+
+« Ilo, tu connais déjà la réponse. Tu la connais depuis 60 ans. »
+
+Elle prend un bâton et dessine les colonnes d'Ilo :
+
+milliers | centaines | dizaines | unités
+
+Puis elle demande : « Quand tu vas vers la gauche, que se passe-t-il ? »
+
+Ilo répond : « Chaque colonne vaut 10 fois plus que sa voisine de droite. »
+
+Nara sourit. « Alors quand tu vas vers la droite ? »
+
+Ilo réfléchit longtemps. Puis ses yeux s'ouvrent grand.
+
+« Chaque colonne vaut 10 fois moins. »
+
+« Voilà », dit Nara. « Et pourquoi t'arrêterais-tu aux unités ? »
+
+
+LES COLONNES CONTINUENT
+
+C'est ça, le secret. Les colonnes ne s'arrêtent jamais, ni à gauche, ni à droite.
+
+À gauche, on multiplie par 10 à chaque colonne : unités, dizaines, centaines, milliers...
+
+À droite, on divise par 10 à chaque colonne. Après les unités, la colonne suivante vaut 10 fois moins qu'une unité.
+
+Une unité coupée en 10. Un dixième.
+
+Et encore après : un dixième coupé en 10. Un centième.
+
+La virgule ne coupe pas le nombre en deux mondes différents. Elle sert juste à montrer où s'arrête la colonne des unités. C'est un panneau, rien de plus.
+
+
+LIS 2,5 COMME UN SAC
+
+2,5 kg, ça veut dire :
+
+2 dans la colonne des unités : 2 kg entiers.
+5 dans la colonne des dixièmes : 5 morceaux d'un dixième de kg.
+
+Un dixième de kilo, c'est 100 g. Cinq dixièmes, c'est 500 g. Un demi-kilo.
+
+Donc 2,5 kg, c'est 2 kg et demi. Ilo comprend enfin sa balance.
+
+
+LE PIÈGE QUI ATTRAPE TOUT LE MONDE
+
+Voici deux nombres : 2,5 et 2,05.
+
+Beaucoup de gens pensent que 2,05 est plus grand, parce qu'il y a plus de chiffres. C'est faux.
+
+Utilise la méthode du niveau 8 : on compare colonne par colonne, en partant de la gauche.
+
+Unités : 2 et 2. Égalité.
+Dixièmes : 5 et 0. Le 5 gagne.
+
+Donc 2,5 est plus grand que 2,05.
+
+2,5 c'est 2 kg et demi. 2,05 c'est 2 kg et 50 g — presque rien de plus que 2 kg.
+
+Le zéro fait son travail de gardien de place, comme au niveau 7 : il tient la colonne des dixièmes vide, pour que le 5 soit bien obligé de rester dans la colonne des centièmes.
+
+Après la virgule, plus il y a de chiffres, plus les morceaux sont petits. Ce n'est pas plus grand. C'est plus fin.
+
+
+TU AS FINI LE CHAPITRE
+
+Regarde le chemin parcouru.
+
+Tu es parti d'un berger qui ne savait pas compter, et qui mettait un caillou dans un sac pour chaque mouton.
+
+Tu as vu naître le paquet de 10. Puis la centaine. Puis le zéro, cette invention étrange qui dessine le vide. Puis les milliers. Et maintenant les colonnes qui continuent de l'autre côté de la virgule.
+
+Et à chaque niveau, c'était toujours la même règle, une seule : chaque colonne vaut 10 fois sa voisine de droite.
+
+Tu ne connais pas dix règles. Tu en connais une. C'est pour ça que tu ne l'oublieras pas.
+
+
+À TOI DE JOUER
+
+Range du plus petit au plus grand :
+
+3,7 — 3,07 — 3,70 — 3
+
+Vas-y vraiment. Colonne par colonne, en partant de la gauche.
+
+Réponse : 3 — 3,07 — 3,7 = 3,70.
+
+Surpris ? 3,7 et 3,70 sont le même nombre ! Le 0 tout à la fin dit « aucun centième » — mais ça, on le savait déjà, puisqu'il n'y avait rien du tout à cette place dans 3,7.
+
+Ce zéro-là ne garde aucune place. Il ne sert à rien. C'est le seul zéro inutile de tout le chapitre — et maintenant tu sais exactement pourquoi.

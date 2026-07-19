@@ -1,0 +1,80 @@
+{
+  "id": "/",
+  "name": "Mon Blog",
+  "short_name": "Blog",
+  "description": "Le blog complet : lis les articles, publie depuis ton téléphone, commente, partage.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#963637",
+  "theme_color": "#963637",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["news", "social", "lifestyle"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "icons": [
+    {
+      "src": "icon-192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mon Blog sur mobile"
+    },
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Mon Blog vue large"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvel article",
+      "short_name": "Écrire",
+      "description": "Écrire et publier un nouvel article",
+      "url": "/pages/article_new.php",
+      "icons": [{ "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Accueil",
+      "short_name": "Accueil",
+      "description": "Tous les articles",
+      "url": "/",
+      "icons": [{ "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

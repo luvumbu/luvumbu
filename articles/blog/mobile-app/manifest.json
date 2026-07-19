@@ -1,0 +1,159 @@
+{
+  "id": "/mobile-app/",
+  "name": "Mon Blog",
+  "short_name": "Blog",
+  "description": "App mobile pour publier et lire les articles du blog, créer des articles et sous-articles depuis ton téléphone. Communauté ouverte, commentaires, partage et galeries.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#2e7d32",
+  "theme_color": "#2e7d32",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["news", "social", "lifestyle", "productivity", "books"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "icons": [
+    {
+      "src": "icon-192.png?v=18",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png?v=18",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png?v=18",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png?v=18",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-192.png?v=18",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Liste des articles sur mobile"
+    },
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Vue large de l'application"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvel article",
+      "short_name": "Écrire",
+      "description": "Écrire et publier un nouvel article",
+      "url": "./index.html?action=new",
+      "icons": [
+        {
+          "src": "icon-192.png?v=18",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mes articles",
+      "short_name": "Articles",
+      "description": "Voir la liste de tous les articles",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "icon-192.png?v=18",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "./index.html?action=share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+blog",
+      "url": "./index.html?article=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./index.html?action=open",
+      "accept": {
+        "text/plain": [".txt", ".md"]
+      },
+      "icons": [
+        {
+          "src": "icon-192.png?v=18",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Derniers articles",
+      "short_name": "Articles",
+      "description": "Widget affichant les derniers articles publiés",
+      "tag": "latest-articles",
+      "ms_ac_template": "widget-template.json",
+      "data": "widget-data.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "screenshot-narrow.png",
+          "sizes": "540x960",
+          "label": "Widget articles"
+        }
+      ],
+      "icons": [
+        {
+          "src": "icon-192.png?v=18",
+          "sizes": "192x192"
+        }
+      ],
+      "auth": false,
+      "update": 86400
+    }
+  ]
+}

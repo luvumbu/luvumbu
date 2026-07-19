@@ -1,0 +1,102 @@
+TITRE : Chapitre 2 · Niveau 9 — La retenue, enfin expliquée
+---
+La retenue. Ce petit chiffre qu'on écrit en haut de l'addition.
+
+Beaucoup d'enfants le posent sans savoir pourquoi. Beaucoup d'adultes aussi.
+
+Après ce niveau, tu seras dans le petit groupe de ceux qui savent vraiment. Et tu ne l'oublieras plus jamais.
+
+
+LE CALCUL QUI DÉBORDE
+
+Tomo additionne deux caisses :
+
+  27
++ 15
+----
+
+On commence par la droite, les restes : 7 + 5.
+
+7 + 5 = 12.
+
+Aïe. 12, c'est trop gros pour tenir dans une colonne de restes. Une colonne ne peut aller que jusqu'à 9.
+
+Qu'est-ce qu'on fait ?
+
+
+RAPPELLE-TOI LA LOI D'ILO
+
+Chapitre 1 : jamais plus de 9 dans une colonne.
+
+Dès qu'une colonne atteint 10, Ilo échange 10 petits cailloux contre 1 gros caillou, et il le pose dans la colonne d'à côté.
+
+C'est exactement ce qu'on va faire ici.
+
+12, c'est 1 paquet de 10 et 2 restes.
+
+Les 2 restes, ils restent dans la colonne des restes. On écrit 2 en bas.
+
+Le paquet de 10, il ne peut pas rester chez les restes. Il déménage dans la colonne des paquets.
+
+Ce paquet qui déménage, c'est LA RETENUE.
+
+
+ON L'ÉCRIT COMME ÇA
+
+  ¹
+  27
++ 15
+----
+   2
+
+Le petit 1 en haut, au-dessus des paquets, c'est le paquet de 10 qui vient d'arriver des restes.
+
+Maintenant, la colonne des paquets : 2 + 1, plus le petit 1 de la retenue.
+
+2 + 1 + 1 = 4.
+
+  ¹
+  27
++ 15
+----
+  42
+
+27 + 15 = 42.
+
+
+C'EST TOUT. VRAIMENT.
+
+La retenue n'est pas une règle bizarre. Ce n'est pas un caprice de maîtresse.
+
+C'est un paquet de 10 qui déménage d'une colonne à l'autre. Parce qu'une colonne ne peut pas contenir 10.
+
+C'est le gros caillou blanc d'Ilo qui change de tas.
+
+Tu connaissais déjà tout ça depuis le chapitre 1. On lui donne juste un nom aujourd'hui : la retenue.
+
+
+POURQUOI ON COMMENCE PAR LA DROITE
+
+Maintenant tu comprends.
+
+Si on commençait par la gauche, on ne saurait pas encore s'il va arriver une retenue de la droite. On devrait revenir en arrière.
+
+En commençant par la droite, la retenue arrive AVANT qu'on calcule la colonne de gauche. Elle est là, prête, quand on en a besoin.
+
+C'est pour ça qu'on calcule de droite à gauche. La retenue voyage vers la gauche, alors on avance dans le même sens qu'elle.
+
+
+À TOI DE JOUER
+
+Additionne. Surveille bien la colonne de droite : si elle dépasse 9, il y a une retenue.
+
+  28 + 14
+  36 + 27
+  45 + 35
+  19 + 19
+
+Réponses : 42, 63, 80, 38.
+
+Vérifions 45 + 35. Droite : 5 + 5 = 10. J'écris 0, je retiens 1 paquet. Gauche : 4 + 3 + 1 = 8. Résultat : 80.
+
+Le 5 + 5 = 10 est un ami du 10 ! Tu vois comme tout se relie ? Les amis du 10 du niveau 4 servent encore ici, à repérer les retenues.

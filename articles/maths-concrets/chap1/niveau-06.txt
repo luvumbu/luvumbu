@@ -1,0 +1,108 @@
+TITRE : Chapitre 1 · Niveau 6 — Le gros caillou noir : la centaine
+---
+Ilo est devenu un berger célèbre. Son troupeau est immense.
+
+Un matin, il compte ses gros cailloux blancs. Il en a 10.
+
+10 gros cailloux blancs. Et sa loi dit : jamais plus de 9 dans une colonne.
+
+Ilo sourit. Il sait exactement quoi faire. Il a déjà fait ça une fois.
+
+
+LE CAILLOU NOIR
+
+Ilo va à la rivière. Il ramasse un caillou noir, bien lisse.
+
+Il prend ses 10 gros cailloux blancs, et il les échange contre ce seul caillou noir.
+
+« Ce caillou noir remplace 10 cailloux blancs », dit Ilo.
+
+Mais attention. Combien de moutons vaut ce caillou noir ?
+
+Chaque caillou blanc vaut 10 moutons. Il y en avait 10.
+10 paquets de 10 moutons.
+10, 20, 30, 40, 50, 60, 70, 80, 90, 100.
+
+Le caillou noir vaut 100 moutons.
+
+C'est un paquet de paquets. Un paquet qui contient 10 paquets, et chaque paquet contient 10 moutons.
+
+Son nom : une centaine.
+
+
+TROIS COLONNES MAINTENANT
+
+Ilo trace une troisième colonne sur sa planche, à gauche des deux autres.
+
+Colonne de droite : les unités. Un caillou = 1 mouton.
+Colonne du milieu : les dizaines. Un caillou = 10 moutons.
+Colonne de gauche : les centaines. Un caillou = 100 moutons.
+
+Ilo pose son sac : 2 cailloux noirs, 4 cailloux blancs, 7 petits cailloux.
+
+Il écrit : 247.
+
+Combien de moutons ?
+2 centaines = 200
+4 dizaines = 40
+7 unités = 7
+200 + 40 + 7 = 247 moutons.
+
+
+LA RÈGLE QUI NE CHANGE JAMAIS
+
+Regarde ce qui vient de se passer, parce que c'est toujours la même chose.
+
+10 unités → 1 dizaine.
+10 dizaines → 1 centaine.
+
+À chaque fois qu'une colonne atteint 10, on échange contre 1 caillou de la colonne de gauche.
+
+Et ça ne s'arrêtera jamais. 10 centaines feront 1 caillou encore plus important (tu le rencontreras au niveau 9).
+
+Chaque colonne vaut 10 fois plus que sa voisine de droite. Toujours. Sans exception.
+
+
+LE 2 DE 247 NE VAUT PAS 2
+
+Voilà la question la plus importante de tout ce chapitre.
+
+Dans 247, que vaut le 2 ?
+
+Beaucoup de gens répondent « deux ». C'est faux.
+
+Le 2 est dans la colonne des centaines. Donc il vaut 2 centaines, c'est-à-dire 200.
+
+Le même chiffre 2, écrit tout à droite, vaudrait 2. Écrit deux colonnes plus à gauche, il vaut 200.
+
+Le même symbole. Cent fois plus. Juste parce qu'il a changé de place.
+
+
+UNE HISTOIRE VRAIE
+
+Cette idée de « la place donne la valeur » n'est pas venue toute seule.
+
+Elle a été inventée en Inde, il y a très longtemps. Des mathématiciens arabes l'ont apprise et l'ont apportée jusqu'en Europe, il y a environ mille ans.
+
+Avant ça, en Europe, on écrivait les nombres comme les Romains : 247 s'écrivait CCXLVII.
+
+Essaie de multiplier CCXLVII par XIX sans tricher. C'est un cauchemar.
+
+C'est pour ça que cette invention a tout changé. Avec seulement 10 symboles — 0 1 2 3 4 5 6 7 8 9 — et une règle de place, tu peux écrire n'importe quel nombre. Aussi grand soit-il. Tu n'auras jamais besoin d'inventer un nouveau symbole.
+
+
+À TOI DE JOUER
+
+Dans le nombre 583 :
+
+Que vaut le 5 ? (Regarde sa colonne.)
+Que vaut le 8 ?
+Que vaut le 3 ?
+
+Maintenant décompose : 583 = ... + ... + ...
+
+Deuxième jeu, plus dur : range ces trois nombres du plus petit au plus grand.
+
+318 — 831 — 183
+
+Ce sont les mêmes chiffres à chaque fois : un 1, un 3, un 8. Seule la place change. Et pourtant l'un est presque cinq fois plus grand que l'autre.

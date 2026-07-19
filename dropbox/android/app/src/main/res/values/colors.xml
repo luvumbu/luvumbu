@@ -1,0 +1,14 @@
+<resources>
+    <color name="ic_launcher_background">#1565C0</color>
+
+    <!-- Palette épurée (thème sombre) -->
+    <color name="bg">#0B1220</color>          <!-- fond général -->
+    <color name="surface">#131C2E</color>      <!-- cartes -->
+    <color name="surface_variant">#1B2740</color>
+    <color name="outline">#26334D</color>      <!-- bordures discrètes -->
+    <color name="accent">#E8772E</color>       <!-- accent (sobre, utilisé avec parcimonie) -->
+    <color name="on_accent">#FFFFFF</color>
+    <color name="text_primary">#E6ECF5</color>
+    <color name="text_secondary">#8AA0BD</color>
+    <color name="scrim">#B3000000</color>
+</resources>

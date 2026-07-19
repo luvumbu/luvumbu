@@ -1,0 +1,84 @@
+<resources>
+    <string name="app_name">PhotoSync</string>
+    <string name="hint_domain">Nom de domaine (ex. luvumbu.com)</string>
+    <string name="hint_subpath">Sous-dossier (ex. apk)</string>
+    <string name="advanced_subfolder">📁 Le serveur est dans un sous-dossier</string>
+    <string name="subpath_help">Laisse décoché si le serveur est à la racine du domaine.</string>
+    <string name="auth_subtitle">Indique ton nom de domaine, puis connecte-toi avec ton compte Google. La configuration est automatique.</string>
+    <string name="sign_in_google">Se connecter avec Google</string>
+
+    <!-- === À REMPLIR === Identifiant client OAuth "Application Web" de Google Cloud.
+         LE MÊME que GOOGLE_CLIENT_ID côté serveur (lib/config.php).
+         Exemple : 1234567890-abcdefg.apps.googleusercontent.com -->
+    <string name="google_web_client_id">878381681024-d7hb2ih3f92jkrlhp4agvb9brpdqv61l.apps.googleusercontent.com</string>
+    <string name="logout">Se déconnecter</string>
+    <string name="connected_as">Connecté en tant que : %1$s</string>
+    <string name="wifi_only">Wi-Fi uniquement</string>
+    <string name="section_sync">Synchronisation</string>
+    <string name="section_options">Options</string>
+    <string name="upload_types_title">Types de fichiers</string>
+    <string name="upload_types_hint">Décoche un type pour ne pas l\'envoyer (ex. : Photos seules).</string>
+    <string name="upload_photos">📷 Photos</string>
+    <string name="upload_videos">🎬 Vidéos</string>
+    <string name="upload_audio">🎵 Musique / audio</string>
+    <string name="upload_none_selected">Sélectionne au moins un type de fichier à synchroniser.</string>
+    <string name="auto_sync">Synchro automatique (arrière-plan ~15 min)</string>
+    <string name="watch_gallery">Surveiller la galerie (alerte temps réel)</string>
+    <string name="watch_on">Surveillance de la galerie activée.</string>
+    <string name="watch_off">Surveillance de la galerie désactivée.</string>
+    <string name="hint_max_per_sync">Max d\'envois par synchro (0 = illimité)</string>
+    <string name="save_and_enable">Enregistrer et activer la synchro</string>
+    <string name="sync_now">Synchroniser maintenant</string>
+    <string name="stop_sync">⏹ Arrêter la synchro</string>
+    <string name="status_stopped">⏹️ Synchro arrêtée.</string>
+    <string name="auto_sync_on">Synchro automatique activée.</string>
+    <string name="auto_sync_off">Synchro automatique désactivée.</string>
+    <string name="detected_change">📸 Nouvelle photo détectée dans la galerie</string>
+    <string name="status_sent">Total envoyé sur le serveur : %1$d photo(s)</string>
+    <string name="activity_title">ACTIVITÉ EN TEMPS RÉEL</string>
+    <string name="status_idle">Prêt. Appuie sur « Synchroniser maintenant ».</string>
+    <string name="view_online">📷 Voir mes photos en ligne</string>
+    <string name="gallery_title">Mes photos en ligne</string>
+    <string name="load_more">Charger plus</string>
+    <string name="photo">Photo</string>
+    <string name="gallery_empty">Aucun fichier sur le serveur pour l\'instant.</string>
+    <string name="gallery_empty_filtered">Aucun fichier dans cette catégorie.</string>
+    <string name="gallery_error">Impossible de charger : %1$s</string>
+
+    <!-- Catégories (onglets de filtre) -->
+    <string name="cat_all">Tout</string>
+    <string name="cat_photo">Photos</string>
+    <string name="cat_video">Vidéos</string>
+    <string name="cat_audio">Musique</string>
+    <string name="cat_document">Documents</string>
+    <string name="cat_other">Autres</string>
+
+    <!-- Tri -->
+    <string name="sort_button">⇅ Trier</string>
+    <string name="sort_title">Trier par</string>
+    <string name="sort_date_desc">Date (plus récent)</string>
+    <string name="sort_date_asc">Date (plus ancien)</string>
+    <string name="sort_name_asc">Nom (A → Z)</string>
+    <string name="sort_name_desc">Nom (Z → A)</string>
+    <string name="sort_size_desc">Taille (plus gros)</string>
+    <string name="sort_size_asc">Taille (plus petit)</string>
+    <string name="sort_type">Type de fichier</string>
+    <string name="open_external_failed">Aucune application pour ouvrir ce fichier.</string>
+
+    <!-- Nettoyage : photos sur le serveur absentes du téléphone -->
+    <string name="cleanup_open">🧹 Photos supprimées du téléphone</string>
+    <string name="cleanup_title">Supprimées du téléphone</string>
+    <string name="cleanup_info">Ces photos sont sur le serveur mais ne sont plus sur ce téléphone. Coche celles à supprimer du serveur, ou laisse-les pour les garder.</string>
+    <string name="cleanup_empty">Aucune photo concernée : tout ce qui est sur le serveur est aussi sur ce téléphone. ✅</string>
+    <string name="cleanup_need_permission">Accès aux photos refusé : impossible de comparer avec ta galerie.</string>
+    <string name="select_all">Tout sélectionner</string>
+    <string name="select_none">Tout désélectionner</string>
+    <string name="delete_from_server">Supprimer du serveur</string>
+    <string name="delete_from_server_n">Supprimer du serveur (%1$d)</string>
+    <string name="cleanup_confirm_title">Supprimer du serveur ?</string>
+    <string name="cleanup_confirm_msg">%1$d photo(s) seront mises à la corbeille du serveur (récupérables 30 jours).</string>
+    <string name="cleanup_keep">Garder</string>
+    <string name="cleanup_delete">Supprimer</string>
+    <string name="cleanup_deleted">%1$d photo(s) supprimée(s) du serveur.</string>
+    <string name="cleanup_delete_failed">Échec de la suppression. Vérifie ta connexion.</string>
+</resources>

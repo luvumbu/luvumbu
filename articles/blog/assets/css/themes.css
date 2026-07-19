@@ -1,0 +1,308 @@
+/* =========================================================================
+   THÈMES DU BLOG — couche de surcharge.
+   Le style par défaut (styles.css) n'est PAS modifié : ces règles ne
+   s'appliquent que lorsque <html> porte un attribut data-theme="...".
+   Chaque thème ne fait que (re)définir des variables ; les règles de
+   surcharge plus bas consomment ces variables.
+   ========================================================================= */
+
+/* ---- Palettes par thème ---- */
+html[data-theme="gothique"] {
+    --bg: #0d0b10;
+    --surface: #16121b;
+    --surface-2: #1c1722;
+    --text: #e7e1d8;
+    --text-soft: #c9c0b6;
+    --muted: #8a7f72;
+    --accent: #b91c4b;
+    --accent-dark: #7f1d3a;
+    --accent-contrast: #fff;
+    --bar-bg: #070608;
+    --bar-text: #e7e1d8;
+    --nav-bg: #100d14;
+    --nav-text: #d8cfc4;
+    --nav-hover: #1c1722;
+    --title-color: #e7e1d8;
+    --border: #2a2330;
+    --title-font: 'UnifrakturCook', 'Playfair Display', serif;
+}
+
+html[data-theme="nuit"] {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #243049;
+    --text: #e2e8f0;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-dark: #0ea5e9;
+    --accent-contrast: #04293f;
+    --bar-bg: #0b1220;
+    --bar-text: #e2e8f0;
+    --nav-bg: #131c30;
+    --nav-text: #cbd5e1;
+    --nav-hover: #1e293b;
+    --title-color: #f1f5f9;
+    --border: #334155;
+}
+
+html[data-theme="sepia"] {
+    --bg: #f3e9d6;
+    --surface: #fbf4e6;
+    --surface-2: #f6edd9;
+    --text: #3b2f23;
+    --text-soft: #5c4a35;
+    --muted: #9c8a6b;
+    --accent: #9a5b2d;
+    --accent-dark: #743f1c;
+    --accent-contrast: #fff;
+    --bar-bg: #4a3526;
+    --bar-text: #f3e9d6;
+    --nav-bg: #efe2c9;
+    --nav-text: #4a3526;
+    --nav-hover: #e6d6b8;
+    --title-color: #4a3526;
+    --border: #ddc9a6;
+    --title-font: 'Playfair Display', Georgia, serif;
+}
+
+html[data-theme="ocean"] {
+    --bg: #04293a;
+    --surface: #064663;
+    --surface-2: #075578;
+    --text: #e0f2fe;
+    --text-soft: #bae6fd;
+    --muted: #7dd3fc;
+    --accent: #2dd4bf;
+    --accent-dark: #14b8a6;
+    --accent-contrast: #04293a;
+    --bar-bg: #021d2b;
+    --bar-text: #e0f2fe;
+    --nav-bg: #053449;
+    --nav-text: #bae6fd;
+    --nav-hover: #075578;
+    --title-color: #e0f2fe;
+    --border: #0e6b8f;
+}
+
+html[data-theme="foret"] {
+    --bg: #0c1f17;
+    --surface: #122c20;
+    --surface-2: #163728;
+    --text: #ecfdf5;
+    --text-soft: #c8ead8;
+    --muted: #86b9a0;
+    --accent: #34d399;
+    --accent-dark: #10b981;
+    --accent-contrast: #052e21;
+    --bar-bg: #07140e;
+    --bar-text: #ecfdf5;
+    --nav-bg: #0f2619;
+    --nav-text: #c8ead8;
+    --nav-hover: #163728;
+    --title-color: #ecfdf5;
+    --border: #1f4734;
+}
+
+html[data-theme="papier"] {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f7f7f5;
+    --text: #1a1a1a;
+    --text-soft: #444444;
+    --muted: #8b8b86;
+    --accent: #1d4ed8;
+    --accent-dark: #1e3a8a;
+    --accent-contrast: #ffffff;
+    --bar-bg: #1a1a1a;
+    --bar-text: #f7f7f5;
+    --nav-bg: #ffffff;
+    --nav-text: #1a1a1a;
+    --nav-hover: #f0f0ee;
+    --title-color: #111111;
+    --border: #e4e4e0;
+    --title-font: 'Playfair Display', Georgia, serif;
+}
+
+html[data-theme="ardoise"] {
+    --bg: #1f2226;
+    --surface: #2a2e34;
+    --surface-2: #333840;
+    --text: #eceff3;
+    --text-soft: #c6ccd4;
+    --muted: #939aa4;
+    --accent: #f59e0b;
+    --accent-dark: #c77c06;
+    --accent-contrast: #1f2226;
+    --bar-bg: #15181b;
+    --bar-text: #eceff3;
+    --nav-bg: #24282d;
+    --nav-text: #c6ccd4;
+    --nav-hover: #333840;
+    --title-color: #f6f8fa;
+    --border: #3d434b;
+}
+
+html[data-theme="lavande"] {
+    --bg: #f6f3fd;
+    --surface: #ffffff;
+    --surface-2: #efe9fb;
+    --text: #2e2545;
+    --text-soft: #55486f;
+    --muted: #9186ad;
+    --accent: #7c3aed;
+    --accent-dark: #5b21b6;
+    --accent-contrast: #ffffff;
+    --bar-bg: #3b2d63;
+    --bar-text: #f6f3fd;
+    --nav-bg: #fbf9ff;
+    --nav-text: #3b2d63;
+    --nav-hover: #ece5fb;
+    --title-color: #3b2d63;
+    --border: #ded4f4;
+}
+
+html[data-theme="rubis"] {
+    --bg: #1c0d12;
+    --surface: #2a141c;
+    --surface-2: #351a24;
+    --text: #f7e9ee;
+    --text-soft: #dcc2cc;
+    --muted: #a4808e;
+    --accent: #e11d48;
+    --accent-dark: #9f1239;
+    --accent-contrast: #ffffff;
+    --bar-bg: #12080b;
+    --bar-text: #f7e9ee;
+    --nav-bg: #241017;
+    --nav-text: #dcc2cc;
+    --nav-hover: #351a24;
+    --title-color: #f7e9ee;
+    --border: #46222f;
+}
+
+html[data-theme="solaire"] {
+    --bg: #fffaf0;
+    --surface: #ffffff;
+    --surface-2: #fff3dc;
+    --text: #3b2f14;
+    --text-soft: #6b5729;
+    --muted: #a9955f;
+    --accent: #d97706;
+    --accent-dark: #a35706;
+    --accent-contrast: #ffffff;
+    --bar-bg: #4a3a15;
+    --bar-text: #fffaf0;
+    --nav-bg: #fffdf7;
+    --nav-text: #4a3a15;
+    --nav-hover: #fbeed0;
+    --title-color: #4a3a15;
+    --border: #f0e0bd;
+}
+
+html[data-theme="neon"] {
+    --bg: #08060f;
+    --surface: #12102080;
+    --surface-2: #191531;
+    --text: #eae6ff;
+    --text-soft: #c3bbf0;
+    --muted: #8b82c0;
+    --accent: #22d3ee;
+    --accent-dark: #d946ef;
+    --accent-contrast: #08060f;
+    --bar-bg: #05040a;
+    --bar-text: #22d3ee;
+    --nav-bg: #0f0c1c;
+    --nav-text: #c3bbf0;
+    --nav-hover: #191531;
+    --title-color: #f0abfc;
+    --border: #322a5c;
+}
+
+/* =========================================================================
+   RÈGLES DE SURCHARGE — ne s'appliquent que si un thème est actif.
+   ========================================================================= */
+html[data-theme] body { background: var(--bg); color: var(--text); }
+
+html[data-theme] a { color: var(--accent); }
+html[data-theme] a:hover { color: var(--accent-dark); }
+
+/* Barre du haut */
+html[data-theme] .menu1 { background-color: var(--bar-bg); color: var(--bar-text); }
+html[data-theme] .socials a { color: var(--bar-text); }
+html[data-theme] .socials a:hover { color: var(--accent); }
+
+/* Titre du site */
+html[data-theme] .bokonzi { color: var(--title-color); font-family: var(--title-font, 'Anton', sans-serif); }
+html[data-theme] .bokonzi a { color: var(--title-color); }
+html[data-theme] .bokonzi p { color: var(--muted); }
+
+/* Barre de navigation */
+html[data-theme] .menu20 { background-color: var(--nav-bg); border-top-color: var(--border); border-bottom-color: var(--border); }
+html[data-theme] .cursor { color: var(--nav-text); border-right-color: var(--border); }
+html[data-theme] .cursor:hover { background-color: var(--nav-hover); }
+
+/* Cartes d'articles */
+html[data-theme] .article-card,
+html[data-theme] .article-full,
+html[data-theme] .empty-state,
+html[data-theme] .sidebar .widget,
+html[data-theme] .auth-card {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+}
+html[data-theme] .article-card h2 a,
+html[data-theme] .article-full h1 { color: var(--text); }
+
+/* Sous-articles */
+html[data-theme] .child-card {
+    background: var(--surface-2);
+    border-color: var(--border);
+    border-left-color: var(--accent-dark);
+}
+html[data-theme] .child-card:hover { border-left-color: var(--accent); }
+html[data-theme] .child-card h3 a { color: var(--text); }
+html[data-theme] .child-card h3 a:hover { color: var(--accent); }
+html[data-theme] .child-card .article-excerpt { color: var(--text-soft); }
+html[data-theme] .child-card .read-more,
+html[data-theme] .read-more { color: var(--accent); }
+html[data-theme] .child-card .read-more:hover { color: var(--accent-dark); }
+
+html[data-theme] .children > h2 { color: var(--text); }
+html[data-theme] .children::before { background: linear-gradient(to right, var(--accent), transparent); }
+
+/* Titres de section sidebar */
+html[data-theme] .sidebar h3 { color: var(--text); }
+
+/* Textes secondaires */
+html[data-theme] .article-excerpt { color: var(--text-soft); }
+html[data-theme] .meta,
+html[data-theme] .muted { color: var(--muted); }
+html[data-theme] .publie { color: var(--accent); }
+
+/* Fil d'ariane */
+html[data-theme] .breadcrumb { color: var(--muted); }
+html[data-theme] .breadcrumb a { color: var(--accent); border-bottom-color: var(--accent-dark); }
+html[data-theme] .breadcrumb a:hover { color: var(--accent-dark); border-bottom-color: var(--accent); }
+
+/* Formulaires */
+html[data-theme] .form label { color: var(--text); }
+html[data-theme] .form input,
+html[data-theme] .form textarea,
+html[data-theme] .form select {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+html[data-theme] .form input:focus,
+html[data-theme] .form textarea:focus,
+html[data-theme] .form select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* Boutons */
+html[data-theme] .btn-primary { background: var(--accent); color: var(--accent-contrast); }
+html[data-theme] .btn-primary:hover { background: var(--accent-dark); }
+html[data-theme] .btn-danger { color: var(--accent); border-color: var(--accent); background: transparent; }
+html[data-theme] .btn-danger:hover { background: var(--accent); color: var(--accent-contrast); }
+html[data-theme] .btn-secondary { color: var(--text); border-color: var(--border); }
+html[data-theme] .btn-secondary:hover { background: var(--surface-2); color: var(--text); }

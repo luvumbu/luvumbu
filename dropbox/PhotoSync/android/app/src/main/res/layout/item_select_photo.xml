@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="140dp"
+    android:layout_margin="2dp"
+    android:background="#16213a">
+
+    <ImageView
+        android:id="@+id/photo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/photo" />
+
+    <!-- Voile sombre quand la photo est sélectionnée -->
+    <View
+        android:id="@+id/selectedOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#803b82f6"
+        android:visibility="gone" />
+
+    <CheckBox
+        android:id="@+id/check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:buttonTint="#ffffff" />
+
+    <TextView
+        android:id="@+id/caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#99000000"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="3dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#ffffff"
+        android:textSize="11sp" />
+</FrameLayout>

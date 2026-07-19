@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#2e7d32">
+    <meta name="color-scheme" content="light">
+    <meta name="description" content="App mobile de Mon Blog">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Blog">
+    <link rel="apple-touch-icon" href="icon-192.png?v=18">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=18">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png?v=18">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=18">
+    <link rel="canonical" href="https://blog.mariondelval.com/mobile-app/">
+    <title>Mon Blog</title>
+    <link rel="stylesheet" href="style.css?v=15">
+</head>
+<body>
+
+<!-- ============ TOASTS (notifications) ============ -->
+<div id="toast-stack" class="toast-stack"></div>
+
+<!-- ============ BANNIÈRE MISE À JOUR ============ -->
+<div id="update-banner" class="update-banner" hidden>
+    <span class="update-text">🚀 Nouvelle version disponible !</span>
+    <button type="button" id="btn-update-now" class="update-btn">Mettre à jour</button>
+</div>
+
+<!-- ============ ÉCRAN CONNEXION ============ -->
+<section id="view-login" class="view view-login" hidden>
+    <div class="login-hero">
+        <img class="login-logo" src="icon-192.png?v=18" alt="Logo Mon Blog">
+        <h1>Mon Blog</h1>
+        <p>Connecte-toi pour publier depuis ton téléphone</p>
+    </div>
+    <form id="form-login" class="form login-form" autocomplete="on">
+        <label>
+            <span class="label-text">Email</span>
+            <input type="email" name="email" required autocomplete="email" autocapitalize="none" inputmode="email" placeholder="ton@email.com">
+        </label>
+        <label>
+            <span class="label-text">Mot de passe</span>
+            <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+        </label>
+        <button type="submit" class="btn-primary btn-block" id="btn-login">
+            <span class="btn-label">Se connecter</span>
+            <span class="btn-loader" hidden>⏳</span>
+        </button>
+        <p class="login-info" id="login-info" hidden></p>
+    </form>
+</section>
+
+<!-- ============ ÉCRAN LISTE ============ -->
+<section id="view-list" class="view" hidden>
+    <header class="topbar">
+        <h1>Mon Blog</h1>
+        <div class="topbar-user" id="topbar-user"></div>
+        <button id="btn-refresh" class="btn-icon" title="Vérifier les mises à jour" aria-label="Vérifier les mises à jour">🔄</button>
+        <button id="btn-logout" class="btn-icon" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
+    </header>
+    <main id="article-list" class="list">
+        <div class="loading"><div class="spinner"></div></div>
+    </main>
+    <button id="btn-new" class="fab" title="Nouvel article" aria-label="Nouvel article">+</button>
+</section>
+
+<!-- ============ ÉCRAN DÉTAIL ============ -->
+<section id="view-article" class="view" hidden>
+    <header class="topbar">
+        <button class="btn-back" data-back aria-label="Retour">←</button>
+        <h1 id="article-title">Article</h1>
+    </header>
+    <main id="article-detail" class="detail">
+        <div class="loading"><div class="spinner"></div></div>
+    </main>
+</section>
+
+<!-- ============ ÉCRAN NOUVEL ARTICLE ============ -->
+<section id="view-new" class="view" hidden>
+    <header class="topbar">
+        <button class="btn-back" data-back aria-label="Retour">←</button>
+        <h1 id="new-title">Nouvel article</h1>
+    </header>
+    <form id="form-new" class="form" enctype="multipart/form-data">
+        <input type="hidden" name="parent_id" value="">
+        <p id="new-parent-info" class="parent-info" hidden></p>
+        <label>
+            <span class="label-text">Titre</span>
+            <input type="text" name="titre" required maxlength="190" placeholder="Titre de l'article">
+        </label>
+        <div class="form-field">
+            <span class="label-text">📷 Image de couverture (optionnel)</span>
+            <div class="file-row">
+                <label class="btn-secondary btn-file" for="input-image">🖼️ Choisir une photo</label>
+                <label class="btn-secondary btn-file" for="input-image-camera">📸 Prendre une photo</label>
+            </div>
+            <input class="visually-hidden" type="file" name="image" id="input-image" accept="image/jpeg,image/png,image/gif,image/webp">
+            <input class="visually-hidden" type="file" id="input-image-camera" accept="image/*" capture="environment">
+            <div id="image-preview-wrap" class="image-preview-wrap" hidden>
+                <img id="image-preview" alt="Aperçu">
+                <button type="button" class="btn-remove-img" id="btn-remove-img" aria-label="Retirer l'image">✕</button>
+            </div>
+        </div>
+        <div class="form-field">
+            <span class="label-text">🖼️ Galerie (plusieurs photos, optionnel)</span>
+            <div class="file-row">
+                <label class="btn-secondary btn-file" for="input-gallery">＋ Ajouter des photos</label>
+                <label class="btn-secondary btn-file" for="input-gallery-camera">📸 Prendre une photo</label>
+            </div>
+            <input class="visually-hidden" type="file" id="input-gallery" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+            <input class="visually-hidden" type="file" id="input-gallery-camera" accept="image/*" capture="environment">
+            <div id="gallery-preview" class="gallery-preview"></div>
+        </div>
+        <label>
+            <span class="label-text">Contenu</span>
+            <textarea name="contenu" rows="12" required placeholder="Écris ton article…"></textarea>
+        </label>
+        <label>
+            <span class="label-text">Sources (optionnel)</span>
+            <textarea name="sources" rows="3" placeholder="https://..."></textarea>
+        </label>
+        <button type="submit" class="btn-primary btn-block" id="btn-publish">
+            <span class="btn-label">📤 Publier</span>
+            <span class="btn-loader" hidden>⏳</span>
+        </button>
+    </form>
+</section>
+
+<!-- ============ ÉCRAN MODIFIER ARTICLE ============ -->
+<section id="view-edit" class="view" hidden>
+    <header class="topbar">
+        <button class="btn-back" data-back aria-label="Retour">←</button>
+        <h1>Modifier l'article</h1>
+    </header>
+    <form id="form-edit" class="form" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="">
+        <input type="hidden" name="_method" value="PUT">
+
+        <label>
+            <span class="label-text">Titre</span>
+            <input type="text" name="titre" required maxlength="190">
+        </label>
+
+        <div class="form-field">
+            <span class="label-text">📷 Couverture</span>
+            <div id="edit-current-cover" class="image-preview-wrap" hidden>
+                <img id="edit-cover-img" alt="">
+                <button type="button" class="btn-remove-img" id="btn-edit-remove-cover" aria-label="Supprimer la couverture">✕</button>
+            </div>
+            <p class="muted" id="edit-cover-removed-info" hidden>Couverture supprimée à l'enregistrement.</p>
+
+            <div class="file-row">
+                <label class="btn-secondary btn-file" for="edit-input-image">🖼️ Remplacer</label>
+                <label class="btn-secondary btn-file" for="edit-input-image-camera">📸 Prendre une photo</label>
+            </div>
+            <input class="visually-hidden" type="file" name="image" id="edit-input-image" accept="image/jpeg,image/png,image/gif,image/webp">
+            <input class="visually-hidden" type="file" id="edit-input-image-camera" accept="image/*" capture="environment">
+            <div id="edit-new-cover-preview" class="image-preview-wrap" hidden>
+                <p class="muted" style="padding:6px 10px;margin:0;background:#fafafa;">Nouvelle couverture :</p>
+                <img id="edit-new-cover-img" alt="">
+                <button type="button" class="btn-remove-img" id="btn-edit-cancel-newcover" aria-label="Annuler">✕</button>
+            </div>
+            <input type="hidden" name="remove_image" id="edit-remove-image" value="">
+        </div>
+
+        <div class="form-field">
+            <span class="label-text">🖼️ Galerie</span>
+            <div id="edit-existing-gallery" class="gallery-preview"></div>
+
+            <p class="muted" style="margin-top:6px;">Ajouter de nouvelles photos :</p>
+            <div class="file-row">
+                <label class="btn-secondary btn-file" for="edit-input-gallery">＋ Ajouter</label>
+                <label class="btn-secondary btn-file" for="edit-input-gallery-camera">📸 Prendre une photo</label>
+            </div>
+            <input class="visually-hidden" type="file" id="edit-input-gallery" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+            <input class="visually-hidden" type="file" id="edit-input-gallery-camera" accept="image/*" capture="environment">
+            <div id="edit-new-gallery-preview" class="gallery-preview"></div>
+        </div>
+
+        <label>
+            <span class="label-text">Contenu</span>
+            <textarea name="contenu" rows="12" required></textarea>
+        </label>
+        <label>
+            <span class="label-text">Sources (optionnel)</span>
+            <textarea name="sources" rows="3" placeholder="https://..."></textarea>
+        </label>
+        <button type="submit" class="btn-primary btn-block" id="btn-save-edit">
+            <span class="btn-label">💾 Enregistrer</span>
+            <span class="btn-loader" hidden>⏳</span>
+        </button>
+    </form>
+</section>
+
+<!-- ============ VISIONNEUSE PLEIN ÉCRAN (photo entière) ============ -->
+<div id="lightbox" class="lightbox" hidden>
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Fermer">✕</button>
+    <img id="lightbox-img" alt="Photo en plein écran">
+</div>
+
+<script>
+    // On désinstalle TOUS les anciens service workers avant tout chargement
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+        });
+        if (window.caches) {
+            caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+        }
+    }
+</script>
+<script src="app.js?v=15"></script>
+</body>
+</html>

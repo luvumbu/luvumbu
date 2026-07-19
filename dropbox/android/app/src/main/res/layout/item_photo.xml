@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tile"
+    android:layout_width="match_parent"
+    android:layout_height="124dp"
+    android:layout_margin="5dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp"
+    app:contentPadding="0dp"
+    app:cardBackgroundColor="@color/surface_variant">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Miniature image (photos) : chargée en taille réduite via Coil. -->
+        <ImageView
+            android:id="@+id/photo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/photo" />
+
+        <!-- Icône de type (vidéo / audio / document / autre). -->
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone"
+            android:contentDescription="@string/photo" />
+
+        <!-- Logo du type (discret), affiché sur chaque vignette. -->
+        <ImageView
+            android:id="@+id/typeBadge"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_badge"
+            android:padding="4dp"
+            android:contentDescription="@string/photo" />
+
+        <!-- Nom du fichier (affiché pour les types non-photo). -->
+        <TextView
+            android:id="@+id/label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@color/scrim"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:maxLines="1"
+            android:ellipsize="middle"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            android:visibility="gone" />
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

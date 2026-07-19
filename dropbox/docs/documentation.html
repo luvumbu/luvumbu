@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhotoSync — Documentation</title>
+<style>
+  :root{
+    --orange:#E8772E; --brown:#5b3a1e; --yellow:#F2B705; --ink:#16213a;
+    --bg:#0b1220; --panel:#111a2e; --card:#16213a; --line:#26344f;
+    --text:#e6edf6; --muted:#9fb3cd; --green:#1f9d55; --red:#cc1f1a;
+    --code:#0f172a; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:15.5px;
+  }
+  a{color:var(--orange); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:var(--code); padding:2px 6px; border-radius:5px; font-size:.9em; color:#ffd9b3}
+  pre{
+    background:var(--code); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; overflow:auto; font-size:13.5px; line-height:1.5;
+  }
+  pre code{background:none; padding:0; color:#cfe0f5}
+
+  /* Layout */
+  .wrap{display:flex; min-height:100vh}
+  nav.side{
+    width:300px; flex:0 0 300px; position:sticky; top:0; align-self:flex-start;
+    height:100vh; overflow:auto; background:var(--panel); border-right:1px solid var(--line);
+    padding:22px 18px;
+  }
+  nav.side .brand{display:flex; align-items:center; gap:12px; margin-bottom:18px}
+  nav.side .brand .logo{
+    width:40px; height:40px; border-radius:11px; flex:0 0 40px;
+    background:radial-gradient(circle at 30% 30%, var(--yellow), var(--orange) 55%, var(--brown));
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+  }
+  nav.side .brand b{font-size:17px}
+  nav.side .brand span{display:block; color:var(--muted); font-size:12px; font-weight:400}
+  nav.side .grp{margin:16px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+  nav.side a{display:block; color:var(--text); padding:6px 10px; border-radius:8px; font-size:14px}
+  nav.side a:hover{background:var(--card); text-decoration:none}
+  nav.side a.sub{padding-left:22px; color:var(--muted); font-size:13.5px}
+
+  main{flex:1; min-width:0; padding:36px 44px 90px; max-width:980px}
+  header.hero{
+    background:linear-gradient(135deg, var(--brown), var(--ink) 60%);
+    border:1px solid var(--line); border-radius:var(--radius); padding:30px 32px; margin-bottom:30px;
+    position:relative; overflow:hidden;
+  }
+  header.hero:after{
+    content:"📷"; position:absolute; right:24px; top:50%; transform:translateY(-50%);
+    font-size:96px; opacity:.12;
+  }
+  header.hero h1{margin:0 0 6px; font-size:30px}
+  header.hero p{margin:0; color:var(--muted); max-width:640px}
+  header.hero .pills{margin-top:16px; display:flex; flex-wrap:wrap; gap:8px}
+  .pill{background:rgba(232,119,46,.16); color:#ffcfa6; border:1px solid rgba(232,119,46,.35);
+        padding:4px 11px; border-radius:999px; font-size:12.5px}
+
+  section{margin-bottom:14px}
+  h2{
+    font-size:23px; margin:38px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--line);
+    scroll-margin-top:18px;
+  }
+  h2 .n{color:var(--orange); font-weight:800; margin-right:8px}
+  h3{font-size:17.5px; margin:24px 0 8px; color:#ffd9b3; scroll-margin-top:18px}
+  h4{font-size:15px; margin:18px 0 6px; color:var(--yellow)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:14px 0}
+  .note{border-left:4px solid var(--orange); background:rgba(232,119,46,.08); padding:12px 16px; border-radius:8px; margin:14px 0}
+  .warn{border-left:4px solid var(--yellow); background:rgba(242,183,5,.08); padding:12px 16px; border-radius:8px; margin:14px 0}
+  .danger{border-left:4px solid var(--red); background:rgba(204,31,26,.10); padding:12px 16px; border-radius:8px; margin:14px 0}
+
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:var(--ink); color:#fff; font-size:13px}
+  tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+
+  ul,ol{padding-left:22px} li{margin:5px 0}
+
+  .tag{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; vertical-align:middle}
+  .get{background:#16432b; color:#7ee2a8} .post{background:#3a2a12; color:#ffcf91}
+
+  .steps{counter-reset:s; list-style:none; padding-left:0}
+  .steps>li{counter-increment:s; position:relative; padding:10px 0 10px 46px; border-bottom:1px dashed var(--line)}
+  .steps>li:before{
+    content:counter(s); position:absolute; left:0; top:9px; width:30px; height:30px;
+    background:var(--orange); color:#1a1208; border-radius:9px; display:flex; align-items:center;
+    justify-content:center; font-weight:800;
+  }
+
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:880px){
+    nav.side{display:none}
+    main{padding:24px 18px 70px}
+    .cols{grid-template-columns:1fr}
+    header.hero:after{display:none}
+  }
+  .totop{position:fixed; right:20px; bottom:20px; background:var(--orange); color:#1a1208;
+    width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:800; box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .totop:hover{text-decoration:none}
+  footer{margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  .seq{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ======================= SIDEBAR ======================= -->
+<nav class="side">
+  <div class="brand">
+    <div class="logo">📷</div>
+    <div><b>PhotoSync</b><span>Documentation v1.0</span></div>
+  </div>
+
+  <div class="grp">Présentation</div>
+  <a href="#apropos">À propos</a>
+  <a href="#archi">Architecture</a>
+
+  <div class="grp">Guide d'utilisation</div>
+  <a href="#u-android" class="sub">Android — démarrage</a>
+  <a href="#u-sync" class="sub">Sauvegarder</a>
+  <a href="#u-web" class="sub">iPhone / navigateur</a>
+  <a href="#u-galerie" class="sub">Galerie & corbeille</a>
+  <a href="#u-faq" class="sub">FAQ</a>
+
+  <div class="grp">Documentation technique</div>
+  <a href="#t-data" class="sub">Base de données</a>
+  <a href="#t-api" class="sub">API serveur</a>
+  <a href="#t-upload" class="sub">Renvoi des fichiers</a>
+  <a href="#t-stockage" class="sub">Stockage & médias</a>
+  <a href="#t-secu" class="sub">Sécurité</a>
+  <a href="#t-android" class="sub">App Android (interne)</a>
+
+  <div class="grp">Mise en place</div>
+  <a href="#i-serveur" class="sub">Installer le serveur</a>
+  <a href="#i-apk" class="sub">Compiler l'APK</a>
+  <a href="#i-config" class="sub">Configuration</a>
+  <a href="#i-debug" class="sub">Dépannage</a>
+</nav>
+
+<!-- ======================= CONTENU ======================= -->
+<main>
+  <header class="hero">
+    <h1>PhotoSync — Documentation</h1>
+    <p>Sauvegarde automatique des photos et vidéos d'un téléphone Android vers votre propre
+       serveur PHP/MySQL, avec comptes utilisateurs, galerie web protégée, corbeille 30 jours
+       et envoi manuel depuis iPhone / navigateur.</p>
+    <div class="pills">
+      <span class="pill">Android (Kotlin)</span>
+      <span class="pill">PHP 7.4+ / MySQL</span>
+      <span class="pill">Multi-comptes</span>
+      <span class="pill">https://luvumbu.com</span>
+    </div>
+  </header>
+
+  <!-- ===== À PROPOS ===== -->
+  <section id="apropos">
+    <h2><span class="n">§</span>À propos</h2>
+    <p>PhotoSync est composé de deux moitiés qui dialoguent en <b>HTTP / JSON + multipart</b> :
+       une <b>application Android</b> qui envoie les médias en arrière-plan, et un <b>serveur PHP</b>
+       qui les reçoit, les range et les sert. Chaque utilisateur possède un <b>compte</b> et ne voit
+       que ses propres photos.</p>
+    <div class="cols">
+      <div class="card">
+        <h4>Adresse du serveur</h4>
+        <code>luvumbu.com</code> — à la racine, sans sous-dossier.
+      </div>
+      <div class="card">
+        <h4>Code d'inscription</h4>
+        Le <b>mot de passe de la base de données</b> (<code>DB_PASS</code>) sert de code pour créer un compte.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ARCHITECTURE ===== -->
+  <section id="archi">
+    <h2><span class="n">§</span>Architecture générale</h2>
+<pre class="seq"><code>┌─────────────────────────┐        HTTPS         ┌──────────────────────────────┐
+│   App Android (Kotlin)  │ ──────────────────►  │   Serveur PHP (mutualisé)    │
+│  WorkManager (15 min)   │  multipart / JSON     │  api/*.php  → JSON            │
+│  OkHttp · Room · Coil   │ ◄──────────────────   │  web/*.php  → pages HTML     │
+└─────────────────────────┘   jeton X-Auth-Token  │  uploads/   → fichiers       │
+            ▲                                      │  MySQL      → métadonnées    │
+            │                                      └──────────────────────────────┘
+   Navigateur (iPhone/PC) ── session web (cookie) ──────────┘</code></pre>
+    <ul>
+      <li><b>Serveur</b> : PHP 7.4+ avec PDO MySQL, sans framework. <code>api/</code> (machine),
+          <code>web/</code> (navigateur), <code>lib/</code> (code commun).</li>
+      <li><b>Client Android</b> : <code>minSdk 26</code> / <code>targetSdk 35</code>, synchro via WorkManager.</li>
+      <li><b>Cloisonnement</b> : chaque requête est filtrée par <code>user_id</code> ; jeton de
+          64 caractères hex par compte (en-tête <code>X-Auth-Token</code>).</li>
+    </ul>
+  </section>
+
+  <!-- =================================================================== -->
+  <!--                       GUIDE D'UTILISATION                            -->
+  <!-- =================================================================== -->
+
+  <section id="u-android">
+    <h2><span class="n">1</span>Android — premier démarrage</h2>
+    <h3>Installer l'application</h3>
+    <ol class="steps">
+      <li>Copiez <code>PhotoSync.apk</code> (ou <code>apk.apk</code>) sur le téléphone et ouvrez-le.</li>
+      <li>Autorisez l'<b>installation depuis cette source</b> (avertissement normal hors store).</li>
+      <li>Installez et ouvrez <b>PhotoSync</b>.</li>
+    </ol>
+    <h3>Créer son compte</h3>
+    <ol class="steps">
+      <li>Saisissez le domaine <code>luvumbu.com</code> (cochez « sous-dossier » seulement si nécessaire).</li>
+      <li>Choisissez <b>Créer un compte</b> : identifiant (3–64 car.), mot de passe (≥ 4 car.).</li>
+      <li>Entrez le <b>code d'inscription</b> = mot de passe de la base de données du serveur.</li>
+      <li>Acceptez l'accès aux <b>photos et vidéos</b> à la première synchro.</li>
+    </ol>
+    <div class="note">💡 Le <b>tout premier compte</b> créé récupère les photos envoyées avant la
+      mise en place des comptes.</div>
+  </section>
+
+  <section id="u-sync">
+    <h2><span class="n">2</span>Sauvegarder ses photos</h2>
+    <div class="cols">
+      <div class="card"><h4>Synchroniser maintenant</h4>Lance une sauvegarde immédiate.</div>
+      <div class="card"><h4>Activer la synchro</h4>Automatique en arrière-plan, ~toutes les 15 min.</div>
+      <div class="card"><h4>Wi-Fi uniquement</h4>N'envoie qu'en Wi-Fi (économise les données).</div>
+      <div class="card"><h4>Surveiller la galerie</h4>Détecte les nouvelles photos en temps réel (app ouverte).</div>
+      <div class="card"><h4>Max d'envois / synchro</h4>Limite par passage (0 = illimité).</div>
+      <div class="card"><h4>Arrêter la synchro</h4>Stoppe l'envoi en cours et l'auto.</div>
+    </div>
+    <h3>Ce qui se passe pendant une synchro</h3>
+    <ol>
+      <li>🔍 <b>Vérification</b> — le serveur indique ce qui est déjà sauvegardé (pas de réenvoi).</li>
+      <li>📤 <b>Envoi</b> — seules les nouveautés partent, progression <code>X / total</code> en direct.</li>
+      <li>✅ <b>Bilan</b> — notification « X sauvegardée(s) ».</li>
+    </ol>
+    <div class="warn">⚙️ <b>Fiabilité</b> : Réglages → Applications → PhotoSync → Batterie →
+      <b>Sans restriction</b>, pour que la synchro en arrière-plan ne soit pas coupée.</div>
+  </section>
+
+  <section id="u-web">
+    <h2><span class="n">3</span>iPhone & navigateur (sans App Store)</h2>
+    <p>iOS n'autorise pas l'envoi automatique en arrière-plan : on passe par le web.</p>
+    <table>
+      <tr><th>Action</th><th>Adresse</th></tr>
+      <tr><td>Envoyer des photos</td><td><code>https://luvumbu.com/web/upload_web.php</code></td></tr>
+      <tr><td>Voir ses photos</td><td><code>https://luvumbu.com/web/gallery.php</code></td></tr>
+      <tr><td>Créer un compte (web)</td><td><code>https://luvumbu.com/web/register.php</code></td></tr>
+    </table>
+    <div class="note">💡 iPhone : Safari → <b>Partager → Sur l'écran d'accueil</b> crée une icône
+      type application. Ces pages marchent aussi sur Android/PC.</div>
+  </section>
+
+  <section id="u-galerie">
+    <h2><span class="n">4</span>Galerie web & corbeille</h2>
+    <ul>
+      <li>Connexion par compte — vous ne voyez que <b>vos</b> photos, avec leur <b>date</b>.</li>
+      <li>Nombre par page réglable (5 / 10 / 20 / 50 / 100), mémorisé.</li>
+      <li>Sélection multiple (cases à cocher + « Tout sélectionner »).</li>
+      <li><b>Corbeille</b> : conservation <b>30 jours</b> puis suppression auto ; restauration ou
+          suppression définitive possibles.</li>
+    </ul>
+    <p>Sur Android, l'écran <b>« Photos supprimées du téléphone »</b> compare serveur ↔ galerie locale
+       et propose de retirer du serveur ce qui n'est plus sur le téléphone.</p>
+  </section>
+
+  <section id="u-faq">
+    <h2><span class="n">5</span>Questions fréquentes</h2>
+    <table>
+      <tr><th>Problème</th><th>Solution</th></tr>
+      <tr><td>« Code d'inscription invalide »</td><td>Le code = mot de passe de la base de données du serveur.</td></tr>
+      <tr><td>Rien ne part en arrière-plan</td><td>Synchro activée, accès photos accordé, batterie « sans restriction », Wi-Fi si Wi-Fi only.</td></tr>
+      <tr><td>Réinstallation : tout renvoyé ?</td><td>Non — le serveur reconnaît les médias déjà présents.</td></tr>
+      <tr><td>« URL introuvable (404) »</td><td>Domaine/sous-dossier mal saisi : vérifier <code>luvumbu.com</code>.</td></tr>
+      <tr><td>« Jeton invalide »</td><td>Se déconnecter puis se reconnecter.</td></tr>
+      <tr><td>Les vidéos ?</td><td>Prises en charge comme les photos.</td></tr>
+    </table>
+  </section>
+
+  <!-- =================================================================== -->
+  <!--                       DOCUMENTATION TECHNIQUE                        -->
+  <!-- =================================================================== -->
+
+  <section id="t-data">
+    <h2><span class="n">6</span>Modèle de données (MySQL)</h2>
+    <p>Tables <b>préfixées</b> (<code>photosync_</code> par défaut) → cohabitation possible dans une
+       base partagée. Noms définis dans <code>lib/bootstrap.php</code>.</p>
+    <h3><code>photosync_users</code></h3>
+    <table>
+      <tr><th>Colonne</th><th>Type</th><th>Rôle</th></tr>
+      <tr><td><code>id</code></td><td>INT U. PK AI</td><td>identifiant du compte</td></tr>
+      <tr><td><code>username</code></td><td>VARCHAR(64) UNIQUE</td><td>identifiant de connexion</td></tr>
+      <tr><td><code>pass_hash</code></td><td>VARCHAR(255)</td><td>hash <code>password_hash()</code> (bcrypt)</td></tr>
+      <tr><td><code>api_token</code></td><td>CHAR(64) UNIQUE</td><td>jeton machine (32 octets hex)</td></tr>
+      <tr><td><code>created_at</code></td><td>DATETIME</td><td>date de création</td></tr>
+    </table>
+    <h3><code>photosync_photos</code></h3>
+    <table>
+      <tr><th>Colonne</th><th>Type</th><th>Rôle</th></tr>
+      <tr><td><code>id</code></td><td>BIGINT U. PK AI</td><td>identifiant de la photo</td></tr>
+      <tr><td><code>user_id</code></td><td>INT U. NULL idx</td><td>propriétaire (NULL = orpheline)</td></tr>
+      <tr><td><code>sha256</code></td><td>CHAR(64)</td><td>empreinte du contenu (déduplication)</td></tr>
+      <tr><td><code>original_name</code></td><td>VARCHAR(255)</td><td>nom de fichier d'origine</td></tr>
+      <tr><td><code>stored_path</code></td><td>VARCHAR(512)</td><td>chemin relatif sous <code>uploads/</code></td></tr>
+      <tr><td><code>size_bytes</code></td><td>BIGINT U.</td><td>taille</td></tr>
+      <tr><td><code>taken_at</code></td><td>DATETIME NULL idx</td><td>date de prise de vue</td></tr>
+      <tr><td><code>uploaded_at</code></td><td>DATETIME</td><td>date de réception</td></tr>
+      <tr><td><code>deleted_at</code></td><td>DATETIME NULL idx</td><td>si renseignée → en corbeille</td></tr>
+    </table>
+    <div class="note">Index clé : <code>UNIQUE (user_id, sha256)</code> → déduplication
+      <b>par compte</b>. <code>Auth::ensureSchema()</code> est idempotent (migration en douceur).</div>
+  </section>
+
+  <section id="t-api">
+    <h2><span class="n">7</span>API serveur (endpoints)</h2>
+    <p>Tous incluent <code>lib/bootstrap.php</code>, répondent via <code>Api::json()</code> /
+       <code>Api::fail()</code>. Auth machine via <code>X-Auth-Token</code> (ou <code>?token=</code>).</p>
+    <table>
+      <tr><th>Endpoint</th><th>Méthode</th><th>Entrée</th><th>Sortie</th></tr>
+      <tr><td><code>register.php</code></td><td><span class="tag post">POST</span></td><td>username, password (+ code d'inscription)</td><td>{ok, token, username}</td></tr>
+      <tr><td><code>login.php</code></td><td><span class="tag post">POST</span></td><td>username, password</td><td>{ok, token, username}</td></tr>
+      <tr><td><code>setup.php</code></td><td><span class="tag post">POST</span></td><td>jeton</td><td>{ok, user_id, space, schema}</td></tr>
+      <tr><td><code>names.php</code></td><td><span class="tag get">GET</span></td><td>jeton</td><td>{ok, names:[…]}</td></tr>
+      <tr><td><code>check.php</code></td><td><span class="tag post">POST</span></td><td>{hashes:[sha256…]}</td><td>{ok, exists:[…]}</td></tr>
+      <tr><td><code>upload.php</code></td><td><span class="tag post">POST</span></td><td>multipart photo + taken_at</td><td>{ok, duplicate, path}</td></tr>
+      <tr><td><code>feed.php</code></td><td><span class="tag get">GET</span></td><td>?page=N</td><td>{ok, total, page, pages, photos:[…]}</td></tr>
+      <tr><td><code>media.php</code></td><td><span class="tag get">GET</span></td><td>?id=N[&amp;thumb=1]</td><td>flux binaire image/vignette</td></tr>
+      <tr><td><code>delete.php</code></td><td><span class="tag post">POST</span></td><td>{ids:[…]}</td><td>mise à la corbeille</td></tr>
+    </table>
+    <p><b>Codes d'erreur</b> : 400 invalide · 401 jeton/compte · 404 introuvable · 405 méthode ·
+       413 trop volumineux · 500 erreur serveur (renvoyée en JSON lisible).</p>
+  </section>
+
+  <section id="t-upload">
+    <h2><span class="n">8</span>Renvoi des fichiers — flux d'upload</h2>
+    <p>C'est le cœur du système : parcours complet d'une photo, du téléphone au disque serveur.</p>
+
+    <h3>① Côté Android — <code>UploadWorker.doWork()</code></h3>
+<pre class="seq"><code>1. isLoggedIn ?                       → sinon « Compte non connecté »
+2. (1ʳᵉ fois) verifySetup() :         permission photos + api/setup.php (compte/schéma/espace)
+3. SCAN local  : MediaScanner         images + vidéos (MediaStore), du + ancien au + récent
+4. FILTRE      : retire les ids déjà présents dans Room (base locale)
+5. VÉRIF       : api/names.php         noms déjà sur le serveur → ignorés (comptés "skipped")
+6. ENVOI       : Semaphore = 4         envois EN PARALLÈLE, limités par maxPerSync
+                   api.upload(photo) → succès = markUploaded immédiat (reprise possible)
+                   échec : si 0 réussie et ≥3 échecs → abandon (serveur KO)
+7. BILAN       : notification « ✅ X sauvegardée(s) » ; que des échecs → Result.retry()</code></pre>
+    <div class="note">Deux niveaux d'anti-doublon côté client : base <b>Room</b> (id MediaStore) +
+      <b>noms serveur</b> (<code>names.php</code>). Le <b>SHA-256</b> reste le filet de sécurité côté serveur.</div>
+
+    <h3>② Côté Android — <code>ApiClient.upload()</code></h3>
+<pre><code>// content:// n'est pas un fichier : copie d'abord dans le cache
+val tmp = File.createTempFile("up_", ".bin", cacheDir)
+contentResolver.openInputStream(photo.uri).copyTo(tmp)
+
+MultipartBody.FORM
+  .addFormDataPart("taken_at", photo.dateTakenMs.toString())
+  .addFormDataPart("photo", photo.name, tmp.asRequestBody(mime))
+
+POST {serverUrl}/api/upload.php
+   header X-Auth-Token: &lt;jeton&gt;
+finally { tmp.delete() }   // toujours nettoyé</code></pre>
+    <p>Timeouts OkHttp adaptés aux gros médias : <b>connect 30 s</b>, <b>write 20 min</b>, <b>read 5 min</b>.</p>
+
+    <h3>③ Côté serveur — <code>api/upload.php</code></h3>
+<pre class="seq"><code>1. POST requis (sinon 405)
+2. uid = currentUserId() (jeton OU session web), sinon 401
+3. $_FILES['photo'] OK ? sinon 400
+4. contrôles : taille &gt; 0 · MAX_BYTES (0=illimité, sinon 413) · is_uploaded_file()
+5. sha = hash_file('sha256', tmp)
+6. DÉDUP   : SELECT WHERE user_id=uid AND sha256=sha → {duplicate:true} sans réécrire
+7. RANGE   : uploads/&lt;uid&gt;/&lt;AAAA&gt;/&lt;MM&gt;/&lt;sha12&gt;_&lt;nom assaini&gt;
+8. move_uploaded_file(tmp, dest), sinon 500
+9. INSERT (user_id, sha256, original_name, stored_path, size_bytes, taken_at)
+10. réponse 201 {ok:true, duplicate:false, path}</code></pre>
+    <div class="warn">Même si l'app envoyait un doublon, le serveur le détecte <b>par contenu</b>
+      (SHA-256) et ne stocke jamais deux fois.</div>
+  </section>
+
+  <section id="t-stockage">
+    <h2><span class="n">9</span>Stockage & service des médias</h2>
+    <h3>Arborescence des fichiers</h3>
+    <table>
+      <tr><th>Type</th><th>Chemin</th></tr>
+      <tr><td>Photo active</td><td><code>uploads/&lt;user_id&gt;/&lt;AAAA&gt;/&lt;MM&gt;/&lt;sha12&gt;_&lt;nom&gt;</code></td></tr>
+      <tr><td>Corbeille</td><td><code>uploads/.corbeille/&lt;même chemin&gt;</code></td></tr>
+      <tr><td>Vignettes (cache)</td><td><code>uploads/.thumbs/&lt;id&gt;.jpg</code></td></tr>
+    </table>
+    <h3><code>media.php</code> — sert une image au propriétaire</h3>
+    <ul>
+      <li>Auth : session web <b>ou</b> jeton ; l'admin voit tout.</li>
+      <li><b>Anti-traversal</b> : <code>realpath()</code> doit rester sous <code>uploads/</code>.</li>
+      <li><b>Auto-nettoyage</b> : fichier disparu → entrée supprimée + 404 (plus d'image cassée).</li>
+      <li><b>Vignette</b> : image → cache JPEG via GD (500 px, qualité 82) ; vidéo → icône SVG « ▶ ».</li>
+    </ul>
+    <h3>Corbeille (<code>lib/Photos.php</code>)</h3>
+    <p><code>trash</code> / <code>restore</code> / <code>deleteForever</code> / <code>purgeOldTrash</code>
+       (suppression après <code>TRASH_DAYS = 30</code> jours). Toujours scopé au compte.</p>
+  </section>
+
+  <section id="t-secu">
+    <h2><span class="n">10</span>Sécurité</h2>
+    <ul>
+      <li><b>Fichiers privés</b> : <code>uploads/.htaccess</code> (<code>Require all denied</code>,
+          <code>php_flag engine off</code>) → tout passe par <code>media.php</code>.</li>
+      <li><b>Cloisonnement</b> : filtrage <code>user_id</code> partout + index <code>(user_id, sha256)</code>.</li>
+      <li><b>Mots de passe</b> : <code>password_hash()</code> / <code>password_verify()</code>, temps constant.</li>
+      <li><b>Upload</b> : <code>is_uploaded_file()</code>, nom assaini, taille bornée.</li>
+      <li><b>Sessions</b> : <code>session_regenerate_id(true)</code> à la connexion.</li>
+    </ul>
+    <div class="danger">🔐 <b>Après l'installation, supprimez <code>install.php</code></b> :
+      il n'est pas protégé par mot de passe.</div>
+  </section>
+
+  <section id="t-android">
+    <h2><span class="n">11</span>Application Android (interne)</h2>
+    <h3>Pile technique</h3>
+    <p><code>com.example.photosync</code> · minSdk 26 · target/compileSdk 35 · Java 17.
+       WorkManager 2.9.1, OkHttp 4.12.0, Coil 2.7.0, Room 2.6.1 (KSP), coroutines 1.8.1.</p>
+    <h3>Permissions</h3>
+    <p><code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code>, <code>READ_MEDIA_IMAGES/VIDEO</code>
+       (Android 13+), <code>READ_EXTERNAL_STORAGE</code> (≤ SDK 32), <code>POST_NOTIFICATIONS</code>.</p>
+    <h3>Composants clés</h3>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>MediaScanner</code></td><td>lit MediaStore (images + vidéos), tri chronologique</td></tr>
+      <tr><td><code>ApiClient</code></td><td>couche réseau OkHttp (upload, feed, login, médias…)</td></tr>
+      <tr><td><code>UploadWorker</code></td><td>synchro : scan + envoi parallèle (×4) + notifications</td></tr>
+      <tr><td><code>AppDb</code> (Room)</td><td>photos déjà envoyées ; vidée à la déconnexion</td></tr>
+      <tr><td><code>SettingsStore</code></td><td>préférences + <code>buildServerUrl()</code> (normalise l'URL)</td></tr>
+    </table>
+    <p>Planification : <code>PeriodicWorkRequest</code> 15 min, contrainte réseau
+       (UNMETERED si Wi-Fi only), backoff exponentiel ; <code>runNow</code> pour l'envoi immédiat.</p>
+  </section>
+
+  <!-- =================================================================== -->
+  <!--                          MISE EN PLACE                               -->
+  <!-- =================================================================== -->
+
+  <section id="i-serveur">
+    <h2><span class="n">12</span>Installer le serveur</h2>
+    <h4>Prérequis</h4>
+    <p>PHP <b>7.4+</b> avec <code>pdo_mysql</code> et <code>gd</code> · une base MySQL + utilisateur · accès FTP.</p>
+    <ol class="steps">
+      <li><b>Base de données</b> : créer base + utilisateur dans le panneau de l'hébergeur ;
+          noter nom / utilisateur / mot de passe.</li>
+      <li><b>Envoyer les fichiers</b> : déposer le <b>contenu</b> de <code>public_html/</code>
+          (et non le dossier) directement à la racine → on obtient <code>public_html/api/</code>,
+          <code>public_html/lib/</code>, etc.</li>
+      <li><b>Assistant</b> : ouvrir <code>https://luvumbu.com/install.php</code> → formulaire
+          (hôte, base, utilisateur, mot de passe, préfixe) → <i>Enregistrer et vérifier</i>.
+          L'assistant écrit <code>lib/db.config.php</code>, crée les tables et <code>uploads/</code>,
+          et affiche un rapport vert.</li>
+      <li><b>Sécuriser</b> : <b>supprimer <code>install.php</code></b>. La config reste dans <code>db.config.php</code>.</li>
+      <li><b>Régler <code>config.php</code></b> si besoin : <code>GALLERY_PASSWORD</code>,
+          <code>MAX_BYTES</code> (0 = illimité).</li>
+    </ol>
+    <div class="note">L'assistant peut <b>créer la base lui-même</b> (<code>CREATE DATABASE IF NOT EXISTS</code>)
+      si l'hébergeur l'autorise. En local XAMPP : hôte <code>localhost</code>, user <code>root</code>, mot de passe vide.</div>
+  </section>
+
+  <section id="i-apk">
+    <h2><span class="n">13</span>Compiler l'APK</h2>
+    <p>Dev : JDK Java 21 (Android Studio jbr), SDK android-35 / build-tools 35.0.0, Gradle 8.9,
+       AGP 8.7.2, Kotlin 2.0.20.</p>
+<pre><code># depuis android/, avec JAVA_HOME et ANDROID_HOME définis
+gradle assembleDebug --no-daemon
+# sortie : android/app/build/outputs/apk/debug/app-debug.apk → PhotoSync.apk</code></pre>
+    <p>APK de <b>debug</b> (signé clé debug, installable directement). Pour le Play Store : APK
+       <b>release</b> signé. Alternative cloud : <code>.github/workflows/android.yml</code> (GitHub Actions).</p>
+  </section>
+
+  <section id="i-config">
+    <h2><span class="n">14</span>Configuration de référence</h2>
+    <h3><code>lib/config.php</code></h3>
+    <table>
+      <tr><th>Constante</th><th>Défaut</th><th>Rôle</th></tr>
+      <tr><td><code>GALLERY_PASSWORD</code></td><td>luvumbu2026</td><td>mot de passe legacy galerie — à changer</td></tr>
+      <tr><td><code>UPLOAD_DIR</code></td><td>lib/../uploads</td><td>dossier de stockage</td></tr>
+      <tr><td><code>MAX_BYTES</code></td><td>0</td><td>taille max / fichier (0 = illimité)</td></tr>
+      <tr><td><code>DB_PREFIX</code></td><td>photosync_</td><td>préfixe des tables</td></tr>
+    </table>
+    <p>Les identifiants MySQL vivent dans <code>lib/db.config.php</code> (généré par l'assistant,
+       non versionné). Côté Android : <code>DEFAULT_DOMAIN = "luvumbu.com"</code>.</p>
+    <div class="warn">Le <b>code d'inscription</b> de l'app doit être égal au <b>mot de passe de la
+      base</b> (<code>DB_PASS</code>), car <code>register.php</code> valide l'inscription contre ce secret.</div>
+  </section>
+
+  <section id="i-debug">
+    <h2><span class="n">15</span>Dépannage technique</h2>
+    <table>
+      <tr><th>Symptôme</th><th>Cause</th><th>Piste</th></tr>
+      <tr><td>« connexion à la base impossible »</td><td>identifiants MySQL</td><td>reconfigurer via <code>install.php?reconfig=1</code></td></tr>
+      <tr><td>500 JSON « Serveur: … »</td><td>exception PHP</td><td>lire le message ; vérifier <code>pdo_mysql</code></td></tr>
+      <tr><td>Upload 401</td><td>jeton invalide</td><td>se reconnecter</td></tr>
+      <tr><td>Upload 413</td><td>limites PHP de l'hébergeur</td><td><code>MAX_BYTES=0</code> + <code>.user.ini</code></td></tr>
+      <tr><td>« Espace non inscriptible »</td><td>droits de <code>uploads/</code></td><td><code>chmod 775</code></td></tr>
+      <tr><td>Images cassées</td><td>fichier disparu</td><td>auto-nettoyé ; voir <code>web/maintenance.php</code></td></tr>
+      <tr><td>Vignettes absentes</td><td>extension GD manquante</td><td>activer <code>gd</code></td></tr>
+      <tr><td>Doublons</td><td>—</td><td>impossibles : dédup <code>(user_id, sha256)</code></td></tr>
+    </table>
+  </section>
+
+  <footer>
+    PhotoSync — Documentation générée à partir du code source (serveur PHP/MySQL + app Android Kotlin).
+    Voir aussi <code>README.md</code>, <code>DOCUMENTATION_UTILISATION.md</code> et
+    <code>DOCUMENTATION_TECHNIQUE.md</code>.
+  </footer>
+</main>
+</div>
+
+<a href="#" class="totop" title="Haut de page">↑</a>
+</body>
+</html>

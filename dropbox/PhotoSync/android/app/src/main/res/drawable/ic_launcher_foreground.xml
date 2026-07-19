@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Visage afro stylisé : cheveux noirs, peau marron, épaules orange, boucles jaunes -->
+
+    <!-- Cheveux afro (noir) : grand disque + touffes autour pour le volume -->
+    <path
+        android:fillColor="#181818"
+        android:pathData="M34,42 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 Z
+                          M46,24 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z
+                          M30,28 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z
+                          M62,28 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z
+                          M26,44 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z
+                          M66,44 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+
+    <!-- Épaules (orange) -->
+    <path
+        android:fillColor="#E8772E"
+        android:pathData="M32,90 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 Z" />
+
+    <!-- Cou (marron) -->
+    <path
+        android:fillColor="#7A4A2A"
+        android:pathData="M49,56 H59 V70 H49 Z" />
+
+    <!-- Visage (marron) -->
+    <path
+        android:fillColor="#8A5A33"
+        android:pathData="M41,47 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 Z" />
+
+    <!-- Yeux (noir) -->
+    <path
+        android:fillColor="#181818"
+        android:pathData="M47.4,45 a1.7,1.7 0 1,0 3.4,0 a1.7,1.7 0 1,0 -3.4,0 Z
+                          M57.2,45 a1.7,1.7 0 1,0 3.4,0 a1.7,1.7 0 1,0 -3.4,0 Z" />
+
+    <!-- Sourire -->
+    <path
+        android:strokeColor="#3A2113"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M48,52.5 q6,5 12,0" />
+
+    <!-- Boucles d'oreilles (jaune) -->
+    <path
+        android:fillColor="#F4C20D"
+        android:pathData="M39,58 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z
+                          M63,58 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z" />
+</vector>

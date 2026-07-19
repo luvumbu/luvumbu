@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arduino Nano + DFPlayer Mini (MP3)</title>
+<style>
+  :root { --bg:#0f1117; --panel:#1a1d27; --txt:#e8eaf0; --accent:#4cc2ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,"Segoe UI",sans-serif; background:var(--bg); color:var(--txt);
+         display:flex; flex-direction:column; align-items:center; min-height:100vh; padding-bottom:40px;}
+  h1 { font-size:1.3rem; margin:18px 0 4px; }
+  .sub { color:#8b90a0; font-size:.85rem; margin-bottom:14px; text-align:center; max-width:90vw;}
+  canvas { background:#11141c; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  .panel { background:var(--panel); padding:18px 22px; border-radius:14px; margin-top:16px; width:820px; max-width:94vw; }
+  .row { display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap; }
+  button { background:var(--accent); border:none; color:#06121c; font-weight:700; padding:9px 15px;
+           border-radius:8px; cursor:pointer; font-size:.9rem; }
+  button:hover { filter:brightness(1.1); }
+  button.sec { background:#2a3140; color:#e8eaf0; }
+  h2 { font-size:1rem; margin:16px 0 6px; }
+  table { border-collapse:collapse; margin-top:8px; font-size:.86rem; width:100%;}
+  th,td { border:1px solid #2a2e3a; padding:7px 11px; text-align:left; }
+  th { background:#11141c; color:var(--accent); }
+  td b { color:#fff; }
+  pre { background:#0b0d13; border:1px solid #2a2e3a; border-radius:10px; padding:14px; overflow:auto;
+        font-size:.82rem; line-height:1.45; color:#cfe3ff; }
+  .codehead { display:flex; justify-content:space-between; align-items:center; margin-top:18px; }
+  .codehead h2 { margin:0; }
+  .tip { margin-top:10px; background:#11141c; padding:10px 14px; border-radius:8px; font-size:.85rem;
+         color:#cfd3e0; border-left:3px solid #ffcf4c; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media(max-width:680px){ .grid2{grid-template-columns:1fr;} }
+  .disp { background:#0b0d13; border:1px solid #2a2e3a; border-radius:8px; padding:8px 14px; font-size:.9rem;
+          font-variant-numeric:tabular-nums; }
+  .kw{color:#ff9d4c;} .num{color:#9be7ff;} .com{color:#6a6f7d;} .fn{color:#7dffa0;} .str{color:#ffd479;} .pp{color:#c792ea;}
+</style>
+</head>
+<body>
+  <h1>🎵 Arduino Nano + DFPlayer Mini — lecteur MP3</h1>
+  <div class="sub">Le DFPlayer Mini lit des fichiers MP3 sur carte micro-SD ; l'Arduino le pilote par liaison série (broches D10/D11).</div>
+
+  <canvas id="c" width="880" height="490"></canvas>
+
+  <div class="panel">
+    <div class="row">
+      <button id="play">▶ Play</button>
+      <button id="pause" class="sec">⏸ Pause</button>
+      <button id="prev" class="sec">⏮ Préc.</button>
+      <button id="next" class="sec">⏭ Suiv.</button>
+      <button id="vdown" class="sec">🔉 Vol −</button>
+      <button id="vup" class="sec">🔊 Vol +</button>
+      <span class="disp" id="disp">⏹ arrêté — piste 0001 — volume 20</span>
+    </div>
+    <div style="font-size:.8rem;color:#6a6f7d;">(Aperçu visuel du module — sur la vraie carte, le son sort du haut-parleur depuis la SD.)</div>
+
+    <div class="grid2">
+      <div>
+        <h2>🔌 Branchement</h2>
+        <table>
+          <tr><th>DFPlayer Mini</th><th>Arduino Nano</th></tr>
+          <tr><td><b>VCC</b></td><td><b>5V</b></td></tr>
+          <tr><td><b>GND</b></td><td><b>GND</b></td></tr>
+          <tr><td><b>RX</b></td><td><b>D11</b> via résistance <b>1 kΩ</b></td></tr>
+          <tr><td><b>TX</b></td><td><b>D10</b></td></tr>
+          <tr><td><b>SPK1</b></td><td>Haut-parleur (borne 1)</td></tr>
+          <tr><td><b>SPK2</b></td><td>Haut-parleur (borne 2)</td></tr>
+        </table>
+      </div>
+      <div>
+        <h2>💾 Carte micro-SD</h2>
+        <table>
+          <tr><th>Élément</th><th>Valeur</th></tr>
+          <tr><td>Format</td><td><b>FAT32</b></td></tr>
+          <tr><td>Nom des fichiers</td><td><b>0001.mp3</b>, 0002.mp3 …</td></tr>
+          <tr><td>(ou dossier)</td><td><b>/mp3/0001.mp3</b></td></tr>
+          <tr><td>Haut-parleur</td><td>8 Ω, 0,5–3 W</td></tr>
+          <tr><td>Alim module</td><td>3,2 – 5 V</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip">
+      ⚠️ <b>Résistance 1 kΩ sur RX</b> : recommandée pour réduire le bruit et protéger l'entrée du module.<br>
+      🔌 Le haut-parleur se branche <b>directement</b> sur SPK1/SPK2 (ampli intégré ~3 W). Pour DAC_L/DAC_R,
+      il faut un <b>ampli externe</b>.<br>
+      📚 Installe la bibliothèque <b>« DFRobotDFPlayerMini »</b> (Croquis → Inclure une bibliothèque → Gérer les bibliothèques).
+    </div>
+
+    <div class="codehead">
+      <h2>📝 Code Arduino (.ino)</h2>
+      <button id="copy">📋 Copier le code</button>
+    </div>
+    <pre id="code"></pre>
+  </div>
+<a class="nano" href="index.html">ARDUINO</a>
+
+<style>
+    .nano{
+        padding: 10px;
+        color: white;
+        background-color: black;
+        
+    }
+</style>
+<script>
+/* ================= CODE ARDUINO ================= */
+const CODE =
+`<span class="pp">#include</span> <span class="str">&lt;SoftwareSerial.h&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;DFRobotDFPlayerMini.h&gt;</span>
+
+<span class="com">// DFPlayer Mini : Arduino D10 = RX , D11 = TX</span>
+SoftwareSerial dfSerial(<span class="num">10</span>, <span class="num">11</span>);   <span class="com">// (RX, TX)</span>
+DFRobotDFPlayerMini player;
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.<span class="fn">begin</span>(<span class="num">115200</span>);
+  dfSerial.<span class="fn">begin</span>(<span class="num">9600</span>);          <span class="com">// le DFPlayer parle en 9600 bauds</span>
+
+  Serial.<span class="fn">println</span>(<span class="str">"Initialisation DFPlayer..."</span>);
+  <span class="kw">if</span> (!player.<span class="fn">begin</span>(dfSerial)) {
+    Serial.<span class="fn">println</span>(<span class="str">"Erreur : module non detecte (verifier cablage + carte SD)."</span>);
+    <span class="kw">while</span> (<span class="kw">true</span>);             <span class="com">// on bloque ici</span>
+  }
+  Serial.<span class="fn">println</span>(<span class="str">"DFPlayer pret !"</span>);
+
+  player.<span class="fn">volume</span>(<span class="num">20</span>);              <span class="com">// volume de 0 a 30</span>
+  <span class="fn">delay</span>(<span class="num">200</span>);                     <span class="com">// laisse le temps a la carte SD</span>
+  player.<span class="fn">play</span>(<span class="num">1</span>);                 <span class="com">// >>> lit AUTOMATIQUEMENT la 1ere piste (0001.mp3) au demarrage</span>
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="com">// Exemples de commandes utiles :</span>
+  <span class="com">// player.next();          // piste suivante</span>
+  <span class="com">// player.previous();      // piste precedente</span>
+  <span class="com">// player.pause();         // pause</span>
+  <span class="com">// player.start();         // reprendre</span>
+  <span class="com">// player.volumeUp();      // + fort</span>
+  <span class="com">// player.loop(1);         // repeter 0001.mp3</span>
+}`;
+document.getElementById('code').innerHTML = CODE;
+function plain(){ return CODE.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'); }
+
+/* ================= ÉTAT SIMULÉ ================= */
+let stState='stop', track=1, vol=20;
+function fmt(n){ return ('000'+n).slice(-4); }
+function updateDisp(){
+  const icon = stState==='play'?'▶':(stState==='pause'?'⏸':'⏹');
+  const word = stState==='play'?'lecture':(stState==='pause'?'pause':'arrêté');
+  document.getElementById('disp').textContent = `${icon} ${word} — piste ${fmt(track)} — volume ${vol}`;
+}
+
+/* ================= DESSIN ================= */
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+let t=0;
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+function wire(x1,y1,x2,y2,col){ ctx.strokeStyle=col; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+function pin(x,y,col,label,lx,ly,align){
+  ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+  if(label){ ctx.fillStyle=col; ctx.font='bold 12px sans-serif'; ctx.textAlign=align||'start'; ctx.fillText(label,lx,ly); ctx.textAlign='start'; }
+}
+
+// Brochage COMPLET de l'Arduino Nano (30 broches, 15 par côté), USB en haut
+function drawNano(BX,BY){
+  const BW=124, BH=378, step=BH/15, off=step/2;
+  // carte
+  ctx.fillStyle='#16321f'; ctx.strokeStyle='#3ad17a'; ctx.lineWidth=2; rr(BX,BY,BW,BH,10); ctx.fill(); ctx.stroke();
+  // port USB
+  ctx.fillStyle='#9aa0aa'; ctx.fillRect(BX+BW/2-16,BY-15,32,16);
+  ctx.fillStyle='#6a6f7d'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText('USB', BX+BW/2, BY-19);
+  // titre vertical pâle au centre
+  ctx.save(); ctx.translate(BX+BW/2, BY+BH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='rgba(90,180,120,0.30)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('ARDUINO  NANO', 0, 5); ctx.restore(); ctx.textAlign='start';
+
+  const leftNames =['D13','3V3','AREF','A0','A1','A2','A3','A4','A5','A6','A7','5V','RST','GND','VIN'];
+  const rightNames=['D12','D11','D10','D9','D8','D7','D6','D5','D4','D3','D2','GND','RST','D0/RX','D1/TX'];
+  function colFor(n){
+    if(n==='5V'||n==='VIN'||n==='3V3') return '#ff8a8a';
+    if(n==='GND') return '#9aa0aa';
+    if(n==='AREF') return '#c792ea';
+    if(n==='RST') return '#ff9d4c';
+    if(/^A\d/.test(n)) return '#ffd479';
+    return '#8fd0ff';
+  }
+  for(let i=0;i<15;i++){
+    const y=BY+off+i*step;
+    // pads
+    ctx.fillStyle='#d9b44a'; ctx.fillRect(BX-7,y-4,7,8); ctx.fillRect(BX+BW,y-4,7,8);
+    // labels (à l'intérieur de la carte, près du bord)
+    ctx.font='bold 11px sans-serif';
+    ctx.fillStyle=colFor(leftNames[i]); ctx.textAlign='left';  ctx.fillText(leftNames[i], BX+6, y+4);
+    ctx.fillStyle=colFor(rightNames[i].replace('/RX','').replace('/TX','')); ctx.textAlign='right'; ctx.fillText(rightNames[i], BX+BW-6, y+4);
+  }
+  ctx.textAlign='start';
+  return {
+    fiveV:{x:BX,      y:BY+off+11*step},   // 5V (côté gauche)
+    d11:  {x:BX+BW,   y:BY+off+1*step},
+    d10:  {x:BX+BW,   y:BY+off+2*step},
+    gnd:  {x:BX+BW,   y:BY+off+11*step},   // GND (côté droit)
+    box:  {x:BX,y:BY,w:BW,h:BH}
+  };
+}
+
+// Brochage COMPLET du DFPlayer Mini (16 broches, 8 par côté)
+function drawDFPlayer(DX,DY){
+  const DW=140, DH=232, step=DH/8, off=step/2;
+  ctx.fillStyle='#15315a'; ctx.strokeStyle='#4c8cff'; ctx.lineWidth=2; rr(DX,DY,DW,DH,10); ctx.fill(); ctx.stroke();
+  // titre vertical pâle
+  ctx.save(); ctx.translate(DX+DW/2, DY+DH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='rgba(120,160,230,0.32)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('DFPLAYER MINI', 0, 5); ctx.restore(); ctx.textAlign='start';
+
+  const L=['VCC','RX','TX','DAC_R','DAC_L','SPK2','GND','SPK1'];
+  const R=['BUSY','USB-','USB+','ADKEY2','ADKEY1','IO2','GND','IO1'];
+  function col(n){
+    if(n==='VCC') return '#ff8a8a';
+    if(n==='GND') return '#9aa0aa';
+    if(n==='RX'||n==='TX') return '#8fd0ff';
+    if(n==='SPK1'||n==='SPK2') return '#c792ea';
+    if(n==='DAC_R'||n==='DAC_L') return '#ffd479';
+    return '#7f93b5';
+  }
+  for(let i=0;i<8;i++){
+    const y=DY+off+i*step;
+    ctx.fillStyle='#d9b44a'; ctx.fillRect(DX-7,y-4,7,8); ctx.fillRect(DX+DW,y-4,7,8);
+    ctx.font='bold 11px sans-serif';
+    ctx.fillStyle=col(L[i]); ctx.textAlign='left';  ctx.fillText(L[i], DX+6, y+4);
+    ctx.fillStyle=col(R[i]); ctx.textAlign='right'; ctx.fillText(R[i], DX+DW-6, y+4);
+  }
+  ctx.textAlign='start';
+  const yat=i=>DY+off+i*step;
+  return {
+    vcc:{x:DX,y:yat(0)}, rx:{x:DX,y:yat(1)}, tx:{x:DX,y:yat(2)},
+    spk2:{x:DX,y:yat(5)}, gnd:{x:DX,y:yat(6)}, spk1:{x:DX,y:yat(7)},
+    box:{x:DX,y:DY,w:DW,h:DH}
+  };
+}
+
+function drawSpeaker(x,y,active){
+  if(active){
+    for(let k=1;k<=3;k++){
+      ctx.strokeStyle=`rgba(199,146,234,${0.5/k})`; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(x,y,30+k*9+(t*0.6)%11,-0.55,0.55); ctx.stroke();
+    }
+  }
+  ctx.fillStyle='#1a1430'; ctx.strokeStyle=active?'#c792ea':'#5a5070'; ctx.lineWidth=3;
+  rr(x-26,y-30,40,60,6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=active?'#2a2444':'#221c34'; ctx.beginPath(); ctx.ellipse(x-6,y,13,20,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#8b90a0'; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('Haut-parleur', x-6, y+48); ctx.textAlign='start';
+}
+
+function render(){
+  t++;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const active = stState==='play';
+
+  const nano = drawNano(150,55);
+  // fils du haut-parleur dessinés AVANT le module (passent derrière, sous le module)
+  const df   = {vcc:{x:540,y:109.5},rx:{x:540,y:138.5},tx:{x:540,y:167.5},spk2:{x:540,y:254.5},gnd:{x:540,y:283.5},spk1:{x:540,y:312.5}};
+
+  // ---- DFPlayer SPK1/SPK2 -> haut-parleur (violet) — contournement par le bas ----
+  wire(df.spk1.x,df.spk1.y, 520,df.spk1.y,'#c792ea'); wire(520,df.spk1.y,520,452,'#c792ea'); wire(520,452,775,452,'#c792ea'); wire(775,452,775,318,'#c792ea'); wire(775,318,786,318,'#c792ea');
+  wire(df.spk2.x,df.spk2.y, 500,df.spk2.y,'#c792ea'); wire(500,df.spk2.y,500,440,'#c792ea'); wire(500,440,760,440,'#c792ea'); wire(760,440,760,288,'#c792ea'); wire(760,288,786,288,'#c792ea');
+
+  drawDFPlayer(540,95);
+  drawSpeaker(800,303,active);
+
+  // ---- D11 -> résistance 1kΩ -> RX (bleu) ----
+  wire(nano.d11.x,nano.d11.y, 330,nano.d11.y,'#4cc2ff');
+  ctx.strokeStyle='#ffcf4c'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(330,nano.d11.y); ctx.lineTo(334,nano.d11.y);
+  for(let k=0;k<5;k++) ctx.lineTo(334+(k+0.5)*8, nano.d11.y+(k%2?6:-6));
+  ctx.lineTo(374,nano.d11.y); ctx.stroke();
+  ctx.fillStyle='#ffcf4c'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText('1kΩ',352,nano.d11.y-12); ctx.textAlign='start';
+  wire(374,nano.d11.y, 430,nano.d11.y,'#4cc2ff'); wire(430,nano.d11.y,430,df.rx.y,'#4cc2ff'); wire(430,df.rx.y,df.rx.x,df.rx.y,'#4cc2ff');
+  // ---- D10 -> TX (vert) ----
+  wire(nano.d10.x,nano.d10.y, 410,nano.d10.y,'#7dffa0'); wire(410,nano.d10.y,410,df.tx.y,'#7dffa0'); wire(410,df.tx.y,df.tx.x,df.tx.y,'#7dffa0');
+  // ---- GND(droite) -> GND (gris) ----
+  wire(nano.gnd.x,nano.gnd.y, 470,nano.gnd.y,'#9aa0aa'); wire(470,nano.gnd.y,470,df.gnd.y,'#9aa0aa'); wire(470,df.gnd.y,df.gnd.x,df.gnd.y,'#9aa0aa');
+  // ---- 5V (côté gauche du Nano) -> contournement par le bas -> VCC (rouge) ----
+  const fy=nano.fiveV.y;
+  wire(nano.fiveV.x,fy, 120,fy,'#ff5d5d'); wire(120,fy,120,468,'#ff5d5d'); wire(120,468,515,468,'#ff5d5d');
+  wire(515,468,515,df.vcc.y,'#ff5d5d'); wire(515,df.vcc.y,df.vcc.x,df.vcc.y,'#ff5d5d');
+
+  // ---- pastilles connexion sur le Nano ----
+  pin(nano.d11.x,nano.d11.y,'#4cc2ff'); pin(nano.d10.x,nano.d10.y,'#7dffa0');
+  pin(nano.gnd.x,nano.gnd.y,'#9aa0aa'); pin(nano.fiveV.x,nano.fiveV.y,'#ff5d5d');
+  // ---- pastilles connexion sur le DFPlayer (côté gauche) ----
+  pin(df.vcc.x,df.vcc.y,'#ff5d5d'); pin(df.rx.x,df.rx.y,'#4cc2ff');
+  pin(df.tx.x,df.tx.y,'#7dffa0'); pin(df.gnd.x,df.gnd.y,'#9aa0aa');
+  pin(df.spk1.x,df.spk1.y,'#c792ea'); pin(df.spk2.x,df.spk2.y,'#c792ea');
+
+  // légende fils
+  ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillStyle='#ff5d5d'; ctx.fillText('■ 5V', 150, 478);
+  ctx.fillStyle='#9aa0aa'; ctx.fillText('■ GND', 200, 478);
+  ctx.fillStyle='#4cc2ff'; ctx.fillText('■ data (RX)', 262, 478);
+  ctx.fillStyle='#7dffa0'; ctx.fillText('■ data (TX)', 350, 478);
+  ctx.fillStyle='#c792ea'; ctx.fillText('■ haut-parleur', 438, 478);
+  ctx.textAlign='start';
+
+  // info piste/volume
+  ctx.fillStyle=active?'#c792ea':'#6a6f7d'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(active?('♪ piste '+fmt(track)+'  vol '+vol):'⏹', 800, 255);
+  ctx.textAlign='start';
+
+  requestAnimationFrame(render);
+}
+
+/* ================= ÉVÉNEMENTS ================= */
+document.getElementById('play').onclick  = ()=>{ stState='play'; updateDisp(); };
+document.getElementById('pause').onclick = ()=>{ stState = stState==='play'?'pause':stState; updateDisp(); };
+document.getElementById('next').onclick  = ()=>{ track++; updateDisp(); };
+document.getElementById('prev').onclick  = ()=>{ track=Math.max(1,track-1); updateDisp(); };
+document.getElementById('vup').onclick    = ()=>{ vol=Math.min(30,vol+1); updateDisp(); };
+document.getElementById('vdown').onclick  = ()=>{ vol=Math.max(0,vol-1); updateDisp(); };
+document.getElementById('copy').onclick = ()=>{
+  navigator.clipboard.writeText(plain());
+  const b=document.getElementById('copy'), o=b.textContent; b.textContent='✅ Copié !'; setTimeout(()=>b.textContent=o,1200);
+};
+
+updateDisp();
+render();
+</script>
+</body>
+</html>

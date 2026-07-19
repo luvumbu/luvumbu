@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Batterie — LED & Charge</title>
+<style>
+  :root { --bg:#0f1117; --panel:#1a1d27; --txt:#e8eaf0; --accent:#4cc2ff; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family: system-ui, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--txt);
+    display:flex; flex-direction:column; align-items:center; min-height:100vh;
+  }
+  h1 { font-size:1.3rem; margin:18px 0 4px; }
+  .sub { color:#8b90a0; font-size:.85rem; margin-bottom:14px; text-align:center; max-width:90vw;}
+  canvas { background:#11141c; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  .tabs { display:flex; gap:8px; margin-bottom:12px; }
+  .tabs button { background:#222632; color:#cfd3e0; }
+  .tabs button.active { background:var(--accent); color:#06121c; }
+  .panel {
+    background:var(--panel); padding:18px 22px; border-radius:14px;
+    margin-top:16px; width:700px; max-width:92vw;
+  }
+  .row { display:flex; align-items:center; gap:14px; margin:10px 0; flex-wrap:wrap;}
+  .row label { width:140px; font-size:.9rem; }
+  input[type=range]{ flex:1; accent-color: var(--accent); min-width:160px;}
+  .val { width:120px; text-align:right; font-variant-numeric:tabular-nums; font-size:.9rem; }
+  .readout { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; font-size:.9rem; }
+  .readout div { background:#11141c; padding:8px 14px; border-radius:8px; }
+  .readout b { color:var(--accent); }
+  .status { margin-top:12px; font-weight:600; font-size:1rem; }
+  .ok { color:#5cdb7d; } .warn { color:#ffcf4c; } .dead { color:#ff5d5d; }
+  button {
+    background:var(--accent); border:none; color:#06121c; font-weight:700;
+    padding:9px 16px; border-radius:8px; cursor:pointer;
+  }
+  button:hover { filter:brightness(1.1); }
+  select { background:#11141c; color:var(--txt); border:1px solid #3a3f4d; border-radius:6px; padding:6px;}
+  .legend { margin-top:16px; border-top:1px solid #2a2e3a; padding-top:14px; }
+  .legend h2 { font-size:.95rem; margin:0 0 10px; }
+  .tip { margin-top:10px; background:#11141c; padding:10px 14px; border-radius:8px;
+         font-size:.85rem; color:#cfd3e0; border-left:3px solid #ffcf4c; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+  <h1>🔋 Circuit Batterie — LED &amp; Charge</h1>
+  <div class="sub" id="sub">Mode décharge : la batterie alimente la LED (avec résistance de protection).</div>
+
+  <div class="tabs">
+    <button id="tabFull" class="active">✅ Mon circuit complet</button>
+    <button id="tabLed">💡 Décharge (LED) seule</button>
+    <button id="tabChg">🔌 Charge (chargeur + diode) seule</button>
+  </div>
+
+  <canvas id="c" width="700" height="360"></canvas>
+
+  <!-- ============ PANNEAU CIRCUIT COMPLET ============ -->
+  <div class="panel" id="panelFull">
+    <div class="row">
+      <button id="plugFull">🔌 Débrancher le chargeur</button>
+      <span style="font-size:.85rem;color:#8b90a0;">Débranche pour voir la diode bloquer le retour — la LED, elle, reste alimentée par la batterie.</span>
+    </div>
+    <div class="readout">
+      <div>Chargeur : <b id="fChg">12 V</b></div>
+      <div>Batterie : <b id="fBat">3,5 V</b></div>
+      <div>Résistance : <b>470 Ω</b></div>
+      <div>Charge en cours : <b id="fReg">–</b></div>
+      <div>LED (anti-retour) : <b id="fDio">–</b></div>
+      <div>Courant LED : <b id="fLed">–</b></div>
+    </div>
+    <div class="status" id="statusFull">—</div>
+    <div class="legend">
+      <h2>🔎 Rôle de chaque composant</h2>
+      <div class="tip">
+        💡 <b>La LED sert de diode anti-retour</b> (une LED EST une diode) : elle laisse passer le
+        courant <b>chargeur → batterie</b> (et s'allume = témoin de charge), et <b>bloque le retour</b>
+        quand le chargeur est débranché → <b>chargeur protégé</b>. C'est ton objectif. ✅<br>
+        🟡 <b>Résistance 470 Ω</b> : limite le courant à ~14 mA pour que la LED <b>ne grille pas</b>
+        — R = (12 − 2 − 3,5) / 0,015 ≈ 470 Ω.<br><br>
+        ⚠️ <b>Limites à connaître</b> de ce montage simple :<br>
+        • La charge est <b>lente</b> (~14 mA seulement, bridé par la LED).<br>
+        • La tension inverse max d'une LED est faible (~5 V) : ici la batterie fait 3,5 V &lt; 5 V → <b>OK</b>.<br>
+        • Ça protège le chargeur, mais <b>pas</b> la batterie de la surcharge (pas de coupure à 4,2 V).
+        Pour ton but (protéger le chargeur), c'est suffisant.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANNEAU MODE LED ============ -->
+  <div class="panel hidden" id="panelLed">
+    <div class="row">
+      <label>Tension batterie</label>
+      <input id="vbat" type="range" min="1.5" max="12" step="0.5" value="9">
+      <span class="val" id="vbatVal">9 V</span>
+    </div>
+    <div class="row">
+      <label>Résistance</label>
+      <input id="res" type="range" min="0" max="2000" step="10" value="470">
+      <span class="val" id="resVal">470 Ω</span>
+    </div>
+    <div class="readout">
+      <div>Courant LED : <b id="iVal">–</b></div>
+      <div>Max sûr : <b>20 mA</b></div>
+      <div>Chute LED : <b>≈2 V</b></div>
+    </div>
+    <div class="status" id="status">—</div>
+    <div class="row" style="margin-top:14px;">
+      <button id="reset">↺ Réparer la LED</button>
+      <button id="flip" style="background:#ff9d4c;">⇄ Inverser la polarité de la LED</button>
+    </div>
+  </div>
+
+  <!-- ============ PANNEAU MODE CHARGE ============ -->
+  <div class="panel hidden" id="panelChg">
+    <div class="row">
+      <label>Charge batterie</label>
+      <input id="soc" type="range" min="0" max="100" step="1" value="40">
+      <span class="val" id="socVal">40 %</span>
+    </div>
+    <div class="row">
+      <label>Type de diode</label>
+      <select id="diode">
+        <option value="0.3">Schottky 1N5817 (≈0,3 V) ✅</option>
+        <option value="0.7">Silicium 1N4007 (≈0,7 V)</option>
+      </select>
+      <button id="plug">🔌 Débrancher le chargeur</button>
+    </div>
+    <div class="readout">
+      <div>Chargeur : <b>5,0 V</b></div>
+      <div>Après diode : <b id="vdiode">–</b></div>
+      <div>Tension batterie : <b id="vbatt2">–</b></div>
+      <div>Sens du courant : <b id="flow">–</b></div>
+    </div>
+    <div class="status" id="statusChg">—</div>
+
+    <div class="legend">
+      <h2>🔎 Pourquoi la diode anti-retour ?</h2>
+      <div class="tip">
+        La <b>diode</b> (anode côté chargeur, cathode côté batterie) ne laisse passer le courant
+        que du <b>chargeur → batterie</b>. Débranche le chargeur : la batterie voudrait se vider
+        dedans, mais la diode <b>bloque</b> → aucun retour de courant. 🔒<br>
+        ⚠️ Avec 5 V seulement, une <b>Schottky</b> (faible chute) laisse plus de tension pour charger.
+        Une diode protège du retour mais <b>ne régule pas</b> la charge : pour du Li-ion, utilise un module <b>TP4056</b>.
+      </div>
+    </div>
+  </div>
+<a class="nano" href="arduino-nano-musique.html">ARDUINO arduino-nano-musique</a>
+
+<style>
+    .nano{
+        padding: 10px;
+        color: white;
+        background-color: black;
+        
+    }
+</style>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+
+let mode = 'full';         // 'full' | 'led' | 'chg'
+let t = 0;
+
+/* =================== ÉTAT CIRCUIT COMPLET =================== */
+let fullPlugged = true;
+const V_BAT_FULL = 3.5;    // batterie Li-ion 1 cellule (~3,5 V)
+const V_CHG_FULL = 12.0;   // chargeur 12 V
+// R limite le courant de charge à travers la LED : I=(12−2−3,5)/470 ≈ 14 mA (LED non grillée)
+const R_LED_FULL = 470;
+const uf = {
+  plug: document.getElementById('plugFull'),
+  reg:  document.getElementById('fReg'),
+  dio:  document.getElementById('fDio'),
+  led:  document.getElementById('fLed'),
+  status: document.getElementById('statusFull'),
+};
+
+/* =================== ÉTAT MODE LED =================== */
+const VF = 2.0, I_MAX = 0.020, I_NOM = 0.010;
+let ledBurned = false, reversed = false;
+
+const ui = {
+  vbat: document.getElementById('vbat'),
+  res:  document.getElementById('res'),
+  vbatVal: document.getElementById('vbatVal'),
+  resVal:  document.getElementById('resVal'),
+  iVal:    document.getElementById('iVal'),
+  status:  document.getElementById('status'),
+};
+
+/* =================== ÉTAT MODE CHARGE =================== */
+const V_CHG = 5.0;          // tension du chargeur
+let chargerPlugged = true;
+let soc = 40;               // état de charge en % (mappé sur une tension batterie)
+
+const uc = {
+  soc: document.getElementById('soc'),
+  socVal: document.getElementById('socVal'),
+  diode: document.getElementById('diode'),
+  plug: document.getElementById('plug'),
+  vdiode: document.getElementById('vdiode'),
+  vbatt2: document.getElementById('vbatt2'),
+  flow: document.getElementById('flow'),
+  statusChg: document.getElementById('statusChg'),
+};
+
+// tension batterie en fonction du % de charge (ex : 3.0V vide -> 4.2V plein, type Li-ion)
+function battVoltage(p){ return 3.0 + (p/100)*1.2; }
+
+/* =================== LOGIQUE MODE LED =================== */
+function computeCurrent(vbat, r){
+  if (vbat <= VF) return 0;
+  if (r <= 0) return 999;
+  return (vbat - VF) / r;
+}
+function updateLed(){
+  const vbat = parseFloat(ui.vbat.value);
+  const r = parseFloat(ui.res.value);
+  ui.vbatVal.textContent = vbat.toFixed(1).replace('.0','') + ' V';
+  ui.resVal.textContent = r + ' Ω';
+  let i = computeCurrent(vbat, r);
+  if (reversed) i = 0;
+  if (!ledBurned && i > I_MAX) ledBurned = true;
+
+  if (ledBurned) {
+    ui.iVal.textContent='0 mA (grillée)';
+    ui.status.innerHTML='💀 LED GRILLÉE — trop de courant ! Augmente la résistance puis répare-la.';
+    ui.status.className='status dead';
+  } else if (reversed) {
+    ui.iVal.textContent='0 mA (bloquée)';
+    ui.status.innerHTML='🔁 LED À L\'ENVERS — polarité inversée : le courant ne passe pas.';
+    ui.status.className='status warn';
+  } else if (i === 0) {
+    ui.iVal.textContent='0 mA';
+    ui.status.innerHTML='⚪ Éteinte — tension batterie trop faible (< 2 V).';
+    ui.status.className='status warn';
+  } else {
+    ui.iVal.textContent=(i*1000).toFixed(1)+' mA';
+    if (i > I_MAX*0.9){
+      ui.status.innerHTML='⚠️ ZONE DANGEREUSE — proche de la limite !';
+      ui.status.className='status warn';
+    } else {
+      ui.status.innerHTML='✅ La LED brille correctement et reste protégée.';
+      ui.status.className='status ok';
+    }
+  }
+  let bright = (!ledBurned && i>0) ? Math.min(1, i/I_NOM) : 0;
+  return { i, bright };
+}
+
+/* =================== LOGIQUE MODE CHARGE =================== */
+function updateChg(){
+  soc = parseFloat(uc.soc.value);
+  uc.socVal.textContent = soc + ' %';
+  const drop = parseFloat(uc.diode.value);
+  const vBatt = battVoltage(soc);
+  const vAfterDiode = chargerPlugged ? (V_CHG - drop) : 0;
+
+  uc.vbatt2.textContent = vBatt.toFixed(2) + ' V';
+
+  // Le courant de charge ne circule que si chargeur branché ET tension dispo > tension batterie
+  const charging = chargerPlugged && (vAfterDiode > vBatt);
+
+  if (!chargerPlugged) {
+    uc.vdiode.textContent = '— (débranché)';
+    uc.flow.textContent = 'aucun 🔒';
+    uc.statusChg.innerHTML = '🔒 Chargeur débranché : la diode <b>bloque</b> le retour — la batterie ne se vide pas dans le chargeur.';
+    uc.statusChg.className = 'status ok';
+    return { charging:false, blockedReverse:true, vAfterDiode, vBatt };
+  }
+
+  uc.vdiode.textContent = vAfterDiode.toFixed(2) + ' V';
+  if (charging) {
+    uc.flow.textContent = 'chargeur → batterie ⚡';
+    uc.statusChg.innerHTML = '⚡ Charge en cours : le courant passe à travers la diode vers la batterie.';
+    uc.statusChg.className = 'status ok';
+    return { charging:true, blockedReverse:false, vAfterDiode, vBatt };
+  } else {
+    uc.flow.textContent = 'aucun (batterie pleine)';
+    uc.statusChg.innerHTML = '✅ Batterie chargée : sa tension a rejoint celle du chargeur, le courant s\'arrête tout seul.';
+    uc.statusChg.className = 'status warn';
+    return { charging:false, blockedReverse:false, vAfterDiode, vBatt };
+  }
+}
+
+/* =================== DESSIN COMMUN =================== */
+function drawWire(x1,y1,x2,y2,active,color){
+  ctx.strokeStyle = active ? (color||'#4cc2ff') : '#3a3f4d';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+}
+function drawBattery(x,y,label,showSigns){
+  ctx.strokeStyle='#e8eaf0'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(x,y-26); ctx.lineTo(x,y+26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+16,y-14); ctx.lineTo(x+16,y+14); ctx.stroke();
+  if(showSigns!==false){
+    ctx.fillStyle='#e8eaf0'; ctx.font='16px sans-serif';
+    ctx.fillText('+', x-16, y-14);
+    ctx.fillText('−', x+24, y-14);
+  }
+  if(label){ ctx.fillStyle='#8b90a0'; ctx.font='13px sans-serif'; ctx.fillText(label, x-22, y+50); }
+}
+// batterie VERTICALE : borne + (plaque longue) en haut, borne − (plaque courte) en bas
+function drawBatteryV(x,y,label){
+  ctx.strokeStyle='#e8eaf0'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(x-24,y-12); ctx.lineTo(x+24,y-12); ctx.stroke(); // plaque + (longue)
+  ctx.beginPath(); ctx.moveTo(x-13,y+12); ctx.lineTo(x+13,y+12); ctx.stroke(); // plaque − (courte)
+  if(label){ ctx.fillStyle='#8b90a0'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+             ctx.fillText(label, x, y+46); ctx.textAlign='start'; }
+}
+// électrons le long d'un chemin ; dir=1 sens normal, dir=-1 inverse
+function drawElectrons(path, speedFactor, dir, color){
+  if(speedFactor<=0) return;
+  ctx.fillStyle = color || '#9be7ff';
+  const n = path.length;
+  for(let p=0;p<14;p++){
+    let base = ((t*0.004*speedFactor) + p/14) % 1;
+    let frac = dir>0 ? base : (1-base);
+    let seg = frac*(n-1);
+    let i = Math.floor(seg), f = seg-i;
+    let a = path[i], b = path[Math.min(i+1,n-1)];
+    ctx.beginPath();
+    ctx.arc(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+/* =================== DESSIN LED =================== */
+function drawResistor(x,y){
+  ctx.strokeStyle='#ffcf4c'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(x,y);
+  let zig=8, w=60; ctx.lineTo(x+8,y);
+  for(let k=0;k<6;k++) ctx.lineTo(x+8+(k+0.5)*(w/6), y+(k%2?zig:-zig));
+  ctx.lineTo(x+8+w,y); ctx.lineTo(x+8+w+8,y); ctx.stroke();
+}
+// pastille ronde colorée avec un signe (+ ou −) au bout d'une patte
+function drawSignBadge(x,y,sign,bg,fg){
+  ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
+  ctx.fillStyle=bg; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle='#0f1117'; ctx.stroke();
+  ctx.fillStyle=fg; ctx.font='bold 16px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(sign, x, y+1);
+  ctx.textAlign='start'; ctx.textBaseline='alphabetic';
+}
+function drawLed(x,y,bright,burned,inv){
+  const r=26;
+  const anodeX = inv ? x+r : x-r, cathodeX = inv ? x-r : x+r;
+  const dirA = Math.sign(anodeX-x), dirK = Math.sign(cathodeX-x);
+  if(bright>0 && !burned){
+    const g=ctx.createRadialGradient(x,y,2,x,y,r*3);
+    g.addColorStop(0,`rgba(255,60,60,${0.9*bright})`); g.addColorStop(1,'rgba(255,60,60,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r*3,0,Math.PI*2); ctx.fill();
+  }
+  let body = burned ? '#3a3030' : `rgb(${Math.floor(60+195*bright)},${Math.floor(20+20*bright)},${Math.floor(20+20*bright)})`;
+  ctx.fillStyle=body; ctx.strokeStyle=burned?'#222':'#ff8080'; ctx.lineWidth=3;
+  ctx.beginPath();
+  if(cathodeX>x) ctx.arc(x,y,r,-Math.PI*0.72,Math.PI*0.72,false);
+  else ctx.arc(x,y,r,Math.PI*0.28,Math.PI*1.72,false);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.lineWidth=3; ctx.strokeStyle=burned?'#aaa':'#cfd3e0';
+  // patte longue = anode (+), patte courte = cathode (−)
+  const anodeEnd = anodeX+dirA*38, cathodeEnd = cathodeX+dirK*18;
+  ctx.beginPath(); ctx.moveTo(anodeX,y); ctx.lineTo(anodeEnd,y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cathodeX,y); ctx.lineTo(cathodeEnd,y); ctx.stroke();
+
+  // pastille "+" sur l'anode (verte)
+  drawSignBadge(anodeEnd, y, '+', '#5cdb7d', '#06210f');
+  // pastille "−" sur la cathode (rouge)
+  drawSignBadge(cathodeEnd, y, '−', '#ff5d5d', '#210606');
+
+  // libellés Anode / Cathode au-dessus
+  ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#5cdb7d'; ctx.fillText('ANODE +', anodeEnd, y-18);
+  ctx.fillStyle='#ff5d5d'; ctx.fillText('CATHODE −', cathodeEnd, y-18);
+  ctx.textAlign='start';
+  if(burned){
+    ctx.strokeStyle='#ff5d5d'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(x-12,y-12); ctx.lineTo(x+12,y+12);
+    ctx.moveTo(x+12,y-12); ctx.lineTo(x-12,y+12); ctx.stroke();
+    ctx.fillStyle='#888'; ctx.font='20px sans-serif'; ctx.fillText('💨', x-10, y-34);
+  }
+}
+
+function renderLed(){
+  const { i, bright } = updateLed();
+  const active = !ledBurned && i>0;
+  const L=120,R=580,TOP=90,BOT=240;
+  const batX=L, batY=(TOP+BOT)/2, resX=270, ledX=460;
+  const path=[[batX,batY-26],[batX,TOP],[resX,TOP],[resX+76,TOP],[ledX-40,TOP],
+              [ledX+40,TOP],[R,TOP],[R,BOT],[batX+16,BOT],[batX+16,batY+26]];
+  drawWire(batX,batY-26,batX,TOP,active);
+  drawWire(batX,TOP,resX,TOP,active);
+  drawWire(resX+76,TOP,ledX-40,TOP,active);
+  drawWire(ledX+40,TOP,R,TOP,active);
+  drawWire(R,TOP,R,BOT,active);
+  drawWire(R,BOT,batX+16,BOT,active);
+  drawWire(batX+16,BOT,batX+16,batY+26,active);
+  drawElectrons(path, i>0?Math.min(1,i/I_NOM):0, 1);
+  drawBattery(batX,batY,'Batterie');
+  drawResistor(resX,TOP);
+  drawLed(ledX,TOP,bright,ledBurned,reversed);
+  ctx.fillStyle='#8b90a0'; ctx.font='13px sans-serif';
+  ctx.fillText('Résistance', resX+8, TOP-22);
+  ctx.fillText('LED', ledX-12, TOP-46);
+}
+
+/* =================== DESSIN CHARGE =================== */
+// chargeur dessiné comme une source carrée "5V"
+function drawCharger(x,y,plugged,vlabel){
+  ctx.strokeStyle = plugged ? '#5cdb7d' : '#6a6f7d';
+  ctx.lineWidth=3; ctx.fillStyle='#161a24';
+  ctx.beginPath(); ctx.roundRect(x-34,y-30,68,60,8); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = plugged ? '#5cdb7d' : '#8b90a0';
+  ctx.font='bold 17px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(vlabel||'5V', x, y+6); ctx.textAlign='start';
+  ctx.fillStyle='#8b90a0'; ctx.font='13px sans-serif';
+  ctx.fillText(plugged?'Chargeur 🔌':'Débranché ⛔', x-30, y+52);
+}
+// diode : triangle pointant vers la cathode (droite = vers batterie). blocked => rouge
+function drawDiode(x,y,conducting,blocked){
+  const s=16;
+  ctx.lineWidth=3;
+  const col = blocked ? '#ff5d5d' : (conducting ? '#5cdb7d' : '#8b90a0');
+  ctx.strokeStyle=col; ctx.fillStyle=col;
+  ctx.beginPath(); // triangle anode(gauche)->cathode(droite)
+  ctx.moveTo(x-s,y-s); ctx.lineTo(x-s,y+s); ctx.lineTo(x+s,y); ctx.closePath(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+s,y-s); ctx.lineTo(x+s,y+s); ctx.stroke(); // barre cathode
+  // pastilles + (anode, côté chargeur) et − (cathode, côté batterie)
+  drawSignBadge(x-s, y, '+', '#5cdb7d', '#06210f');
+  drawSignBadge(x+s, y, '−', '#ff5d5d', '#210606');
+  ctx.font='11px sans-serif'; ctx.fillStyle='#8b90a0'; ctx.textAlign='center';
+  ctx.fillText('anode', x-s, y-s-6); ctx.fillText('cathode', x+s, y-s-6);
+  ctx.fillStyle=col; ctx.font='13px sans-serif';
+  ctx.fillText('Diode anti-retour', x, y+34); ctx.textAlign='start';
+  if(blocked){
+    ctx.fillStyle='#ff5d5d'; ctx.font='18px sans-serif';
+    ctx.fillText('🚫', x-9, y-28);
+  }
+}
+
+function renderChg(){
+  const st = updateChg();
+  const TOP=100,BOT=240,L=130,R=580;
+  const chgX=L, chgY=(TOP+BOT)/2, diodeX=355, battX=R;
+  // chemin chargeur+ -> diode -> batterie+, retour bas
+  const path=[[chgX,chgY-30],[chgX,TOP],[diodeX-16,TOP],[diodeX+16,TOP],
+              [battX,TOP],[battX,BOT],[chgX,BOT],[chgX,chgY+30]];
+
+  const active = st.charging;          // fil "vivant" seulement si ça charge
+  const wireColor = active ? '#5cdb7d' : '#3a3f4d';
+  drawWire(chgX,chgY-30,chgX,TOP,active,'#5cdb7d');
+  drawWire(chgX,TOP,diodeX-16,TOP,active,'#5cdb7d');
+  drawWire(diodeX+16,TOP,battX,TOP,active,'#5cdb7d');
+  drawWire(battX,TOP,battX,BOT,active,'#5cdb7d');
+  drawWire(battX,BOT,chgX,BOT,active,'#5cdb7d');
+  drawWire(chgX,BOT,chgX,chgY+30,active,'#5cdb7d');
+
+  // électrons : sens chargeur->batterie quand ça charge
+  drawElectrons(path, st.charging?0.8:0, 1, '#7dffa0');
+
+  drawCharger(chgX,chgY,chargerPlugged);
+  drawDiode(diodeX,TOP, st.charging, st.blockedReverse || (chargerPlugged && !st.charging));
+  drawBattery(battX,chgY,'Batterie', false);
+
+  // Pastilles + / − sur les bornes : rail HAUT = +, rail BAS = −
+  drawSignBadge(chgX, chgY-40, '+', '#5cdb7d', '#06210f');   // chargeur +
+  drawSignBadge(chgX, chgY+40, '−', '#ff5d5d', '#210606');   // chargeur −
+  drawSignBadge(battX, chgY-40, '+', '#5cdb7d', '#06210f');  // batterie +
+  drawSignBadge(battX, chgY+40, '−', '#ff5d5d', '#210606');  // batterie −
+
+  // jauge de charge sur la batterie
+  ctx.fillStyle='#222632'; ctx.fillRect(battX-30,BOT-2,60,10);
+  ctx.fillStyle='#5cdb7d'; ctx.fillRect(battX-30,BOT-2,60*soc/100,10);
+  ctx.strokeStyle='#3a3f4d'; ctx.lineWidth=1; ctx.strokeRect(battX-30,BOT-2,60,10);
+  ctx.fillStyle='#8b90a0'; ctx.font='12px sans-serif';
+  ctx.fillText(soc+'%', battX-12, BOT+24);
+}
+
+/* =================== CIRCUIT COMPLET : LED = DIODE ANTI-RETOUR =================== */
+// Boucle unique : Chargeur 12V (+) → Résistance → LED(anode→cathode) → Batterie 3,5V → retour (−)
+// La LED bloque le retour (protège le chargeur) ET sert de témoin de charge.
+function renderFull(){
+  const TOP=110, BOT=275, Lx=120, Rx=580;
+  const chgY=(TOP+BOT)/2, battY=(TOP+BOT)/2;
+  const resX=235, ledCx=410;             // sur le fil du haut : résistance puis LED
+
+  // courant de charge à travers la LED : I = (Vchg − Vled − Vbat) / R
+  const i = fullPlugged ? Math.max(0, (V_CHG_FULL - VF - V_BAT_FULL) / R_LED_FULL) : 0;
+  const charging = i > 0;
+  const bright = Math.min(1, i / I_NOM);
+  const safe = i <= I_MAX;                // la résistance garde la LED sous 20 mA
+
+  // --- textes ---
+  uf.reg.textContent = fullPlugged ? (charging?'oui ⚡':'non') : '— (débranché)';
+  uf.dio.textContent = fullPlugged ? 'passe ⚡ (LED allumée)' : 'bloque 🔒 (LED éteinte)';
+  uf.led.textContent = (i*1000).toFixed(1) + ' mA ' + (safe?'✅':'💥');
+  if(!fullPlugged){
+    uf.status.innerHTML = '🔒 Chargeur débranché : la LED (= diode) <b>bloque le retour</b> → le chargeur est protégé. La batterie ne se vide pas dedans.';
+    uf.status.className = 'status ok';
+  } else if(charging){
+    uf.status.innerHTML = '⚡ Charge en cours : le courant passe par la LED (qui s\'allume = <b>témoin de charge</b>), limité par la résistance → LED protégée.';
+    uf.status.className = 'status ok';
+  } else {
+    uf.status.innerHTML = '✅ Batterie pleine : plus de courant, la LED s\'éteint.';
+    uf.status.className = 'status warn';
+  }
+
+  // --- fils de la boucle ---
+  // haut : chargeur+ → résistance → LED → batterie+
+  drawWire(Lx,TOP,resX,TOP,charging,'#7dffa0');
+  drawWire(resX+92,TOP,ledCx-26-30,TOP,charging,'#7dffa0');     // résistance → LED (anode gauche)
+  drawWire(ledCx+26+16,TOP,Rx,TOP,charging,'#7dffa0');          // LED (cathode droite) → batterie+
+  // côtés + bas (retour −)
+  drawWire(Lx,TOP,Lx,BOT,charging,'#7dffa0');                   // côté chargeur (gauche)
+  drawWire(Rx,TOP,Rx,battY-12,charging,'#7dffa0');              // descend vers borne + batterie
+  drawWire(Rx,battY+12,Rx,BOT,charging,'#7dffa0');              // borne − batterie vers le bas
+  drawWire(Lx,BOT,Rx,BOT,charging,'#7dffa0');                   // retour bas (−)
+
+  // électrons : chargeur+ (bas-gauche) monte, traverse résistance+LED, vers batterie
+  const loop=[[Lx,BOT],[Lx,TOP],[resX,TOP],[resX+92,TOP],
+              [ledCx-26,TOP],[ledCx+26,TOP],[Rx,TOP],[Rx,BOT],[Lx,BOT]];
+  drawElectrons(loop, charging?bright:0, 1, '#7dffa0');
+
+  // --- composants ---
+  drawCharger(Lx,chgY,fullPlugged,'12V');
+  drawResistor(resX,TOP);
+  // LED : inv=false → anode à gauche (+ côté chargeur/résistance), cathode à droite (− côté batterie)
+  drawLed(ledCx,TOP,bright,false,false);
+  drawBatteryV(Rx,battY,'Batterie 3,5V');
+
+  // --- pastilles + / − ---
+  // chargeur : + en haut (sortie vers résistance), − en bas (retour)
+  drawSignBadge(Lx, chgY-34, '+', '#5cdb7d', '#06210f');
+  drawSignBadge(Lx, chgY+34, '−', '#ff5d5d', '#210606');
+  // batterie : + collé à la plaque longue (haut), − collé à la plaque courte (bas)
+  drawSignBadge(Rx, battY-12, '+', '#5cdb7d', '#06210f');
+  drawSignBadge(Rx, battY+12, '−', '#ff5d5d', '#210606');
+  // libellés bornes batterie
+  ctx.font='bold 12px sans-serif'; ctx.textAlign='left';
+  ctx.fillStyle='#5cdb7d'; ctx.fillText('borne +', Rx+18, battY-9);
+  ctx.fillStyle='#ff5d5d'; ctx.fillText('borne −', Rx+18, battY+16);
+  ctx.textAlign='start';
+
+  // --- légendes ---
+  ctx.fillStyle='#8b90a0'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Chargeur 12V', Lx, BOT+40);
+  ctx.fillText('Résistance 470Ω', resX+46, TOP-44);
+  ctx.fillText('Batterie 3,5V', Rx, BOT+40);
+  ctx.fillStyle = charging ? '#5cdb7d' : '#8b90a0';
+  ctx.fillText('LED = diode anti-retour + témoin', ledCx, TOP-50);
+  ctx.textAlign='start';
+}
+
+/* =================== BOUCLE =================== */
+function render(){
+  t++;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(mode==='full') renderFull();
+  else if(mode==='led') renderLed();
+  else renderChg();
+  requestAnimationFrame(render);
+}
+
+/* =================== ÉVÉNEMENTS =================== */
+document.getElementById('reset').addEventListener('click', ()=>{ ledBurned=false; });
+document.getElementById('flip').addEventListener('click', ()=>{ reversed=!reversed; });
+
+uc.plug.addEventListener('click', ()=>{
+  chargerPlugged = !chargerPlugged;
+  uc.plug.textContent = chargerPlugged ? '🔌 Débrancher le chargeur' : '🔌 Brancher le chargeur';
+});
+
+uf.plug.addEventListener('click', ()=>{
+  fullPlugged = !fullPlugged;
+  uf.plug.textContent = fullPlugged ? '🔌 Débrancher le chargeur' : '🔌 Brancher le chargeur';
+});
+
+const tabFull=document.getElementById('tabFull'), tabLed=document.getElementById('tabLed'), tabChg=document.getElementById('tabChg');
+const panelFull=document.getElementById('panelFull'), panelLed=document.getElementById('panelLed'), panelChg=document.getElementById('panelChg');
+const sub=document.getElementById('sub');
+const SUBS = {
+  full: 'Circuit complet : chargeur 12V → résistance 470Ω → LED → batterie 3,5V. La LED sert de diode anti-retour (protège le chargeur) ET de témoin de charge.',
+  led:  'Mode décharge : la batterie alimente la LED (avec résistance de protection).',
+  chg:  'Mode charge : le chargeur 5V recharge la batterie ; la diode empêche le courant de repartir vers le chargeur.'
+};
+function setMode(m){
+  mode=m;
+  tabFull.classList.toggle('active', m==='full');
+  tabLed.classList.toggle('active', m==='led');
+  tabChg.classList.toggle('active', m==='chg');
+  panelFull.classList.toggle('hidden', m!=='full');
+  panelLed.classList.toggle('hidden', m!=='led');
+  panelChg.classList.toggle('hidden', m!=='chg');
+  sub.textContent = SUBS[m];
+}
+tabFull.addEventListener('click', ()=>setMode('full'));
+tabLed.addEventListener('click', ()=>setMode('led'));
+tabChg.addEventListener('click', ()=>setMode('chg'));
+
+render();
+</script>
+</body>
+</html>

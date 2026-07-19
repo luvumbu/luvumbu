@@ -1,0 +1,15 @@
+config/config.php
+config/sync_keys.json
+uploads/*
+!uploads/.gitkeep
+
+# Scripts de diagnostic / debug (à supprimer après usage)
+_diagnostic.php
+_fix_db.php
+
+# Binaires APK / clés de signature — NE JAMAIS committer
+APK/
+*.apk
+*.aab
+*.keystore
+signing-key-info.txt

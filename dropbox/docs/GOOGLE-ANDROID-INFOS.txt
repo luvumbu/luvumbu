@@ -1,0 +1,29 @@
+===========================================================
+  PhotoSync — Infos pour l'identifiant OAuth "Android"
+  (Google Cloud Console > Identifiants > ID client OAuth)
+===========================================================
+
+NOM DU PACKAGE (copier exactement) :
+com.example.photosync
+
+
+EMPREINTE SHA-1 (copier exactement, avec les " : ") :
+DB:FE:55:A1:AD:1A:7B:E4:B0:DB:4B:11:A9:7A:19:6E:89:3F:1B:07
+
+
+-----------------------------------------------------------
+Au cas où Google demande aussi la SHA-256 :
+FF:9A:6F:6E:A5:DF:9C:FA:96:65:EF:DB:14:5E:C3:CE:4C:3D:94:F2:89:CB:1F:26:E9:A8:22:76:CE:2A:1D:0F
+-----------------------------------------------------------
+
+D'OÙ VIENT CETTE EMPREINTE ?
+Elle provient de la clé de signature de l'APK (fichier de debug) :
+  C:\Users\maste\.android\debug.keystore
+C'est avec cette clé qu'Android Studio signe l'APK "app-debug.apk".
+Google doit connaître cette empreinte pour autoriser la connexion
+Google dans l'application.
+
+IMPORTANT :
+- Cette empreinte est valable pour l'APK ACTUEL (version debug).
+- Si un jour tu signes l'APK en "release" (autre clé), il faudra
+  ajouter la NOUVELLE empreinte SHA-1 à ce même identifiant Android.

@@ -1,0 +1,109 @@
+TITRE : Chapitre 2 · Niveau 3 — 3 et 2, ou 2 et 3 ?
+---
+Au niveau 2, je t'ai dit : « pars du plus grand ».
+
+Tu as peut-être eu envie de demander : mais est-ce qu'on a le droit ?
+
+C'est une très bonne question. La réponse est oui, et voici pourquoi.
+
+
+TOMO ET SA TABLE
+
+Tomo pose 3 pommes à gauche et 2 pommes à droite. Il les pousse ensemble : 5 pommes.
+
+Maintenant, Tomo fait le tour de sa table. Il va de l'autre côté.
+
+Il regarde à nouveau.
+
+De ce côté-là, le tas de 3 est à droite, et le tas de 2 est à gauche !
+
+Alors, combien de pommes ?
+
+Cinq. Évidemment cinq.
+
+Les pommes n'ont pas bougé. C'est Tomo qui a bougé.
+
+
+VOILÀ LA RÉPONSE
+
+3 + 2 et 2 + 3, c'est la même table, regardée d'un autre côté.
+
+La table ne change pas de pommes selon l'endroit où tu te mets.
+
+Alors bien sûr que ça fait pareil.
+
+3 + 2 = 5
+2 + 3 = 5
+
+Ce n'est pas une règle inventée par les maîtresses. C'est juste que les pommes s'en fichent, de quel côté tu les regardes.
+
+
+DANS UNE ADDITION, L'ORDRE EST LIBRE
+
+Retiens cette phrase. Elle va te servir toute ta vie.
+
+Tu as le droit de mettre les nombres dans l'ordre que tu veux.
+
+Et ça, ce n'est pas juste un truc rigolo. C'est le secret numéro un du calcul rapide.
+
+
+LE VRAI POUVOIR
+
+Regarde ce calcul : 8 + 7 + 2.
+
+Fais-le dans l'ordre. 8 + 7, ça fait 15. Puis 15 + 2, ça fait 17.
+
+C'est pénible, non ? 8 + 7, il faut réfléchir.
+
+Maintenant, réorganise. Tu as le droit !
+
+8 + 2, ça fait 10. Facile ! Puis 10 + 7, ça fait 17. Encore plus facile !
+
+Même calcul. Même réponse. Mais un chemin beaucoup plus agréable.
+
+
+C'EST ÇA, ÊTRE BON EN CALCUL
+
+Voici un secret que peu de gens disent.
+
+Les gens rapides en calcul ne calculent pas plus vite que toi.
+
+Ils REGARDENT d'abord. Ils cherchent les paires qui tombent rond. Et ensuite seulement, ils calculent.
+
+C'est comme ranger sa chambre : si tu tries d'abord, tout va plus vite après.
+
+Alors avant de te lancer dans une addition, prends deux secondes. Regarde les nombres. Est-ce qu'il y en a deux qui vont bien ensemble ?
+
+
+ATTENTION : ÇA NE MARCHE QUE POUR L'ADDITION
+
+Très important. Ne mélange pas.
+
+Dans une addition, l'ordre est libre.
+
+Dans une soustraction, l'ordre est INTERDIT.
+
+10 − 3, ça fait 7.
+3 − 10, ça ne fait pas 7 du tout ! Tu ne peux même pas enlever 10 pommes d'un tas qui en contient 3.
+
+Tu verras ça au niveau 6. Pour l'instant, retiens juste : additionner, ordre libre. Soustraire, ordre interdit.
+
+
+À TOI DE JOUER
+
+Pour chaque calcul, cherche d'abord la paire qui fait 10. Puis calcule.
+
+7 + 5 + 3
+9 + 4 + 1
+6 + 8 + 4
+2 + 9 + 8
+
+Réponses et chemins :
+7 + 3 = 10, puis + 5 = 15.
+9 + 1 = 10, puis + 4 = 14.
+6 + 4 = 10, puis + 8 = 18.
+2 + 8 = 10, puis + 9 = 19.
+
+Tu as vu ? À chaque fois, il y avait une paire cachée qui faisait 10. Il fallait juste la voir.
+
+Ces paires-là, elles ont un nom. C'est le niveau 4.

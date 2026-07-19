@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📖 Cours</title>
+  <style>
+    :root {
+      --green:#58cc02; --green-d:#58a700; --blue:#1cb0f6; --blue-d:#1899d6;
+      --ink:#3a2e2e; --bg:#fff7ec; --card:#fff;
+    }
+    /* 🔍 Taille de base de la page de cours (tout est en rem → grossit d'un coup). */
+    html { font-size:18px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'Comic Sans MS','Segoe UI',system-ui,sans-serif;
+      background:radial-gradient(circle at top,#ffe9c7,var(--bg));
+      color:var(--ink); min-height:100vh; padding:1rem;
+    }
+    .wrap { max-width:760px; margin:0 auto; }
+    .topbar { display:flex; gap:.6rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .btn {
+      border:none; border-radius:14px; padding:.6rem 1rem; font-weight:800; cursor:pointer;
+      font-family:inherit; font-size:.95rem; text-decoration:none; display:inline-block;
+    }
+    .btn-back { background:var(--blue); color:#fff; box-shadow:0 4px 0 var(--blue-d); }
+    .btn-listen { background:#fff; color:var(--ink); border:2px solid var(--ink); }
+    .btn-do { background:var(--green); color:#fff; box-shadow:0 4px 0 var(--green-d); margin-left:auto; }
+    .header {
+      background:var(--card); border:3px solid var(--ink); border-radius:20px;
+      padding:1.2rem; text-align:center; margin-bottom:1rem;
+    }
+    .header .emoji { font-size:3.5rem; }
+    .header h1 { font-size:1.7rem; margin:.3rem 0; }
+    .header .intro { font-size:1.05rem; line-height:1.5; opacity:.9; }
+    .section {
+      background:var(--card); border:2px solid #e5e5e5; border-radius:16px;
+      padding:1rem 1.2rem; margin-bottom:.9rem;
+    }
+    .section h2 {
+      font-size:1.15rem; color:var(--green-d); margin-bottom:.5rem;
+      border-bottom:2px solid #eee; padding-bottom:.3rem;
+    }
+    .section p { font-size:1.02rem; line-height:1.55; margin:.35rem 0; }
+    .ex {
+      background:#f3fbef; border-left:5px solid var(--green); border-radius:8px;
+      padding:.5rem .8rem; margin:.5rem 0; font-size:1.05rem; font-weight:700;
+    }
+    .ex div { padding:.15rem 0; }
+    .tips {
+      background:#fff8db; border:2px dashed #e6c200; border-radius:16px;
+      padding:.9rem 1.2rem; margin-bottom:.9rem;
+    }
+    .tips h2 { font-size:1.1rem; margin-bottom:.4rem; }
+    .tips li { margin:.3rem 0 .3rem 1.2rem; line-height:1.5; }
+    .remember {
+      background:var(--green); color:#fff; border-radius:16px;
+      padding:1rem 1.2rem; font-size:1.1rem; font-weight:800; text-align:center;
+      box-shadow:0 5px 0 var(--green-d);
+    }
+    .remember .lbl { display:block; font-size:.8rem; opacity:.85; margin-bottom:.2rem; }
+    .missing { text-align:center; padding:3rem 1rem; font-size:1.2rem; }
+    @media (prefers-color-scheme: dark) {
+      body { background:#241f1b; color:#f0e9e0; }
+      .header,.section { background:#332c26; border-color:#4a4038; }
+      .ex { background:#2a3324; }
+      .tips { background:#3a3420; }
+    }
+    /* Téléphone */
+    @media (max-width: 600px) {
+      html { font-size:19px; }
+      body { padding:.5rem; }
+      .topbar { gap:.4rem; }
+      .btn { padding:.6rem .8rem; font-size:.95rem; }
+      .btn-do { margin-left:0; }
+      .header { padding:1rem .8rem; border-radius:16px; }
+      .header .emoji { font-size:3.4rem; }
+      .header h1 { font-size:1.55rem; }
+      .header .intro { font-size:1.08rem; }
+      .section { padding:.9rem 1rem; }
+      .section h2 { font-size:1.2rem; }
+      .section p, .ex { font-size:1.12rem; }
+      .remember { font-size:1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a href="index.html" id="back" class="btn btn-back">← Retour au jeu</a>
+      <button id="listen" class="btn btn-listen">🔊 Écouter le cours</button>
+      <a href="index.html" id="do-exercise" class="btn btn-do">▶ Faire l'exercice</a>
+    </div>
+    <div id="course"></div>
+  </div>
+  <script type="module" src="js/cours.js"></script>
+</body>
+</html>

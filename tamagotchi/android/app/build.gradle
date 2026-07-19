@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.tamagotchi.edu'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.tamagotchi.edu"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        // ⚙️  L'URL de ton application web en ligne.
+        //     Change-la pour l'adresse de ton serveur (déployé ou IP locale).
+        //     Exemples :
+        //       "https://mon-site.fr/tamagotchi/public/"
+        //       "http://192.168.0.103/tamagotchi/public/"   (test sur le même réseau wifi)
+        buildConfigField "String", "APP_URL", "\"https://luvumbu.com/tamagotchi/public/\""
+
+        // ID client Web Google (sert de "serverClientId" pour la connexion native).
+        buildConfigField "String", "WEB_CLIENT_ID", "\"878381681024-6qnsarrvcrj935f56vln5uugc091gg7c.apps.googleusercontent.com\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+
+    // Connexion Google native (Credential Manager + Google ID)
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    implementation 'androidx.credentials:credentials:1.3.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
+}

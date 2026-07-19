@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Bouton flottant « Actualiser » : recharge la dernière version en ligne,
+         sans voler le geste de scroll (contrairement à l'ancien tirer-pour-rafraîchir). -->
+    <Button
+        android:id="@+id/refreshButton"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="14dp"
+        android:text="🔄"
+        android:textSize="20sp"
+        android:padding="0dp"
+        android:includeFontPadding="false"
+        android:alpha="0.85"
+        android:background="@drawable/refresh_bg"
+        android:contentDescription="Actualiser" />
+</FrameLayout>

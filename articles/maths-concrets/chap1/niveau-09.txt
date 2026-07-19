@@ -1,0 +1,100 @@
+TITRE : Chapitre 1 · Niveau 9 — Les milliers
+---
+Ilo est vieux maintenant. Son troupeau est le plus grand du pays.
+
+Un matin, il compte ses cailloux noirs. Il en a 10.
+
+Tu sais déjà ce qui va se passer.
+
+
+LE CAILLOU ROUGE
+
+Ilo échange ses 10 cailloux noirs contre un seul caillou rouge.
+
+Combien vaut ce caillou rouge ?
+
+Chaque caillou noir vaut 100 moutons. Il y en avait 10.
+
+100, 200, 300, 400, 500, 600, 700, 800, 900, 1000.
+
+Le caillou rouge vaut 1000 moutons. Son nom : un millier.
+
+Ilo ajoute une quatrième colonne sur sa planche, encore à gauche.
+
+Colonne 1 (à droite) : unités. 1 mouton.
+Colonne 2 : dizaines. 10 moutons.
+Colonne 3 : centaines. 100 moutons.
+Colonne 4 : milliers. 1000 moutons.
+
+Ilo pose : 3 cailloux rouges, 0 caillou noir, 5 cailloux blancs, 2 petits cailloux.
+
+Il écrit : 3 052 moutons.
+
+
+TU AS COMPRIS LE SECRET
+
+Arrête-toi une seconde et regarde ce que tu viens de faire.
+
+Tu n'as rien appris de nouveau dans ce niveau. Rien du tout.
+
+C'est la même règle qu'au niveau 4, la même qu'au niveau 6 : quand une colonne atteint 10, on échange contre 1 caillou de la colonne de gauche.
+
+Et cette règle ne s'arrêtera jamais.
+
+10 milliers font une dizaine de milliers (10 000).
+10 dizaines de milliers font une centaine de milliers (100 000).
+10 centaines de milliers font un million (1 000 000).
+
+Un million, c'est juste beaucoup de paquets de paquets de paquets. Ce n'est pas un monstre. C'est le même caillou d'Ilo qui a déménagé six fois vers la gauche.
+
+Voilà pourquoi 10 symboles suffisent pour écrire tous les nombres du monde. Tu n'as jamais besoin d'un nouveau caillou. Tu as juste besoin d'une colonne de plus.
+
+
+L'ESPACE DANS LES GRANDS NOMBRES
+
+Tu as vu que j'ai écrit 3 052 avec un petit espace, et 1 000 000 avec des espaces.
+
+Ce n'est pas une décoration. C'est pour aider tes yeux à voir les paquets de trois colonnes.
+
+1000000 : combien de zéros ? Tu dois les compter un par un, et tu peux te tromper.
+1 000 000 : trois paquets. Tu vois tout de suite que c'est un million.
+
+Les espaces sont là pour te rendre service. Sers-t'en quand tu écris de grands nombres.
+
+
+UN ORDRE DE GRANDEUR
+
+Les grands nombres, ça ne veut pas dire grand-chose tant qu'on ne les sent pas. Alors sens-les :
+
+1 000 secondes, c'est environ 17 minutes. Un dessin animé.
+1 000 000 de secondes, c'est environ 11 jours et demi. Des vacances entières.
+
+Pourtant, on dirait que million n'est « qu'un peu plus » que mille, parce que les deux mots se ressemblent.
+
+Faux. Il y a trois colonnes d'écart. Chaque colonne multiplie par 10. Donc le million est mille fois plus grand que le mille.
+
+Les mots se ressemblent. Les nombres, pas du tout.
+
+
+À TOI DE JOUER
+
+Décompose 4 207 comme le sac d'Ilo :
+
+Combien de cailloux rouges (milliers) ?
+Combien de cailloux noirs (centaines) ?
+Combien de cailloux blancs (dizaines) ?
+Combien de petits cailloux (unités) ?
+
+Réponse : 4 rouges, 2 noirs, 0 blanc, 7 petits. Le 0 est là parce qu'il n'y a aucune dizaine — mais la colonne existe, et sans elle le 2 glisserait.
+
+Deuxième question, la plus dure du chapitre jusqu'ici :
+
+Ilo a 1 000 moutons. Il en vend 1. Combien lui en reste-t-il ?
+
+Attention. Dans son sac, il n'a qu'un seul caillou rouge et rien d'autre. Il ne peut pas donner un mouton avec un caillou rouge.
+
+Alors il casse son caillou rouge en 10 cailloux noirs. Puis il casse un caillou noir en 10 cailloux blancs. Puis il casse un caillou blanc en 10 petits cailloux. Maintenant il peut enlever un petit caillou.
+
+Il lui reste : 9 noirs, 9 blancs, 9 petits. 999 moutons.
+
+Ce cassage en cascade, tu le connais déjà : à l'école, on l'appelle « l'emprunt ». Ce n'est pas une règle bizarre. C'est juste Ilo qui casse un gros caillou pour faire de la monnaie.

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation — CV Luvumbu</title>
+<style>
+  :root{
+    --bg:#1e2c49;--panel:#2a3c5f;--panel2:#243553;--line:#3c5078;
+    --ink:#eef3fb;--muted:#aabbd6;--accent:#5b95ff;--accent2:#38d8ee;--gold:#d4a23c;--green:#34d399;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1100px 500px at 10% -10%,#335089 0%,transparent 55%),var(--bg);
+    color:var(--ink);line-height:1.6;}
+  a{color:var(--accent2);}
+  .wrap{max-width:920px;margin:0 auto;padding:34px 22px 70px;}
+  header h1{font-size:2rem;margin:0 0 4px;}
+  header p{color:var(--muted);margin:0 0 8px;}
+  .toc{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:22px 0;}
+  .toc b{color:var(--accent2);}
+  .toc ul{margin:8px 0 0;padding-left:18px;columns:2;}
+  .toc a{color:#cdd9ef;text-decoration:none;}
+  .toc a:hover{color:#fff;text-decoration:underline;}
+  section{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:16px;padding:22px 24px;margin:18px 0;}
+  h2{font-size:1.25rem;margin:0 0 12px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  h3{font-size:1rem;color:var(--accent2);margin:18px 0 6px;}
+  code{background:#16264a;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.88em;color:#bfe9f2;}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.92rem;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--accent2);font-size:.82rem;text-transform:uppercase;letter-spacing:.03em;}
+  .tag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:.78rem;font-weight:700;margin-right:4px;}
+  .get{background:#1f3a5f;color:#7fb4ff;}
+  .post{background:#1f4a36;color:#7ee0a6;}
+  .put{background:#4a3f1f;color:#e8cf7a;}
+  .del{background:#4a2424;color:#f2a3a3;}
+  .note{background:rgba(56,216,238,.08);border:1px solid rgba(56,216,238,.3);border-radius:10px;padding:11px 14px;color:#bfe9f2;font-size:.9rem;}
+  ul li{margin-bottom:4px;}
+  footer{color:var(--muted);text-align:center;margin-top:30px;font-size:.85rem;}
+  .back{display:inline-block;margin-bottom:18px;color:#cdd9ef;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../architecture.php">← Retour à l'architecture</a>
+  <header>
+    <h1>📘 Documentation — CV Luvumbu</h1>
+    <p>Guide complet de l'application : pages, modules, API, modèle de données et fonctionnalités.</p>
+  </header>
+
+  <div class="toc">
+    <b>Sommaire</b>
+    <ul>
+      <li><a href="#presentation">1. Présentation</a></li>
+      <li><a href="#pages">2. Pages</a></li>
+      <li><a href="#editeur">3. Éditeur de CV</a></li>
+      <li><a href="#corbeille">4. Corbeille</a></li>
+      <li><a href="#partage">5. Partage public + QR</a></li>
+      <li><a href="#candidatures">6. Candidatures</a></li>
+      <li><a href="#aide">7. Aide & tutoriel</a></li>
+      <li><a href="#modules">8. Modules (includes/)</a></li>
+      <li><a href="#api">9. API REST</a></li>
+      <li><a href="#data">10. Modèle de données</a></li>
+    </ul>
+  </div>
+
+  <section id="presentation">
+    <h2>1. 🧭 Présentation</h2>
+    <p>CV Luvumbu est une application PHP/MySQL pour <b>créer, mettre en forme, partager et suivre</b> des CV.
+       Elle propose un éditeur visuel (WYSIWYG) avec plusieurs modèles, un rendu imprimable/PDF, des liens
+       de partage publics avec QR code, et un suivi de candidatures.</p>
+    <ul>
+      <li><b>Back-end :</b> PHP (PDO/MySQL), sessions, protection CSRF.</li>
+      <li><b>Front-end éditeur :</b> moteur de rendu partagé <code>assets/js/cv-builder.js</code>.</li>
+      <li><b>API :</b> REST authentifiée par clé API (<code>api/cv.php</code>).</li>
+    </ul>
+  </section>
+
+  <section id="pages">
+    <h2>2. 📄 Pages de l'application</h2>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>index.php</code></td><td>Point d'entrée : redirige selon l'état (installation / connexion / tableau de bord).</td></tr>
+      <tr><td><code>install.php</code></td><td>Assistant d'installation : configure la base et crée le schéma.</td></tr>
+      <tr><td><code>login.php</code></td><td>Connexion (identifiants, repli base de données, lien mot de passe oublié).</td></tr>
+      <tr><td><code>dashboard.php</code></td><td>Tableau de bord : suivi des candidatures (entreprise, réponse, relance, infos supplémentaires).</td></tr>
+      <tr><td><code>mes_cv.php</code></td><td>Liste des CV, création, corbeille, partage public, aide contextuelle.</td></tr>
+      <tr><td><code>cv_builder.php</code></td><td>Éditeur visuel (modèles, couleurs, sections, coordonnées dynamiques, tutoriel).</td></tr>
+      <tr><td><code>cv_view.php</code></td><td>Aperçu façon document A4, imprimable / exportable en PDF.</td></tr>
+      <tr><td><code>cv_public.php</code></td><td><b>Vue publique</b> d'un CV via un jeton de partage (sans connexion).</td></tr>
+      <tr><td><code>parametres.php</code></td><td>Compte et clés API (génération, permissions, révocation).</td></tr>
+      <tr><td><code>architecture.php</code></td><td>Vue d'ensemble technique du projet.</td></tr>
+    </table>
+  </section>
+
+  <section id="editeur">
+    <h2>3. 🎨 Éditeur de CV</h2>
+    <p>L'éditeur (<code>cv_builder.php</code>) s'appuie sur le moteur <code>cv-builder.js</code>. Options principales :</p>
+    <ul>
+      <li><b>Photo</b> : import, taille, forme (cercle, arrondi, carré, portrait, hexagone).</li>
+      <li><b>Modèles</b> : <code>dc2scale</code> (Tableautier), <code>moderne</code>, etc. Le bandeau latéral descend automatiquement jusqu'en bas de la page.</li>
+      <li><b>Couleurs</b> : principale + secondaire, palettes prêtes, et overrides avancés (texte, fond, bordures, badges).</li>
+      <li><b>Coordonnées dynamiques</b> : bouton <b>+</b> pour ajouter une info (📍 lieu, 📞 téléphone, 🌐 site web…), ✕ pour retirer.</li>
+      <li><b>Sections</b> : Expérience, Formation, Compétences, Logiciels, Habilitations, Langues, Loisirs — ajout/retrait d'éléments.</li>
+      <li><b>Mise en page</b> : « tenir sur une page », disposition libre (canvas), taille du texte.</li>
+      <li><b>Aperçu en direct</b> : visible/masqué (masqué = formulaire plein écran).</li>
+    </ul>
+  </section>
+
+  <section id="corbeille">
+    <h2>4. 🗑️ Corbeille</h2>
+    <p>Supprimer un CV le déplace dans la <b>corbeille</b> (suppression douce, colonne <code>deleted_at</code>).
+       Depuis la corbeille, on peut <b>restaurer</b> un CV ou le <b>supprimer définitivement</b>.</p>
+  </section>
+
+  <section id="partage">
+    <h2>5. 🔗 Partage public + QR code</h2>
+    <p>Chaque CV peut recevoir un <b>jeton de partage</b> (<code>share_token</code>). Une fois le partage activé :</p>
+    <ul>
+      <li>un <b>lien public</b> <code>cv_public.php?token=…</code> permet à n'importe qui de voir le CV sans compte ;</li>
+      <li>un <b>QR code</b> pointant vers ce lien est affiché ;</li>
+      <li>le partage est <b>désactivable</b> à tout moment (le lien cesse alors de fonctionner).</li>
+    </ul>
+    <div class="note">La page publique est en <code>noindex</code> (non référencée par les moteurs de recherche).</div>
+  </section>
+
+  <section id="candidatures">
+    <h2>6. 💼 Suivi des candidatures</h2>
+    <p>Sur le tableau de bord : pour chaque candidature, on enregistre l'<b>entreprise</b>, la <b>date d'envoi</b>,
+       le <b>CV envoyé</b>, le <b>statut</b> (en attente / positive / négative) et une éventuelle <b>relance</b>.</p>
+    <p>Un bouton <b>« + Ajouter une information »</b> permet d'attacher des <b>infos supplémentaires</b> libres
+       (libellé + valeur : poste, salaire, contact, lien…), stockées en JSON (colonne <code>extra_json</code>)
+       et affichées sous forme de puces.</p>
+  </section>
+
+  <section id="aide">
+    <h2>7. ❓ Aide & tutoriel</h2>
+    <ul>
+      <li><b>Tutoriel interactif</b> (éditeur) : bouton <b>🎓 Tutoriel</b> → visite guidée pas à pas de toutes les options (surbrillance + bulle).</li>
+      <li><b>Aide contextuelle</b> (Mes CV) : pastilles <b>ⓘ</b> partout, et un <b>Mode aide</b> qui affiche toutes les explications d'un coup.</li>
+    </ul>
+  </section>
+
+  <section id="modules">
+    <h2>8. 🧩 Modules métier <code>(includes/)</code></h2>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>db.php</code></td><td>Connexion PDO, configuration, santé de la base, URL de base.</td></tr>
+      <tr><td><code>guard.php</code></td><td>Garde-fou : redirige vers l'installation si la base ne répond pas.</td></tr>
+      <tr><td><code>auth.php</code></td><td>Session, connexion/déconnexion, jeton CSRF.</td></tr>
+      <tr><td><code>cv.php</code></td><td>CV : création, liste, lecture, profil riche, corbeille, partage public.</td></tr>
+      <tr><td><code>applications.php</code></td><td>Candidatures : suivi, statuts, relances, infos supplémentaires.</td></tr>
+      <tr><td><code>api_keys.php</code></td><td>Clés API : génération, vérification, permissions (scopes).</td></tr>
+    </table>
+  </section>
+
+  <section id="api">
+    <h2>9. 🔌 API REST <code>(api/cv.php)</code></h2>
+    <p>Authentification par en-tête <code>X-API-Key</code> (ou <code>Authorization: Bearer</code>).</p>
+    <table>
+      <tr><th>Méthode</th><th>Description</th></tr>
+      <tr><td><span class="tag get">GET</span> <code>/api/cv.php</code></td><td>Liste les CV (scope <code>cv:read</code>).</td></tr>
+      <tr><td><span class="tag get">GET</span> <code>?id=N&amp;profile=1</code></td><td>Détail d'un CV + profil riche.</td></tr>
+      <tr><td><span class="tag get">GET</span> <code>?whoami=1</code></td><td>Renvoie l'utilisateur et les permissions de la clé.</td></tr>
+      <tr><td><span class="tag post">POST</span> <code>/api/cv.php</code></td><td>Crée un CV (champs texte et/ou <code>profile</code> riche).</td></tr>
+      <tr><td><span class="tag put">PUT</span> <code>/api/cv.php</code></td><td>Met à jour un CV ; <code>{ "share": true }</code> active le partage et renvoie <code>share_url</code>.</td></tr>
+      <tr><td><span class="tag del">DELETE</span> <code>?id=N[&amp;force=1]</code></td><td>Met à la corbeille, ou supprime définitivement avec <code>force=1</code>.</td></tr>
+    </table>
+    <h3>Permissions (scopes)</h3>
+    <p><code>cv:read</code>, <code>cv:write</code>, <code>cv:delete</code>, <code>profile:read</code>, <code>profile:write</code>.</p>
+  </section>
+
+  <section id="data">
+    <h2>10. 🗄️ Modèle de données</h2>
+    <h3>Table <code>cvs</code></h3>
+    <p><code>id</code>, <code>user_id</code>, <code>full_name</code>, <code>title</code>, <code>email</code>, <code>phone</code>,
+       <code>summary</code>, <code>skills</code>, <code>experience</code>, <code>education</code>,
+       <code>profile_json</code> (profil riche), <code>deleted_at</code> (corbeille),
+       <code>share_token</code> (partage public), <code>created_at</code>, <code>updated_at</code>.</p>
+    <h3>Table <code>applications</code></h3>
+    <p><code>id</code>, <code>user_id</code>, <code>cv_id</code>, <code>company</code>, <code>sent_at</code>,
+       <code>status</code>, <code>followup</code>, <code>followup_date</code>, <code>notes</code>,
+       <code>extra_json</code> (infos supplémentaires), <code>created_at</code>, <code>updated_at</code>.</p>
+    <h3>Table <code>api_keys</code></h3>
+    <p><code>id</code>, <code>user_id</code>, <code>label</code>, <code>scopes</code>, <code>key_prefix</code>,
+       <code>key_hash</code> (SHA-256), <code>created_at</code>, <code>last_used_at</code>, <code>revoked_at</code>.</p>
+  </section>
+
+  <footer>CV Luvumbu — documentation générée pour le projet. Chemin : <code>cv_doc/documentation.html</code></footer>
+</div>
+</body>
+</html>

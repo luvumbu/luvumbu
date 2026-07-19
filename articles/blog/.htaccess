@@ -1,0 +1,38 @@
+# Augmente les limites PHP pour permettre l'upload de grosses photos (jusqu'a 15 Mo)
+# et la creation d'articles avec plusieurs photos en galerie.
+
+# En FastCGI/FPM, Apache ne transmet pas le header Authorization a PHP :
+# sans ces regles, api/_auth.php ne voit jamais le token Bearer et repond 401.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+<IfModule mod_php.c>
+    php_value upload_max_filesize 15M
+    php_value post_max_size       80M
+    php_value max_file_uploads    20
+    php_value memory_limit        256M
+    php_value max_execution_time  120
+</IfModule>
+
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 15M
+    php_value post_max_size       80M
+    php_value max_file_uploads    20
+    php_value memory_limit        256M
+    php_value max_execution_time  120
+</IfModule>
+
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 15M
+    php_value post_max_size       80M
+    php_value max_file_uploads    20
+    php_value memory_limit        256M
+    php_value max_execution_time  120
+</IfModule>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation technique — Mon Blog</title>
+    <link rel="icon" type="image/png" href="../blog/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:           #0f172a;
+            --bg-sidebar:   #0a1226;
+            --bg-card:      #1e293b;
+            --bg-code:      #1a2237;
+            --bg-code-inline:#27324a;
+            --text:         #e2e8f0;
+            --text-muted:   #94a3b8;
+            --text-strong:  #f8fafc;
+            --accent:       #22c55e;
+            --accent-2:     #6366f1;
+            --border:       rgba(255,255,255,0.06);
+            --border-strong:rgba(255,255,255,0.12);
+            --link:         #60a5fa;
+            --link-hover:   #93c5fd;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 28px 0;
+        }
+        .sidebar-brand {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .sidebar-brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-strong);
+            margin-bottom: 4px;
+        }
+        .sidebar-brand p {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .sidebar nav { padding: 0 12px; }
+        .sidebar a {
+            display: block;
+            padding: 9px 14px;
+            margin-bottom: 2px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 7px;
+            font-size: 13.5px;
+            transition: background .15s, color .15s;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+        }
+        .sidebar a:hover {
+            background: rgba(255,255,255,0.04);
+            color: var(--text-strong);
+        }
+        .sidebar a.active {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .sidebar a .num {
+            display: inline-block;
+            width: 26px;
+            opacity: 0.6;
+            font-size: 12px;
+        }
+        .sidebar a.active .num { opacity: 1; }
+
+        /* ============ MAIN ============ */
+        main {
+            overflow-y: auto;
+            padding: 48px 56px 80px;
+            scroll-behavior: smooth;
+        }
+        .doc {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+        .doc.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .crumb {
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        /* Markdown rendering */
+        .doc h1 {
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-strong);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+        .doc h2 {
+            font-size: 26px;
+            font-weight: 600;
+            margin: 40px 0 16px;
+            color: var(--text-strong);
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .doc h2:first-of-type { border-top: none; padding-top: 0; }
+        .doc h3 {
+            font-size: 19px;
+            font-weight: 600;
+            margin: 28px 0 12px;
+            color: var(--text-strong);
+        }
+        .doc h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 22px 0 10px;
+            color: var(--text-strong);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .doc p { margin-bottom: 14px; color: var(--text); }
+        .doc strong { color: var(--text-strong); font-weight: 600; }
+        .doc em { color: var(--text); }
+
+        .doc a {
+            color: var(--link);
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(96, 165, 250, 0.4);
+            transition: color .15s, border-color .15s;
+        }
+        .doc a:hover {
+            color: var(--link-hover);
+            border-bottom-color: var(--link-hover);
+        }
+
+        .doc ul, .doc ol {
+            margin: 0 0 16px 0;
+            padding-left: 28px;
+        }
+        .doc li {
+            margin-bottom: 6px;
+        }
+        .doc li > p { margin-bottom: 6px; }
+
+        /* Code */
+        .doc code {
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 13px;
+            background: var(--bg-code-inline);
+            padding: 2px 7px;
+            border-radius: 4px;
+            color: #fde68a;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .doc pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 20px;
+            overflow-x: auto;
+            margin: 18px 0;
+            box-shadow: 0 6px 24px -8px rgba(0,0,0,0.4);
+        }
+        .doc pre code {
+            background: transparent;
+            padding: 0;
+            border: none;
+            color: #e0f2fe;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre;
+        }
+
+        /* Tables */
+        .doc table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 18px 0;
+            font-size: 14px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .doc thead {
+            background: rgba(255,255,255,0.04);
+        }
+        .doc th, .doc td {
+            text-align: left;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .doc th {
+            font-weight: 600;
+            color: var(--text-strong);
+            font-size: 13px;
+            letter-spacing: 0.4px;
+        }
+        .doc td code { font-size: 12px; }
+
+        /* Blockquote */
+        .doc blockquote {
+            border-left: 4px solid var(--accent);
+            background: rgba(34, 197, 94, 0.06);
+            padding: 12px 18px;
+            margin: 18px 0;
+            border-radius: 0 8px 8px 0;
+            color: var(--text);
+        }
+        .doc blockquote p:last-child { margin-bottom: 0; }
+
+        /* Horizontal rule */
+        .doc hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px; height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Error state */
+        .doc-error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed;
+                top: 0; left: -280px;
+                width: 280px; height: 100vh;
+                z-index: 100;
+                transition: left .25s ease;
+                box-shadow: 0 0 60px rgba(0,0,0,0.5);
+            }
+            .sidebar.open { left: 0; }
+            main { padding: 24px 20px 60px; }
+            .mobile-toggle {
+                position: fixed;
+                top: 12px; right: 12px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                color: var(--text-strong);
+                padding: 8px 14px;
+                border-radius: 8px;
+                cursor: pointer;
+                z-index: 101;
+                font-size: 14px;
+                display: block;
+            }
+            .doc h1 { font-size: 28px; }
+            .doc h2 { font-size: 22px; }
+            .doc h3 { font-size: 17px; }
+            .doc pre { font-size: 12px; }
+            .doc table { font-size: 13px; }
+        }
+        .mobile-toggle { display: none; }
+    </style>
+</head>
+<body>
+    <button class="mobile-toggle" id="mobile-toggle">☰ Menu</button>
+
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <h1>📚 Documentation</h1>
+                <p>Mon Blog — technique</p>
+            </div>
+            <nav id="nav">
+                <a data-doc="README"><span class="num">★</span>Table des matières</a>
+                <a data-doc="01-architecture"><span class="num">01</span>Architecture</a>
+                <a data-doc="02-installation"><span class="num">02</span>Installation</a>
+                <a data-doc="03-database"><span class="num">03</span>Base de données</a>
+                <a data-doc="04-api"><span class="num">04</span>API JSON</a>
+                <a data-doc="05-deployment"><span class="num">05</span>Déploiement</a>
+                <a data-doc="06-sync"><span class="num">06</span>Synchronisation</a>
+                <a data-doc="07-mobile-app"><span class="num">07</span>App mobile (PWA)</a>
+                <a data-doc="08-admin"><span class="num">08</span>Panel admin</a>
+                <a data-doc="09-security"><span class="num">09</span>Sécurité</a>
+                <a data-doc="10-troubleshooting"><span class="num">10</span>Dépannage</a>
+                <a data-doc="11-nouveautes"><span class="num">11</span>Nouveautés</a>
+                <a data-doc="12-questionnaires"><span class="num">12</span>Questionnaires</a>
+            </nav>
+        </aside>
+
+        <main id="main">
+            <div class="doc" id="doc">
+                <p class="crumb">Chargement…</p>
+                <p><span class="spinner"></span> Initialisation</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===== Config =====
+        const docs = {
+            'README':            { title: 'Table des matières',     file: 'README.md' },
+            '01-architecture':   { title: 'Architecture',           file: '01-architecture.md' },
+            '02-installation':   { title: 'Installation',           file: '02-installation.md' },
+            '03-database':       { title: 'Base de données',        file: '03-database.md' },
+            '04-api':            { title: 'API JSON',               file: '04-api.md' },
+            '05-deployment':     { title: 'Déploiement',            file: '05-deployment.md' },
+            '06-sync':           { title: 'Synchronisation',        file: '06-sync.md' },
+            '07-mobile-app':     { title: 'App mobile (PWA)',       file: '07-mobile-app.md' },
+            '08-admin':          { title: 'Panel admin',            file: '08-admin.md' },
+            '09-security':       { title: 'Sécurité',               file: '09-security.md' },
+            '10-troubleshooting':{ title: 'Dépannage',              file: '10-troubleshooting.md' },
+            '11-nouveautes':     { title: 'Nouveautés',             file: '11-nouveautes.md' },
+            '12-questionnaires': { title: 'Questionnaires',         file: '12-questionnaires.md' },
+        };
+
+        const navLinks = document.querySelectorAll('#nav a');
+        const docEl    = document.getElementById('doc');
+        const mainEl   = document.getElementById('main');
+        const sidebar  = document.getElementById('sidebar');
+        const toggle   = document.getElementById('mobile-toggle');
+
+        // Markdown renderer (marked.js si disponible, sinon fallback texte brut)
+        const renderMd = (md) => {
+            if (typeof marked !== 'undefined') {
+                // Lien interne entre docs : on intercepte les .md
+                const renderer = new marked.Renderer();
+                const origLink = renderer.link.bind(renderer);
+                renderer.link = function (token) {
+                    const href = token.href || '';
+                    if (href.endsWith('.md')) {
+                        const slug = href.replace(/\.md$/, '');
+                        return `<a href="#${slug}" data-doc="${slug}">${token.text}</a>`;
+                    }
+                    return origLink(token);
+                };
+                return marked.parse(md, { renderer, gfm: true, breaks: false });
+            }
+            return '<pre>' + md.replace(/[<>]/g, c => c === '<' ? '&lt;' : '&gt;') + '</pre>';
+        };
+
+        const setActive = (slug) => {
+            navLinks.forEach(a => a.classList.toggle('active', a.dataset.doc === slug));
+        };
+
+        const loadDoc = async (slug) => {
+            const meta = docs[slug];
+            if (!meta) return;
+            docEl.classList.add('loading');
+            docEl.innerHTML = '<p class="crumb">Documentation</p>'
+                + '<p><span class="spinner"></span> Chargement de ' + meta.title + '…</p>';
+            setActive(slug);
+            history.replaceState(null, '', '#' + slug);
+            document.title = meta.title + ' — Documentation';
+
+            try {
+                const res = await fetch(meta.file, { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const md   = await res.text();
+                const html = renderMd(md);
+                docEl.innerHTML = '<p class="crumb">' + meta.title + '</p>' + html;
+                docEl.classList.remove('loading');
+                mainEl.scrollTop = 0;
+
+                // Intercepte les liens internes vers d'autres .md (data-doc)
+                docEl.querySelectorAll('a[data-doc]').forEach(a => {
+                    a.addEventListener('click', e => {
+                        e.preventDefault();
+                        loadDoc(a.dataset.doc);
+                    });
+                });
+            } catch (err) {
+                docEl.innerHTML =
+                    '<p class="crumb">Documentation</p>'
+                  + '<h1>Erreur de chargement</h1>'
+                  + '<div class="doc-error">'
+                  + '<p><strong>Impossible de charger <code>' + meta.file + '</code></strong></p>'
+                  + '<p>Erreur : ' + err.message + '</p>'
+                  + '<p style="margin-top:14px;">Cette page doit être ouverte via un serveur web (XAMPP) à cause des restrictions CORS du navigateur sur les fichiers <code>file://</code>. Lance Apache et ouvre <code>http://localhost/Blog/doc/index.html</code>.</p>'
+                  + '</div>';
+                docEl.classList.remove('loading');
+            }
+        };
+
+        // ===== Init =====
+        navLinks.forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                loadDoc(a.dataset.doc);
+                if (window.innerWidth < 900) sidebar.classList.remove('open');
+            });
+        });
+
+        toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+        // Charge le doc depuis le hash ou le défaut
+        const initialSlug = (location.hash || '#README').slice(1);
+        loadDoc(docs[initialSlug] ? initialSlug : 'README');
+
+        // Bonus : navigation flèches gauche/droite
+        document.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            const order = Object.keys(docs);
+            const idx   = order.indexOf((location.hash || '#README').slice(1));
+            if (idx === -1) return;
+            if (e.key === 'ArrowLeft'  && idx > 0)               loadDoc(order[idx - 1]);
+            if (e.key === 'ArrowRight' && idx < order.length - 1) loadDoc(order[idx + 1]);
+        });
+    </script>
+</body>
+</html>

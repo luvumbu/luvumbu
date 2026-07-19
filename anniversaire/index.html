@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compte à rebours anniversaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root {
+    --bg1: #1e1b4b;
+    --bg2: #4c1d95;
+    --accent: #f472b6;
+    --accent2: #38bdf8;
+    --card: rgba(255,255,255,0.07);
+    --text: #f8fafc;
+    --muted: #c4b5fd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    margin: 8px 0 4px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle { color: var(--muted); font-size: .95rem; margin-bottom: 26px; text-align:center; }
+
+  /* Formulaire d'ajout */
+  .form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 34px;
+  }
+  .form input {
+    flex: 1 1 180px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .form input::placeholder { color: #cbd5e1; }
+  .form input:focus { outline: 2px solid var(--accent); }
+  .form button {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #0b1020;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .form button:hover { filter: brightness(1.08); }
+
+  /* Filtres par famille */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 30px;
+  }
+  .filters:empty { display: none; }
+  .chip {
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-size: .85rem;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .chip:hover { background: rgba(255,255,255,.14); }
+  .chip.active {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #0b1020;
+    font-weight: 700;
+    border-color: transparent;
+  }
+  .chip .count { opacity: .7; font-size: .78em; }
+
+  /* Badges famille sur les cartes */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; justify-content: center; }
+  .row .tags { justify-content: flex-start; }
+  .tag {
+    font-size: .7rem;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(56,189,248,.18);
+    color: var(--accent2);
+    border: 1px solid rgba(56,189,248,.35);
+  }
+
+  /* Carte Noël (par défaut) */
+  .noel-card {
+    width: 100%;
+    max-width: 680px;
+    text-align: center;
+    padding: 22px 20px;
+    margin-bottom: 24px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(190,18,60,.35), rgba(21,128,61,.35));
+    border: 1px solid rgba(255,255,255,.15);
+    backdrop-filter: blur(6px);
+  }
+  .noel-card .noel-title { font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 800; }
+  .noel-card .countdown { margin-top: 16px; }
+  .noel-card.today .noel-title { animation: pulse 1s infinite alternate; }
+
+  /* Onglets fenêtre cadeaux */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: .95rem;
+  }
+  .tab.active { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0b1020; border-color: transparent; }
+
+  /* Vedette : prochain anniversaire */
+  .hero {
+    width: 100%;
+    max-width: 680px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    padding: 30px 20px;
+    text-align: center;
+    margin-bottom: 34px;
+    backdrop-filter: blur(6px);
+  }
+  .hero .who { font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 700; }
+  .hero .when { color: var(--muted); margin-top: 6px; }
+  .countdown {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+  .unit {
+    background: rgba(0,0,0,.25);
+    border-radius: 16px;
+    padding: 14px 8px;
+    min-width: 82px;
+  }
+  .unit .num {
+    font-size: clamp(2rem, 9vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .unit .lbl { font-size: .75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 6px; }
+  .today-banner {
+    font-size: clamp(1.4rem, 6vw, 2.4rem);
+    font-weight: 800;
+    padding: 10px;
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { to { transform: scale(1.06); } }
+
+  /* Liste des autres */
+  .list { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 10px; }
+  .list h2 { font-size: 1rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .row .info .name { font-weight: 600; }
+  .row .info .date { font-size: .8rem; color: var(--muted); }
+  .row .days { font-weight: 700; color: var(--accent2); text-align: right; white-space: nowrap; }
+  .row .days small { display:block; color: var(--muted); font-weight: 400; font-size:.7rem; }
+  .row .del {
+    background: transparent;
+    border: none;
+    color: #f87171;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  .empty { color: var(--muted); text-align: center; padding: 20px; }
+
+  h1 { font-family: var(--titlefont, inherit); }
+
+  /* Bouton engrenage admin */
+  .gear {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: linear-gradient(90deg, rgba(244,114,182,.25), rgba(56,189,248,.25));
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 45;
+  }
+  .gear .gear-label { font-size: .85rem; }
+  .gear:hover { filter: brightness(1.15); }
+  @media (max-width: 520px) {
+    .gear .gear-label { display: none; } /* juste l'icône sur petit écran */
+    .gear { padding: 0; width: 46px; justify-content: center; }
+  }
+
+  /* Fenêtre modale admin */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+    padding: 16px;
+  }
+  .overlay.open { display: flex; }
+  .panel {
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #1e1b3a;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  .panel h2 { margin-bottom: 4px; }
+  .panel .hint { color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: .85rem; margin-bottom: 6px; color: var(--muted); }
+  .field input[type=text],
+  .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .field .colorrow { display: flex; align-items: center; gap: 10px; }
+  .field input[type=color] {
+    width: 48px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .field .val { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .panel-actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .panel-actions button {
+    flex: 1 1 120px;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: .95rem;
+  }
+  .btn-primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0b1020; }
+  .btn-ghost { background: rgba(255,255,255,.1); color: var(--text); }
+  .btn-danger { background: rgba(248,113,113,.2); color: #fca5a5; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .swatch {
+    width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .swatch:hover { border-color: #fff; }
+
+  /* Écran d'accueil (espaces) */
+  .gate {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .gate.hidden { display: none; }
+  .gate-admin { z-index: 55; } /* au-dessus de l'écran d'accueil (z-index 50) */
+  /* La fenêtre d'admin de l'accueil s'ouvre PAR-DESSUS l'accueil (z-index 50),
+     sinon elle apparaît derrière et semble ne rien faire. */
+  #globalOverlay { z-index: 60; }
+  #adminOverlay { z-index: 60; }
+
+  /* Bouton "Connexion admin" sous les onglets de l'accueil */
+  .admin-link {
+    display: block;
+    width: 100%;
+    margin: 0 0 18px;
+    padding: 9px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255,255,255,.25);
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .admin-link:hover { color: var(--text); border-color: var(--accent); }
+
+  /* Liste des espaces (panneau admin) */
+  .space-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 12px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    margin-bottom: 8px;
+  }
+  .space-row .info { flex: 1; min-width: 0; }
+  .space-row .info b { display: block; word-break: break-word; }
+  .space-row .info small { color: var(--muted); font-size: .78rem; }
+  .space-row button { padding: 7px 12px; border-radius: 9px; border: none; font-weight: 700; cursor: pointer; font-size: .85rem; }
+  .space-row .enter { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0b1020; }
+  .space-row .del { background: rgba(248,113,113,.2); color: #fca5a5; }
+  .gate-box {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 22px;
+    padding: 28px 24px;
+    backdrop-filter: blur(8px);
+  }
+  .gate-logo { font-size: 1.6rem; text-align: center; margin-bottom: 6px; }
+  .gate-sub { text-align: center; color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+  .gate .field label { display:block; font-size:.85rem; margin-bottom:6px; color:var(--muted); }
+  .gate .field input {
+    width: 100%; padding: 11px 13px; border-radius: 11px;
+    border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08);
+    color: var(--text); font-size: 1rem;
+  }
+  .gate-err { color: #fca5a5; font-size: .85rem; min-height: 1.1em; margin: 4px 0 10px; text-align:center; }
+  .gate-btn { width: 100%; padding: 13px; font-size: 1rem; border-radius: 12px; border:none; cursor:pointer; }
+
+  /* Barre de session */
+  .session-bar {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 999px;
+    padding: 6px 8px 6px 14px;
+    font-size: .85rem;
+  }
+  .session-bar button {
+    background: rgba(248,113,113,.2);
+    color: #fca5a5;
+    border: none;
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: .8rem;
+  }
+
+  /* Corbeille (grâce 2 jours) */
+  .trash { width: 100%; max-width: 680px; margin-top: 30px; }
+  .trash h2 { font-size: 1rem; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  .trash:empty { display: none; }
+  .trash-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(248,113,113,.08);
+    border: 1px dashed rgba(248,113,113,.4);
+    border-radius: 14px; padding: 10px 14px; margin-bottom: 8px;
+  }
+  .trash-row .t-info .t-name { font-weight: 600; text-decoration: line-through; opacity: .8; }
+  .trash-row .t-info .t-left { font-size: .78rem; color: #fca5a5; }
+  .trash-row .t-actions { display: flex; gap: 8px; }
+  .trash-row button {
+    border: none; border-radius: 9px; padding: 6px 11px; cursor: pointer; font-size: .82rem; font-weight: 600;
+  }
+  .t-restore { background: rgba(52,211,153,.2); color: #6ee7b7; }
+  .t-purge { background: rgba(248,113,113,.2); color: #fca5a5; }
+
+  /* Idées cadeaux */
+  .gift-btn {
+    background: rgba(251,191,36,.15);
+    border: 1px solid rgba(251,191,36,.4);
+    color: #fbbf24;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .gift-btn:hover { background: rgba(251,191,36,.28); }
+  .gift-btn .badge {
+    font-size: .72rem;
+    background: #fbbf24;
+    color: #0b1020;
+    border-radius: 999px;
+    padding: 0 6px;
+    margin-left: 2px;
+    font-weight: 700;
+  }
+  .gift-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .gift-list:empty::after {
+    content: "Aucune idée pour l'instant.";
+    color: var(--muted);
+    font-size: .85rem;
+  }
+  .gift-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .gift-item .g-text { flex: 1; font-weight: 600; word-break: break-word; }
+  .gift-item .g-link {
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: .85rem;
+    border: 1px solid rgba(56,189,248,.4);
+    padding: 3px 9px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .gift-item .g-link:hover { background: rgba(56,189,248,.15); }
+  .gift-item .g-del {
+    background: none; border: none; color: #f87171;
+    font-size: 1.1rem; cursor: pointer;
+  }
+  .gift-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .gift-form input {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .gift-form button { padding: 11px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; }
+
+  /* Aligner les boutons d'action des cartes */
+  .row .actions { display: flex; align-items: center; gap: 8px; }
+
+  /* Vue d'ensemble cadeaux de Noël */
+  .noel-person {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .noel-person .np-name { font-weight: 700; margin-bottom: 8px; }
+  .noel-person .gift-list { margin-bottom: 10px; }
+  .noel-person .np-add { display: flex; flex-wrap: wrap; gap: 8px; }
+  .noel-person .np-add input {
+    flex: 1 1 130px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    font-size: .92rem;
+  }
+  .noel-person .np-add button {
+    padding: 9px 14px; border-radius: 9px; border: none; font-weight: 700; cursor: pointer; font-size: .9rem;
+  }
+
+  /* =========================================================
+     FINITIONS VISUELLES
+     ========================================================= */
+
+  /* Fond animé : léger déplacement du dégradé + halos lumineux */
+  body {
+    background-size: 200% 200%;
+    animation: bgShift 24s ease infinite;
+  }
+  @keyframes bgShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(600px circle at 15% 20%, rgba(244,114,182,.16), transparent 60%),
+      radial-gradient(600px circle at 85% 80%, rgba(56,189,248,.14), transparent 60%);
+  }
+  body > * { position: relative; z-index: 1; }
+
+  /* Transitions douces un peu partout */
+  .hero, .noel-card, .row, .chip, .gift-btn, .unit, .trash-row, button, input, select {
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, filter .18s ease;
+  }
+
+  /* Entrée en fondu + glissement */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero, .noel-card, .row, .trash-row { animation: rise .45s ease both; }
+
+  /* Profondeur : ombres portées */
+  .hero, .noel-card {
+    box-shadow: 0 18px 40px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  /* Cartes de la liste : survol qui décolle */
+  .row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px -16px rgba(0,0,0,.7);
+    border-color: rgba(255,255,255,.22);
+  }
+
+  /* Boutons : relief au survol */
+  .form button, .gate-btn, .btn-primary {
+    box-shadow: 0 8px 20px -10px var(--accent);
+  }
+  .form button:hover, .gate-btn:hover, .btn-primary:hover { transform: translateY(-1px); }
+  .form button:active, .gate-btn:active, .btn-primary:active { transform: translateY(1px); }
+
+  /* Unités du compte à rebours : dégradé sur les chiffres + relief */
+  .unit {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 6px 14px -10px rgba(0,0,0,.8);
+  }
+  .unit .num {
+    background: linear-gradient(180deg, #fff, var(--muted));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 10px rgba(0,0,0,.25);
+  }
+
+  /* Pastilles de filtre : petit rebond au survol */
+  .chip:hover { transform: translateY(-1px); }
+
+  /* Champs : halo net au focus */
+  .form input:focus, .gate .field input:focus, .gift-form input:focus,
+  .field input:focus, .field select:focus, .np-add input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(244,114,182,.25);
+  }
+
+  /* Barre de session + engrenage : effet verre */
+  .session-bar, .gear { box-shadow: 0 8px 22px -12px rgba(0,0,0,.7); }
+  .gear:hover { transform: translateY(-1px); }
+
+  /* Carte Noël : neige qui tombe */
+  .noel-card { position: relative; overflow: hidden; }
+  .noel-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(2px 2px at 20% 10%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%, #fff, transparent),
+      radial-gradient(2px 2px at 40% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 10% 50%, #fff, transparent),
+      radial-gradient(2px 2px at 90% 70%, #fff, transparent);
+    background-size: 100% 100%;
+    opacity: .5;
+    animation: snow 6s linear infinite;
+  }
+  @keyframes snow {
+    from { background-position: 0 -100%; }
+    to   { background-position: 0 100%; }
+  }
+
+  /* Bannière du jour J : dégradé festif */
+  .today-banner {
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: pulse 1s infinite alternate, shine 3s linear infinite;
+  }
+  @keyframes shine { to { background-position: 200% center; } }
+
+  /* Confettis (le jour d'un anniversaire) */
+  .confetti {
+    position: fixed;
+    top: -10px;
+    width: 9px;
+    height: 14px;
+    z-index: 40;
+    pointer-events: none;
+    opacity: .9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Fenêtres modales : apparition en zoom */
+  @keyframes pop { from { opacity: 0; transform: scale(.94) translateY(10px); } to { opacity: 1; transform: none; } }
+  .overlay.open .panel, .gate .gate-box { animation: pop .28s ease both; }
+
+  /* Barre de défilement discrète */
+  * { scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* Accessibilité : on respecte "réduire les animations" */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  /* =========================================================
+     THÈME CLAIR "HR CONSULTING" — surcharge appliquée par-dessus
+     tout le reste (mêmes couleurs, topbar, cartes blanches, bleu).
+     ========================================================= */
+  :root {
+    --brand:   #2557a7;
+    --brand-d: #1e4789;
+    --danger:  #c0392b;
+    --danger-d:#962d22;
+    --ink:     #1b2430;
+    --accent:  #2557a7;   /* bleu de marque */
+    --accent2: #1e4789;   /* bleu foncé */
+    --card:    #ffffff;
+    --bg1:     #f4f6fa;
+    --bg2:     #f4f6fa;
+    --text:    #33404f;
+    --muted:   #6b7684;
+    --line:    #e6e9ee;
+    --shadow-sm: 0 1px 2px rgba(20,35,60,.06), 0 1px 3px rgba(20,35,60,.05);
+    --shadow-md: 0 4px 14px rgba(20,35,60,.09);
+    --ring:    0 0 0 3px rgba(37,87,167,.28);
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg1) !important;
+    color: var(--text);
+    animation: none !important;
+    padding: 104px 16px 60px;   /* dégage la topbar + mainnav fixes */
+  }
+  body::before { display: none !important; }   /* supprime les halos sombres */
+
+  h1, h2, h3, h4 { color: var(--ink); letter-spacing: -0.01em; }
+  .subtitle, .list h2, .trash h2 { color: var(--muted); }
+
+  /* ---- Topbar + navigation (comme hrconsulting) ---- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 10px 24px;
+    background: #fff; border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+  }
+  .topbar .brand { font-size: 1.15rem; font-weight: 800; color: var(--brand); display: flex; align-items: center; gap: 6px; }
+  .topbar .brand span { color: var(--ink); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+  .mainnav {
+    position: fixed; top: 56px; left: 0; right: 0; z-index: 19;
+    display: flex; gap: 6px; padding: 0 24px;
+    background: linear-gradient(180deg, var(--brand), var(--brand-d));
+  }
+  .mainnav-link {
+    color: rgba(255,255,255,.95); padding: 11px 14px;
+    font-size: .9rem; font-weight: 600; border-bottom: 3px solid transparent;
+  }
+  .mainnav-link.active { border-bottom-color: rgba(255,255,255,.85); }
+
+  /* ---- Bouton Admin (engrenage) → bouton rouge, dans la topbar ---- */
+  .gear {
+    position: static; top: auto; right: auto;
+    height: 40px; padding: 0 16px; border-radius: 8px;
+    border: 1px solid var(--danger); background: var(--danger); color: #fff;
+    box-shadow: none; font-size: 1rem;
+  }
+  .gear:hover { background: var(--danger-d); filter: none; transform: translateY(-1px); }
+  .gate-admin { position: absolute; top: 16px; right: 16px; }
+
+  /* ---- Barre de session → pastille claire, dans la topbar ---- */
+  .session-bar {
+    position: static; top: auto; left: auto;
+    background: #f1f3f6; border: 1px solid var(--line); color: var(--text);
+    box-shadow: none;
+  }
+  .session-bar button { background: var(--danger); color: #fff; }
+  .session-bar button:hover { background: var(--danger-d); }
+
+  /* ---- Cartes blanches génériques ---- */
+  .hero, .row, .noel-card, .gift-item, .noel-person, .space-row, .trash-row {
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: var(--shadow-sm) !important;
+    backdrop-filter: none !important;
+  }
+  .hero, .noel-card { box-shadow: var(--shadow-md) !important; }
+  .hero .who, .row .info .name, .noel-person .np-name, .space-row .info b { color: var(--ink); }
+  .hero .when, .row .info .date, .space-row .info small { color: var(--muted); }
+  .row:hover { box-shadow: var(--shadow-md) !important; border-color: #b9cdea !important; }
+
+  /* Compte à rebours : tuiles bleutées, chiffres bleu marque */
+  .unit {
+    background: #eef3fb !important;
+    border: 1px solid #dbe6f7;
+    box-shadow: none !important;
+  }
+  .unit .num {
+    background: none; -webkit-background-clip: initial; background-clip: initial;
+    color: var(--brand); text-shadow: none;
+  }
+  .unit .lbl { color: var(--muted); }
+  .today-banner { -webkit-text-fill-color: initial; color: var(--brand); }
+  .row .days { color: var(--brand); }
+
+  /* Carte Noël : blanche avec accent festif, sans neige (invisible sur clair) */
+  .noel-card { background: #fff !important; border-left: 4px solid var(--danger) !important; }
+  .noel-card::after { display: none !important; }
+  .noel-card .noel-title { color: var(--ink); }
+
+  /* ---- Formulaires / champs ---- */
+  .form input, .gate .field input, .gift-form input, .np-add input,
+  .field input[type=text], .field select, .gift-item .g-text {
+    background: #fff !important;
+    border: 1px solid #d5dbe3 !important;
+    color: var(--text) !important;
+  }
+  .form input::placeholder, .gift-form input::placeholder { color: #9aa4b1; }
+  .form input:focus, .gate .field input:focus, .gift-form input:focus,
+  .field input:focus, .field select:focus, .np-add input:focus {
+    border-color: var(--brand) !important; box-shadow: var(--ring) !important;
+  }
+  .gate .field label, .field label { color: var(--text); }
+
+  /* ---- Boutons ---- */
+  .form button, .gate-btn, .btn-primary, .space-row .enter, .gift-form button, .np-add button {
+    background: var(--brand) !important; color: #fff !important;
+    box-shadow: none !important; border: none;
+  }
+  .form button:hover, .gate-btn:hover, .btn-primary:hover,
+  .space-row .enter:hover, .gift-form button:hover, .np-add button:hover {
+    background: var(--brand-d) !important; transform: translateY(-1px);
+  }
+  .btn-ghost { background: #eef3fb !important; color: var(--brand) !important; }
+  .btn-danger, .space-row .del, .row .del, .gift-item .g-del,
+  .t-purge, .trash-row .t-purge { background: rgba(192,57,43,.12) !important; color: var(--danger) !important; }
+  .row .del, .gift-item .g-del { background: none !important; }
+  .t-restore { background: #e7f6ec !important; color: #14683a !important; }
+
+  /* ---- Onglets / puces / badges ---- */
+  .tab, .chip {
+    background: #fff !important; border: 1px solid #d5dbe3 !important; color: var(--text) !important;
+  }
+  .tab.active, .chip.active { background: var(--brand) !important; color: #fff !important; border-color: var(--brand) !important; }
+  .tag, .gift-item .g-link { background: #eef3fb !important; color: var(--brand) !important; border: 1px solid #d7e3f7 !important; }
+  .gift-btn { background: #fff4d6 !important; border: 1px solid #f0dca6 !important; color: #8a6100 !important; }
+  .gift-btn .badge { background: #8a6100; color: #fff; }
+  .admin-link { background: #fff !important; border: 1px dashed #c3cddb !important; color: var(--muted) !important; }
+  .admin-link:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
+
+  /* ---- Fenêtres modales ---- */
+  .panel { background: #fff !important; border: 1px solid var(--line) !important; color: var(--text); box-shadow: var(--shadow-md); }
+  .panel h2 { color: var(--ink); }
+  .panel .hint, .gate-sub { color: var(--muted); }
+
+  /* ---- Écran d'accueil (gate) en clair ---- */
+  .gate { background: linear-gradient(135deg, #eef2f8, #f4f6fa) !important; }
+  .gate-box { background: #fff !important; border: 1px solid var(--line) !important; box-shadow: var(--shadow-md); backdrop-filter: none !important; }
+  .gate-logo { color: var(--ink); }
+
+  /* ---- Corbeille / cadeaux ---- */
+  .trash-row { border: 1px dashed #f0c9c3 !important; background: #fdf5f4 !important; }
+  .trash-row .t-info .t-left { color: var(--danger); }
+  .gift-item .g-text { border: none !important; background: none !important; }
+</style>
+</head>
+<body>
+  <!-- Écran d'accueil : créer ou rejoindre un espace -->
+  <div class="gate" id="gate">
+    <button class="gear gate-admin" id="gateAdmin" title="Réglages de l'accueil">⚙️<span class="gear-label">Admin</span></button>
+    <div class="gate-box">
+      <h1 class="gate-logo" id="gateLogo">🎂 Mon espace anniversaires</h1>
+      <p class="gate-sub">Crée ton espace ou rejoins le tien avec ton mot de passe.</p>
+
+      <div class="tabs">
+        <button type="button" class="tab active" data-gtab="login">Se connecter</button>
+        <button type="button" class="tab" data-gtab="create">Créer un espace</button>
+      </div>
+
+      <button type="button" class="admin-link" id="adminLoginBtn">🔑 Connexion admin</button>
+
+      <div class="field">
+        <label for="spaceName">Nom de l'espace</label>
+        <input type="text" id="spaceName" placeholder="ex. FAMILLE DUPONT" autocomplete="off" style="text-transform:uppercase">
+      </div>
+      <div class="field">
+        <label for="spacePwd">Mot de passe</label>
+        <input type="text" id="spacePwd" placeholder="Mot de passe" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+      </div>
+      <div class="field" id="spacePwd2Field" style="display:none;">
+        <label for="spacePwd2">Confirmer le mot de passe</label>
+        <input type="text" id="spacePwd2" placeholder="Retape le mot de passe" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+      </div>
+
+      <p class="gate-err" id="gateErr"></p>
+      <button class="btn-primary gate-btn" id="gateBtn">Se connecter</button>
+      <p class="hint" style="margin-top:14px;text-align:center;">🔒 Le mot de passe protège la modification et la suppression de tes données.</p>
+    </div>
+  </div>
+
+  <!-- Barre supérieure (style hrconsulting) — visible une fois dans un espace -->
+  <div class="topbar" id="topbar">
+    <div class="brand">🎂 <span>Anniversaires</span></div>
+    <div class="topbar-right">
+      <!-- Barre de session (espace courant) -->
+      <div class="session-bar" id="sessionBar" style="display:none;">
+        <span>📁 <b id="spaceLabel"></b></span>
+        <button id="logoutBtn" title="Se déconnecter">Quitter</button>
+      </div>
+      <button class="gear" id="gear" title="Mode admin">⚙️<span class="gear-label">Admin</span></button>
+    </div>
+  </div>
+  <nav class="mainnav" id="mainnav">
+    <span class="mainnav-link active">🎂 Compte à rebours</span>
+  </nav>
+
+  <!-- Fenêtre modale : CONNEXION ADMIN (gérer tous les espaces) -->
+  <div class="overlay" id="adminOverlay">
+    <div class="panel">
+      <h2>🔑 Connexion admin</h2>
+      <p class="hint">Accès réservé : gère tous les espaces (entrer, supprimer).</p>
+
+      <div id="aLogin">
+        <div class="field">
+          <label for="aDb">Nom de la base (dbname)</label>
+          <input type="text" id="aDb" value="anniversaire_app" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="aUser">Utilisateur</label>
+          <input type="text" id="aUser" value="root" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="aPwd">Mot de passe (vide par défaut)</label>
+          <input type="text" id="aPwd" placeholder="(laisser vide)" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+        <p class="hint" id="aErr" style="color:#fca5a5;display:none;"></p>
+        <div class="panel-actions">
+          <button class="btn-primary" id="aLoginGo">Se connecter</button>
+          <button class="btn-ghost" id="aClose1">Fermer</button>
+        </div>
+        <p class="hint" style="margin-top:14px;">XAMPP par défaut : base <b>anniversaire_app</b> · utilisateur <b>root</b> · mot de passe <b>vide</b>. Clique juste sur « Se connecter ».</p>
+      </div>
+
+      <div id="aPanel" style="display:none;">
+        <p class="hint" id="aCount" style="margin-bottom:12px;"></p>
+        <div id="aList"></div>
+        <div class="panel-actions">
+          <button class="btn-ghost" id="aClose2">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre modale : ADMIN GLOBAL de l'accueil (mot de passe maître) -->
+  <div class="overlay" id="globalOverlay">
+    <div class="panel">
+      <h2>🎨 Apparence de l'accueil</h2>
+      <p class="hint">Réglages globaux de la page d'accueil, visibles par tous les visiteurs.</p>
+
+      <div id="gLogin">
+        <div class="field">
+          <label for="gUser">Identifiant</label>
+          <input type="text" id="gUser" placeholder="Identifiant" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="gPwd">Mot de passe</label>
+          <input type="text" id="gPwd" placeholder="Mot de passe" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+        <p class="hint" id="gErr" style="color:#fca5a5;display:none;"></p>
+        <div class="panel-actions">
+          <button class="btn-primary" id="gLoginBtn">Déverrouiller</button>
+          <button class="btn-ghost" id="gClose1">Fermer</button>
+        </div>
+        <p class="hint" style="margin-top:14px;">Mot de passe maître par défaut : <b>admin</b> (à changer ci-dessous).</p>
+      </div>
+
+      <div id="gSettings" style="display:none;">
+        <div class="field">
+          <label>Thèmes prédéfinis</label>
+          <div class="presets" id="gPresets"></div>
+        </div>
+        <div class="field">
+          <label for="gTitle">Titre de l'accueil</label>
+          <input type="text" id="gTitle">
+        </div>
+        <div class="field">
+          <label>Couleur d'accent 1</label>
+          <div class="colorrow"><input type="color" id="gAccent"><span class="val" id="gvAccent"></span></div>
+        </div>
+        <div class="field">
+          <label>Couleur d'accent 2</label>
+          <div class="colorrow"><input type="color" id="gAccent2"><span class="val" id="gvAccent2"></span></div>
+        </div>
+        <div class="field">
+          <label>Fond — haut du dégradé</label>
+          <div class="colorrow"><input type="color" id="gBg1"><span class="val" id="gvBg1"></span></div>
+        </div>
+        <div class="field">
+          <label>Fond — bas du dégradé</label>
+          <div class="colorrow"><input type="color" id="gBg2"><span class="val" id="gvBg2"></span></div>
+        </div>
+        <div class="field">
+          <label for="gFont">Police du titre</label>
+          <select id="gFont">
+            <option value="">Par défaut (système)</option>
+            <option value="Georgia, serif">Georgia (serif)</option>
+            <option value="'Courier New', monospace">Courier (mono)</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans (fun)</option>
+            <option value="Impact, sans-serif">Impact (gras)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="gNewUser">Changer l'identifiant admin</label>
+          <input type="text" id="gNewUser" placeholder="Laisser vide pour ne pas changer" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="gNewPwd">Changer le mot de passe admin</label>
+          <input type="text" id="gNewPwd" placeholder="Laisser vide pour ne pas changer" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+        <div class="panel-actions">
+          <button class="btn-primary" id="gSaveBtn">Enregistrer</button>
+          <button class="btn-danger" id="gResetBtn">Réinitialiser</button>
+          <button class="btn-ghost" id="gClose2">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2>🔧 Mode admin</h2>
+      <p class="hint" id="panelHint">Personnalise l'apparence de la page.</p>
+
+      <!-- Écran de connexion -->
+      <div id="loginScreen">
+        <div class="field">
+          <label for="pwd">Mot de passe de l'espace</label>
+          <input type="text" id="pwd" placeholder="Mot de passe" autocomplete="off" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+        <p class="hint" id="loginErr" style="color:#fca5a5;display:none;">Mot de passe incorrect.</p>
+        <div class="panel-actions">
+          <button class="btn-primary" id="loginBtn">Déverrouiller</button>
+          <button class="btn-ghost" id="closeLogin">Fermer</button>
+        </div>
+        <p class="hint" id="adminHint" style="margin-top:14px;">Utilise le <b>mot de passe de ton espace</b> (le même qu'à la connexion).</p>
+      </div>
+
+      <!-- Réglages -->
+      <div id="settingsScreen" style="display:none;">
+        <div class="field">
+          <label>Thèmes prédéfinis</label>
+          <div class="presets" id="presets"></div>
+        </div>
+
+        <div class="field">
+          <label for="setTitle">Titre de la page</label>
+          <input type="text" id="setTitle">
+        </div>
+
+        <div class="field">
+          <label>Couleur d'accent 1</label>
+          <div class="colorrow"><input type="color" id="cAccent"><span class="val" id="vAccent"></span></div>
+        </div>
+        <div class="field">
+          <label>Couleur d'accent 2</label>
+          <div class="colorrow"><input type="color" id="cAccent2"><span class="val" id="vAccent2"></span></div>
+        </div>
+        <div class="field">
+          <label>Fond — haut du dégradé</label>
+          <div class="colorrow"><input type="color" id="cBg1"><span class="val" id="vBg1"></span></div>
+        </div>
+        <div class="field">
+          <label>Fond — bas du dégradé</label>
+          <div class="colorrow"><input type="color" id="cBg2"><span class="val" id="vBg2"></span></div>
+        </div>
+
+        <div class="field">
+          <label for="setFont">Police du titre</label>
+          <select id="setFont">
+            <option value="">Par défaut (système)</option>
+            <option value="Georgia, serif">Georgia (serif)</option>
+            <option value="'Courier New', monospace">Courier (mono)</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans (fun)</option>
+            <option value="Impact, sans-serif">Impact (gras)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="setPwd">Changer le mot de passe de l'espace</label>
+          <input type="text" id="setPwd" placeholder="Laisser vide pour ne pas changer" style="-webkit-text-security:disc;text-security:disc;">
+        </div>
+
+        <div class="panel-actions">
+          <button class="btn-primary" id="saveBtn">Enregistrer</button>
+          <button class="btn-danger" id="resetBtn">Réinitialiser</button>
+          <button class="btn-ghost" id="closeSettings">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre modale : idées de cadeaux -->
+  <div class="overlay" id="giftOverlay">
+    <div class="panel">
+      <h2>🎁 Idées cadeaux — <span id="giftPerson"></span></h2>
+      <p class="hint">Note les idées de cadeaux et ajoute un lien pour t'aider à chercher.</p>
+
+      <div class="tabs">
+        <button type="button" class="tab active" data-cat="anniversaire">🎂 Anniversaire</button>
+        <button type="button" class="tab" data-cat="noel">🎄 Noël</button>
+      </div>
+
+      <div id="giftList" class="gift-list"></div>
+
+      <form id="giftForm" class="gift-form">
+        <input type="text" id="giftText" placeholder="Idée de cadeau (ex. Casque audio)" required>
+        <input type="url" id="giftUrl" placeholder="Lien externe (optionnel) — https://...">
+        <button type="submit" class="btn-primary">Ajouter l'idée</button>
+      </form>
+
+      <div class="panel-actions">
+        <button class="btn-ghost" id="closeGift">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre modale : vue d'ensemble des cadeaux de Noël, par personne -->
+  <div class="overlay" id="noelGiftOverlay">
+    <div class="panel">
+      <h2>🎄 Cadeaux de Noël</h2>
+      <p class="hint">Une liste par personne : note les idées et ajoute un lien pour t'aider.</p>
+      <div id="noelGiftBody"></div>
+      <div class="panel-actions">
+        <button class="btn-ghost" id="closeNoelGift">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <h1 id="pageTitle">🎂 Compte à rebours anniversaire</h1>
+  <p class="subtitle">Ajoute une date de naissance, on te dit quand le grand jour approche.</p>
+
+  <form class="form" id="form">
+    <input type="text" id="name" placeholder="Prénom (ex. Maman)" required>
+    <input type="date" id="dob" required>
+    <input type="text" id="families" placeholder="Famille(s) — ex. DUPONT, MARTIN" list="familyList" style="text-transform:uppercase">
+    <datalist id="familyList"></datalist>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="noel-card" id="noelCard">
+    <div class="noel-title">🎄 Noël</div>
+    <div class="when" id="noelDate"></div>
+    <div class="countdown" id="noelCd"></div>
+    <button class="gift-btn" id="noelGiftBtn" style="margin-top:16px">🎁 Cadeaux de Noël (par personne)</button>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="empty">Aucun anniversaire pour l'instant. Ajoute-en un ci-dessus ! 🎉</div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="trash" id="trash"></div>
+
+<script>
+  // ===== État en mémoire + synchro serveur =====
+  const GRACE_MS = 2 * 24 * 60 * 60 * 1000; // 2 jours avant suppression définitive
+  const APP_BASE = "/anniversaire/";        // dossier de l'app sur le serveur
+  const API_URL = APP_BASE + "api.php";     // chemin absolu (URL propre = base différente)
+  let SPACE = null;                 // nom de l'espace connecté
+  let STATE = { people: [], settings: {} };
+  let persistTimer = null;
+
+  // Nom d'espace éventuellement présent dans l'URL : /anniversaire/DUPONT
+  function spaceFromUrl() {
+    const parts = location.pathname.split("/").filter(Boolean);
+    const i = parts.indexOf("anniversaire");
+    if (i >= 0 && parts[i + 1]) {
+      try { return decodeURIComponent(parts[i + 1]).toLocaleUpperCase("fr-FR"); }
+      catch { return null; }
+    }
+    return null;
+  }
+
+  // Met l'URL du navigateur à jour : /anniversaire/DUPONT (sans recharger)
+  function setUrlForSpace(name) {
+    const path = name ? APP_BASE + encodeURIComponent(name) : APP_BASE;
+    history.replaceState(null, "", path);
+  }
+
+  async function api(action, payload = {}) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...payload })
+    });
+    let json;
+    try { json = await res.json(); } catch { throw new Error("Réponse serveur invalide."); }
+    if (!json.ok) throw new Error(json.error || "Erreur serveur.");
+    return json;
+  }
+
+  // Enregistre STATE sur le serveur (groupé pour éviter les appels en rafale)
+  function persist() {
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+      api("save", { data: STATE }).catch(err => console.warn("Sauvegarde échouée :", err.message));
+    }, 350);
+  }
+
+  const form = document.getElementById("form");
+  const nameInput = document.getElementById("name");
+  const dobInput = document.getElementById("dob");
+  const familiesInput = document.getElementById("families");
+  const filtersBox = document.getElementById("filters");
+  let activeFamily = null; // null = toutes les familles
+  const hero = document.getElementById("hero");
+  const list = document.getElementById("list");
+
+  const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+  function load() { return STATE.people || []; }
+  function save(data) { STATE.people = data; persist(); }
+
+  // Prochain anniversaire à partir d'aujourd'hui (renvoie une Date)
+  function nextBirthday(dob) {
+    const b = new Date(dob + "T00:00:00");
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let next = new Date(today.getFullYear(), b.getMonth(), b.getDate());
+    if (next < today) next = new Date(today.getFullYear() + 1, b.getMonth(), b.getDate());
+    return next;
+  }
+
+  function ageTurning(dob, nextDate) {
+    const b = new Date(dob + "T00:00:00");
+    return nextDate.getFullYear() - b.getFullYear();
+  }
+
+  function isBirthdayToday(dob) {
+    const b = new Date(dob + "T00:00:00");
+    const now = new Date();
+    return b.getDate() === now.getDate() && b.getMonth() === now.getMonth();
+  }
+
+  // Personnes actives (non supprimées)
+  function activePeople() { return load().filter(p => !p.deletedAt); }
+
+  // Liste enrichie (date du prochain anniv.) + triée + filtrée par famille active
+  function getSortedList() {
+    let data = activePeople().map(p => ({...p, families: p.families || [], next: nextBirthday(p.dob)}));
+    if (activeFamily) data = data.filter(p => p.families.includes(activeFamily));
+    data.sort((a, b) => a.next - b.next);
+    return data;
+  }
+
+  // Toutes les familles existantes (avec compte)
+  function allFamilies() {
+    const counts = {};
+    activePeople().forEach(p => (p.families || []).forEach(f => counts[f] = (counts[f] || 0) + 1));
+    return counts;
+  }
+
+  function renderFilters() {
+    const counts = allFamilies();
+    const names = Object.keys(counts).sort((a, b) => a.localeCompare(b, "fr"));
+
+    // Met à jour l'autocomplétion du formulaire
+    document.getElementById("familyList").innerHTML =
+      names.map(n => `<option value="${escapeHtml(n)}">`).join("");
+
+    if (names.length === 0) { filtersBox.innerHTML = ""; return; }
+    // si la famille active a disparu, on revient à "Toutes"
+    if (activeFamily && !counts[activeFamily]) activeFamily = null;
+
+    let html = `<button class="chip ${activeFamily === null ? "active" : ""}" data-fam="">Toutes <span class="count">${activePeople().length}</span></button>`;
+    names.forEach(n => {
+      html += `<button class="chip ${activeFamily === n ? "active" : ""}" data-fam="${escapeHtml(n)}">${escapeHtml(n)} <span class="count">${counts[n]}</span></button>`;
+    });
+    filtersBox.innerHTML = html;
+
+    filtersBox.querySelectorAll(".chip").forEach(btn => {
+      btn.onclick = () => { activeFamily = btn.dataset.fam || null; render(); };
+    });
+  }
+
+  function familyTags(families) {
+    if (!families || !families.length) return "";
+    return `<div class="tags">${families.map(f => `<span class="tag">${escapeHtml(f)}</span>`).join("")}</div>`;
+  }
+
+  function render() {
+    purgeExpired();
+    renderFilters();
+    renderTrash();
+    const enriched = getSortedList();
+
+    if (enriched.length === 0) {
+      const msg = activeFamily
+        ? `Personne dans la famille « ${escapeHtml(activeFamily)} ».`
+        : "Aucun anniversaire pour l'instant. Ajoute-en un ci-dessus ! 🎉";
+      hero.innerHTML = `<div class="empty">${msg}</div>`;
+      list.innerHTML = "";
+      return;
+    }
+
+    const featured = enriched[0];
+    renderHero(featured);
+    if (isBirthdayToday(featured.dob)) launchConfetti(); // 🎉 le jour J
+
+    // liste des suivants
+    const rest = enriched.slice(1);
+    let html = rest.length ? '<h2>Les suivants</h2>' : '';
+    enriched.forEach((p, i) => {
+      if (i === 0) return;
+      const days = Math.ceil((p.next - new Date(new Date().toDateString())) / 86400000);
+      const dateStr = `${p.next.getDate()} ${MOIS[p.next.getMonth()]}`;
+      html += `
+        <div class="row">
+          <div class="info">
+            <div class="name">${escapeHtml(p.name)} ${isBirthdayToday(p.dob) ? "🎉" : ""}</div>
+            <div class="date">${dateStr} · ${ageTurning(p.dob, p.next)} ans</div>
+            ${familyTags(p.families)}
+          </div>
+          <div class="days">${isBirthdayToday(p.dob) ? "Aujourd'hui !" : days + " j"}<small>${isBirthdayToday(p.dob) ? "" : "restants"}</small></div>
+          <div class="actions">
+            <button class="gift-btn" data-gift="${p.id}" title="Idées cadeaux">🎁${giftCount(p) ? `<span class="badge">${giftCount(p)}</span>` : ""}</button>
+            <button class="del" data-id="${p.id}" title="Supprimer">✕</button>
+          </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+
+    list.querySelectorAll(".del").forEach(btn => {
+      btn.onclick = () => remove(btn.dataset.id);
+    });
+  }
+
+  function renderHero(p) {
+    const dateStr = `${p.next.getDate()} ${MOIS[p.next.getMonth()]} ${p.next.getFullYear()}`;
+    if (isBirthdayToday(p.dob)) {
+      hero.innerHTML = `
+        <div class="who">${escapeHtml(p.name)}</div>
+        <div class="today-banner">🎉 C'est aujourd'hui ! Joyeux anniversaire ! 🎂</div>
+        <div class="when">${ageTurning(p.dob, p.next)} ans</div>
+        ${familyTags(p.families)}
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="gift-btn" data-gift="${p.id}">🎁 Idées cadeaux${giftCount(p) ? ` (${giftCount(p)})` : ""}</button>
+          <button class="del" data-id="${p.id}" title="Supprimer" style="font-size:1rem;color:#f87171;background:none;border:1px solid #f87171;border-radius:10px;padding:6px 12px;cursor:pointer">Supprimer</button>
+        </div>`;
+    } else {
+      hero.innerHTML = `
+        <div class="who">Prochain : ${escapeHtml(p.name)}</div>
+        <div class="when">${dateStr} · ${ageTurning(p.dob, p.next)} ans</div>
+        ${familyTags(p.families)}
+        <div class="countdown" id="cd"></div>
+        <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="gift-btn" data-gift="${p.id}">🎁 Idées cadeaux${giftCount(p) ? ` (${giftCount(p)})` : ""}</button>
+          <button class="del" data-id="${p.id}" title="Supprimer" style="font-size:1rem;color:#f87171;background:none;border:1px solid #f87171;border-radius:10px;padding:6px 12px;cursor:pointer">Supprimer</button>
+        </div>`;
+    }
+    hero.querySelectorAll(".del").forEach(btn => btn.onclick = () => remove(btn.dataset.id));
+    tick(); // met à jour immédiatement le compteur
+  }
+
+  // Met à jour le compte à rebours en direct (jours/heures/min/sec)
+  function tick() {
+    const cd = document.getElementById("cd");
+    if (!cd) return;
+    const enriched = getSortedList();
+    if (!enriched.length) return;
+    const target = enriched[0].next.getTime();
+    const now = Date.now();
+    let diff = Math.max(0, target - now);
+
+    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+    const h = Math.floor(diff / 3600000); diff -= h * 3600000;
+    const m = Math.floor(diff / 60000); diff -= m * 60000;
+    const s = Math.floor(diff / 1000);
+
+    cd.innerHTML = `
+      ${unit(d, "jours")}
+      ${unit(h, "heures")}
+      ${unit(m, "minutes")}
+      ${unit(s, "secondes")}`;
+  }
+
+  function unit(n, label) {
+    return `<div class="unit"><div class="num">${String(n).padStart(2,"0")}</div><div class="lbl">${label}</div></div>`;
+  }
+
+  // Prochain 25 décembre
+  function nextChristmas() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let d = new Date(today.getFullYear(), 11, 25);
+    if (d < today) d = new Date(today.getFullYear() + 1, 11, 25);
+    return d;
+  }
+
+  function updateNoel() {
+    const card = document.getElementById("noelCard");
+    const dateEl = document.getElementById("noelDate");
+    const cd = document.getElementById("noelCd");
+    const now = new Date();
+    const isToday = now.getDate() === 25 && now.getMonth() === 11;
+
+    if (isToday) {
+      card.classList.add("today");
+      dateEl.textContent = "";
+      cd.innerHTML = `<div class="today-banner">🎁 Joyeux Noël ! 🎄</div>`;
+      return;
+    }
+    card.classList.remove("today");
+    const target = nextChristmas();
+    dateEl.textContent = `25 décembre ${target.getFullYear()}`;
+    let diff = Math.max(0, target.getTime() - now.getTime());
+    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+    const h = Math.floor(diff / 3600000); diff -= h * 3600000;
+    const m = Math.floor(diff / 60000); diff -= m * 60000;
+    const s = Math.floor(diff / 1000);
+    cd.innerHTML = `${unit(d, "jours")}${unit(h, "heures")}${unit(m, "minutes")}${unit(s, "secondes")}`;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  // Pluie de confettis (le jour d'un anniversaire), avec throttle
+  let _lastConfetti = 0;
+  function launchConfetti() {
+    if (Date.now() - _lastConfetti < 30000) return; // pas plus d'une fois / 30 s
+    _lastConfetti = Date.now();
+    const colors = ["#f472b6", "#38bdf8", "#fbbf24", "#a3e635", "#e879f9", "#fb7185"];
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.style.left = (Math.random() * 100) + "vw";
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2.5 + Math.random() * 2) + "s";
+      c.style.animationDelay = (Math.random() * 1.2) + "s";
+      c.style.transform = `rotate(${Math.random() * 360}deg)`;
+      if (Math.random() > 0.5) c.style.borderRadius = "50%";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5200);
+    }
+  }
+
+  // Suppression douce : l'élément part à la corbeille, récupérable pendant 2 jours
+  function remove(id) {
+    if (!confirm("Mettre cet anniversaire à la corbeille ?\n(Récupérable pendant 2 jours, puis suppression définitive.)")) return;
+    const data = load();
+    const p = data.find(x => x.id === id);
+    if (p) { p.deletedAt = Date.now(); save(data); }
+    render();
+  }
+
+  // Restaurer un élément de la corbeille
+  function restore(id) {
+    const data = load();
+    const p = data.find(x => x.id === id);
+    if (p) { delete p.deletedAt; save(data); }
+    render();
+  }
+
+  // Suppression définitive immédiate (dans la corbeille)
+  function purgeNow(id) {
+    if (!confirm("Supprimer DÉFINITIVEMENT ? Cette action est irréversible.")) return;
+    save(load().filter(p => p.id !== id));
+    render();
+  }
+
+  // Purge automatique des éléments en corbeille depuis plus de 2 jours
+  function purgeExpired() {
+    const now = Date.now();
+    const kept = load().filter(p => !p.deletedAt || (now - p.deletedAt) < GRACE_MS);
+    if (kept.length !== load().length) save(kept);
+  }
+
+  // Affiche la corbeille avec le temps restant avant suppression définitive
+  function renderTrash() {
+    const trash = document.getElementById("trash");
+    const now = Date.now();
+    const deleted = load()
+      .filter(p => p.deletedAt)
+      .sort((a, b) => b.deletedAt - a.deletedAt);
+
+    if (!deleted.length) { trash.innerHTML = ""; return; }
+
+    let html = `<h2>🗑️ Corbeille — récupérable 2 jours</h2>`;
+    deleted.forEach(p => {
+      const leftMs = GRACE_MS - (now - p.deletedAt);
+      const hLeft = Math.max(0, Math.floor(leftMs / 3600000));
+      const leftTxt = hLeft >= 24 ? `${Math.floor(hLeft / 24)} j ${hLeft % 24} h` : `${hLeft} h`;
+      html += `
+        <div class="trash-row">
+          <div class="t-info">
+            <div class="t-name">${escapeHtml(p.name)}</div>
+            <div class="t-left">Suppression définitive dans ${leftTxt}</div>
+          </div>
+          <div class="t-actions">
+            <button class="t-restore" data-restore="${p.id}">↩︎ Restaurer</button>
+            <button class="t-purge" data-purge="${p.id}">Supprimer définitivement</button>
+          </div>
+        </div>`;
+    });
+    trash.innerHTML = html;
+
+    trash.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => restore(b.dataset.restore));
+    trash.querySelectorAll("[data-purge]").forEach(b => b.onclick = () => purgeNow(b.dataset.purge));
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const data = load();
+    data.push({
+      id: String(Date.now()) + Math.floor(Math.random() * 1000),
+      name: nameInput.value.trim(),
+      dob: dobInput.value,
+      families: parseFamilies(familiesInput.value)
+    });
+    save(data);
+    form.reset();
+    render();
+  });
+
+  // "dupont, Martin" -> ["DUPONT", "MARTIN"]  (majuscules, une ou deux familles max)
+  function parseFamilies(str) {
+    return (str || "")
+      .split(",")
+      .map(f => f.trim().toLocaleUpperCase("fr-FR"))
+      .filter(Boolean)
+      .slice(0, 2);
+  }
+
+  // En direct : n'accepte que des lettres (accents ok), espace, tiret, apostrophe
+  // et la virgule (séparateur de familles) — et met tout en MAJUSCULES.
+  familiesInput.addEventListener("input", () => {
+    const start = familiesInput.selectionStart;
+    const before = familiesInput.value;
+    const cleaned = before
+      .replace(/[^\p{L}\s\-',]/gu, "")
+      .toLocaleUpperCase("fr-FR");
+    if (cleaned !== before) {
+      const removed = before.length - cleaned.length; // 0 si c'était juste la casse
+      familiesInput.value = cleaned;
+      familiesInput.setSelectionRange(start - removed, start - removed); // curseur au bon endroit
+    }
+  });
+
+  /* =================== MODE ADMIN / RÉGLAGES =================== */
+  const DEFAULTS = {
+    title: "🎂 Compte à rebours anniversaire",
+    accent: "#f472b6",
+    accent2: "#38bdf8",
+    bg1: "#1e1b4b",
+    bg2: "#4c1d95",
+    titlefont: ""
+  };
+  const PRESETS = [
+    { name: "Violet",   accent: "#f472b6", accent2: "#38bdf8", bg1: "#1e1b4b", bg2: "#4c1d95" },
+    { name: "Coucher",  accent: "#fbbf24", accent2: "#fb7185", bg1: "#7c2d12", bg2: "#be123c" },
+    { name: "Océan",    accent: "#22d3ee", accent2: "#34d399", bg1: "#083344", bg2: "#0f766e" },
+    { name: "Forêt",    accent: "#a3e635", accent2: "#fbbf24", bg1: "#14532d", bg2: "#166534" },
+    { name: "Nuit",     accent: "#818cf8", accent2: "#e879f9", bg1: "#020617", bg2: "#1e1b4b" },
+    { name: "Bonbon",   accent: "#f472b6", accent2: "#f9a8d4", bg1: "#831843", bg2: "#db2777" }
+  ];
+
+  function loadSettings() { return { ...DEFAULTS, ...(STATE.settings || {}) }; }
+  function saveSettings(s) { STATE.settings = s; persist(); }
+
+  function applySettings(s) {
+    const root = document.documentElement.style;
+    // Thème fixe "HR Consulting" : les couleurs ne sont plus pilotées par l'espace.
+    root.setProperty("--titlefont", s.titlefont || "inherit");
+    document.getElementById("pageTitle").textContent = s.title;
+    document.title = s.title.replace(/^[^\w]+/, "") || "Compte à rebours";
+  }
+
+  // Éléments admin
+  const gear = document.getElementById("gear");
+  const overlay = document.getElementById("overlay");
+  const loginScreen = document.getElementById("loginScreen");
+  const settingsScreen = document.getElementById("settingsScreen");
+  const pwd = document.getElementById("pwd");
+  const loginErr = document.getElementById("loginErr");
+
+  const fields = {
+    title:  document.getElementById("setTitle"),
+    accent: document.getElementById("cAccent"),
+    accent2:document.getElementById("cAccent2"),
+    bg1:    document.getElementById("cBg1"),
+    bg2:    document.getElementById("cBg2"),
+    font:   document.getElementById("setFont"),
+    newPwd: document.getElementById("setPwd")
+  };
+  const vals = {
+    accent: document.getElementById("vAccent"),
+    accent2:document.getElementById("vAccent2"),
+    bg1:    document.getElementById("vBg1"),
+    bg2:    document.getElementById("vBg2")
+  };
+
+  // Aperçu en direct quand on bouge un curseur de couleur
+  function livePreview() {
+    const root = document.documentElement.style;
+    // Thème fixe : l'aperçu ne modifie plus les couleurs (design HR Consulting).
+    root.setProperty("--titlefont", fields.font.value || "inherit");
+    document.getElementById("pageTitle").textContent = fields.title.value || DEFAULTS.title;
+    vals.accent.textContent = fields.accent.value;
+    vals.accent2.textContent = fields.accent2.value;
+    vals.bg1.textContent = fields.bg1.value;
+    vals.bg2.textContent = fields.bg2.value;
+  }
+  ["accent","accent2","bg1","bg2"].forEach(k => fields[k].addEventListener("input", livePreview));
+  fields.font.addEventListener("change", livePreview);
+  fields.title.addEventListener("input", livePreview);
+
+  // Remplir le formulaire avec les réglages actuels
+  function fillForm() {
+    const s = loadSettings();
+    fields.title.value = s.title;
+    fields.accent.value = s.accent;
+    fields.accent2.value = s.accent2;
+    fields.bg1.value = s.bg1;
+    fields.bg2.value = s.bg2;
+    fields.font.value = s.titlefont;
+    fields.newPwd.value = "";
+    vals.accent.textContent = s.accent;
+    vals.accent2.textContent = s.accent2;
+    vals.bg1.textContent = s.bg1;
+    vals.bg2.textContent = s.bg2;
+  }
+
+  // Thèmes prédéfinis
+  const presetsBox = document.getElementById("presets");
+  PRESETS.forEach(p => {
+    const sw = document.createElement("div");
+    sw.className = "swatch";
+    sw.title = p.name;
+    sw.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
+    sw.style.boxShadow = `inset 0 0 0 3px ${p.accent}`;
+    sw.onclick = () => {
+      fields.accent.value = p.accent;
+      fields.accent2.value = p.accent2;
+      fields.bg1.value = p.bg1;
+      fields.bg2.value = p.bg2;
+      livePreview();
+    };
+    presetsBox.appendChild(sw);
+  });
+
+  function openOverlay() {
+    // Rappelle dans quel espace on est (le mot de passe attendu est celui de CET espace)
+    document.getElementById("adminHint").innerHTML =
+      `Entre le <b>mot de passe de l'espace « ${escapeHtml(SPACE || "")} »</b> (le même qu'à la connexion).`;
+    overlay.classList.add("open");
+  }
+  function closeOverlay() {
+    overlay.classList.remove("open");
+    loginScreen.style.display = "block";
+    settingsScreen.style.display = "none";
+    loginErr.style.display = "none";
+    pwd.value = "";
+    applySettings(loadSettings()); // annule tout aperçu non enregistré
+  }
+
+  gear.addEventListener("click", openOverlay);
+  document.getElementById("closeLogin").addEventListener("click", closeOverlay);
+  document.getElementById("closeSettings").addEventListener("click", closeOverlay);
+  overlay.addEventListener("click", e => { if (e.target === overlay) closeOverlay(); });
+
+  document.getElementById("loginBtn").addEventListener("click", tryLogin);
+  pwd.addEventListener("keydown", e => { if (e.key === "Enter") tryLogin(); });
+
+  // Déverrouille le mode admin en vérifiant le mot de passe de l'espace côté serveur
+  async function tryLogin() {
+    loginErr.style.display = "none";
+    const loginBtn = document.getElementById("loginBtn");
+    loginBtn.disabled = true;
+    try {
+      await api("verify", { password: pwd.value });
+      loginScreen.style.display = "none";
+      settingsScreen.style.display = "block";
+      fillForm();
+    } catch (err) {
+      loginErr.textContent = err.message || "Mot de passe incorrect.";
+      loginErr.style.display = "block";
+    } finally {
+      loginBtn.disabled = false;
+    }
+  }
+
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    const s = loadSettings();
+    s.title = fields.title.value.trim() || DEFAULTS.title;
+    s.accent = fields.accent.value;
+    s.accent2 = fields.accent2.value;
+    s.bg1 = fields.bg1.value;
+    s.bg2 = fields.bg2.value;
+    s.titlefont = fields.font.value;
+    saveSettings(s);
+    applySettings(s);
+
+    // Changement éventuel du mot de passe de l'espace (en base)
+    const newPwd = fields.newPwd.value.trim();
+    if (newPwd) {
+      try {
+        await api("change_password", { password: newPwd });
+        alert("Mot de passe de l'espace mis à jour.");
+      } catch (err) {
+        alert("Le mot de passe n'a pas pu être changé : " + err.message);
+      }
+    }
+    closeOverlay();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if (!confirm("Réinitialiser toute l'apparence par défaut ? (Le mot de passe de l'espace n'est pas touché.)")) return;
+    STATE.settings = {};
+    persist();
+    applySettings(loadSettings());
+    fillForm();
+  });
+
+  /* =================== IDÉES CADEAUX =================== */
+  const giftOverlay = document.getElementById("giftOverlay");
+  const giftListBox = document.getElementById("giftList");
+  const giftForm = document.getElementById("giftForm");
+  const giftText = document.getElementById("giftText");
+  const giftUrl = document.getElementById("giftUrl");
+  let currentGiftId = null;
+  let currentGiftCat = "anniversaire";
+
+  // clé de stockage selon la catégorie : anniversaire -> gifts, noel -> giftsNoel
+  function catKey(cat) { return cat === "noel" ? "giftsNoel" : "gifts"; }
+
+  // total des idées (anniversaire + Noël) pour le badge
+  function giftCount(p) { return (p.gifts || []).length + (p.giftsNoel || []).length; }
+
+  // Basculer d'onglet
+  document.querySelectorAll(".tab").forEach(t => {
+    t.addEventListener("click", () => {
+      currentGiftCat = t.dataset.cat;
+      document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+      renderGiftList();
+    });
+  });
+
+  // Ouvre la fenêtre cadeaux pour une personne (délégation de clic)
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-gift]");
+    if (!btn) return;
+    openGifts(btn.dataset.gift);
+  });
+
+  function openGifts(id) {
+    const person = load().find(p => p.id === id);
+    if (!person) return;
+    currentGiftId = id;
+    currentGiftCat = "anniversaire"; // onglet par défaut à l'ouverture
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.cat === "anniversaire"));
+    document.getElementById("giftPerson").textContent = person.name;
+    renderGiftList();
+    giftForm.reset();
+    giftOverlay.classList.add("open");
+  }
+
+  function renderGiftList() {
+    const person = load().find(p => p.id === currentGiftId);
+    const gifts = (person && person[catKey(currentGiftCat)]) || [];
+    giftListBox.innerHTML = gifts.map((g, i) => `
+      <div class="gift-item">
+        <span class="g-text">${escapeHtml(g.text)}</span>
+        ${g.url ? `<a class="g-link" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
+        <button class="g-del" data-gidx="${i}" title="Supprimer">✕</button>
+      </div>`).join("");
+
+    giftListBox.querySelectorAll(".g-del").forEach(b => {
+      b.onclick = () => removeGift(parseInt(b.dataset.gidx, 10));
+    });
+  }
+
+  giftForm.addEventListener("submit", e => {
+    e.preventDefault();
+    let url = giftUrl.value.trim();
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url; // ajoute https:// si oublié
+    const data = load();
+    const person = data.find(p => p.id === currentGiftId);
+    if (!person) return;
+    const key = catKey(currentGiftCat);
+    if (!person[key]) person[key] = [];
+    person[key].push({ text: giftText.value.trim(), url });
+    save(data);
+    giftForm.reset();
+    renderGiftList();
+    render(); // met à jour le badge du compteur
+  });
+
+  function removeGift(idx) {
+    const data = load();
+    const person = data.find(p => p.id === currentGiftId);
+    const key = catKey(currentGiftCat);
+    if (!person || !person[key]) return;
+    person[key].splice(idx, 1);
+    save(data);
+    renderGiftList();
+    render();
+  }
+
+  function closeGift() { giftOverlay.classList.remove("open"); currentGiftId = null; }
+  document.getElementById("closeGift").addEventListener("click", closeGift);
+  giftOverlay.addEventListener("click", e => { if (e.target === giftOverlay) closeGift(); });
+
+  /* =================== VUE D'ENSEMBLE : CADEAUX DE NOËL PAR PERSONNE =================== */
+  const noelGiftOverlay = document.getElementById("noelGiftOverlay");
+  const noelGiftBody = document.getElementById("noelGiftBody");
+
+  document.getElementById("noelGiftBtn").addEventListener("click", () => {
+    renderNoelGifts();
+    noelGiftOverlay.classList.add("open");
+  });
+
+  function renderNoelGifts() {
+    const people = activePeople();
+    if (!people.length) {
+      noelGiftBody.innerHTML = `<p class="hint">Ajoute d'abord des personnes pour leur associer des cadeaux de Noël.</p>`;
+      return;
+    }
+    noelGiftBody.innerHTML = people.map(p => {
+      const gifts = p.giftsNoel || [];
+      const items = gifts.map((g, i) => `
+        <div class="gift-item">
+          <span class="g-text">${escapeHtml(g.text)}</span>
+          ${g.url ? `<a class="g-link" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">🔗 Voir</a>` : ""}
+          <button class="g-del" data-np="${p.id}" data-ni="${i}" title="Supprimer">✕</button>
+        </div>`).join("");
+      return `
+        <div class="noel-person">
+          <div class="np-name">🎄 ${escapeHtml(p.name)}</div>
+          <div class="gift-list">${items || '<span class="hint">Aucune idée pour l\'instant.</span>'}</div>
+          <div class="np-add">
+            <input type="text" class="np-text" placeholder="Idée de cadeau">
+            <input type="url" class="np-url" placeholder="Lien (optionnel)">
+            <button class="btn-primary np-add-btn" data-np="${p.id}">Ajouter</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    // Supprimer une idée
+    noelGiftBody.querySelectorAll(".g-del").forEach(b =>
+      b.onclick = () => removeNoelGift(b.dataset.np, parseInt(b.dataset.ni, 10)));
+
+    // Ajouter une idée (les champs sont dans le même bloc que le bouton)
+    noelGiftBody.querySelectorAll(".np-add-btn").forEach(b =>
+      b.onclick = () => {
+        const block = b.closest(".np-add");
+        const textEl = block.querySelector(".np-text");
+        const urlEl = block.querySelector(".np-url");
+        addNoelGift(b.dataset.np, textEl.value, urlEl.value);
+      });
+  }
+
+  function addNoelGift(id, text, url) {
+    text = (text || "").trim();
+    if (!text) return;
+    url = (url || "").trim();
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    const data = load();
+    const p = data.find(x => x.id === id);
+    if (!p) return;
+    if (!p.giftsNoel) p.giftsNoel = [];
+    p.giftsNoel.push({ text, url });
+    save(data);
+    renderNoelGifts();
+    render(); // met à jour les badges 🎁
+  }
+
+  function removeNoelGift(id, idx) {
+    const data = load();
+    const p = data.find(x => x.id === id);
+    if (!p || !p.giftsNoel) return;
+    p.giftsNoel.splice(idx, 1);
+    save(data);
+    renderNoelGifts();
+    render();
+  }
+
+  function closeNoelGift() { noelGiftOverlay.classList.remove("open"); }
+  document.getElementById("closeNoelGift").addEventListener("click", closeNoelGift);
+  noelGiftOverlay.addEventListener("click", e => { if (e.target === noelGiftOverlay) closeNoelGift(); });
+
+  /* =================== ESPACES (connexion / création) =================== */
+  const gate = document.getElementById("gate");
+  const sessionBar = document.getElementById("sessionBar");
+  const spaceNameEl = document.getElementById("spaceName");
+  const spacePwdEl = document.getElementById("spacePwd");
+  const spacePwd2El = document.getElementById("spacePwd2");
+  const spacePwd2Field = document.getElementById("spacePwd2Field");
+  const gateErr = document.getElementById("gateErr");
+  const gateBtn = document.getElementById("gateBtn");
+  let gateMode = "login"; // "login" | "create"
+
+  // Bascule entre les onglets "Se connecter" et "Créer un espace"
+  gate.querySelectorAll("[data-gtab]").forEach(t => {
+    t.addEventListener("click", () => {
+      gateMode = t.dataset.gtab;
+      gate.querySelectorAll("[data-gtab]").forEach(x => x.classList.toggle("active", x === t));
+      spacePwd2Field.style.display = gateMode === "create" ? "block" : "none";
+      gateBtn.textContent = gateMode === "create" ? "Créer mon espace" : "Se connecter";
+      gateErr.textContent = "";
+    });
+  });
+
+  gateBtn.addEventListener("click", submitGate);
+  [spaceNameEl, spacePwdEl, spacePwd2El].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") submitGate(); }));
+
+  // Nom de l'espace : toujours en MAJUSCULES, en direct
+  spaceNameEl.addEventListener("input", () => {
+    const start = spaceNameEl.selectionStart;
+    const up = spaceNameEl.value.toLocaleUpperCase("fr-FR");
+    if (up !== spaceNameEl.value) {
+      spaceNameEl.value = up;
+      spaceNameEl.setSelectionRange(start, start); // même longueur → curseur inchangé
+    }
+  });
+
+  async function submitGate() {
+    const name = spaceNameEl.value.trim();
+    const password = spacePwdEl.value;
+    gateErr.textContent = "";
+    if (!name || !password) { gateErr.textContent = "Nom et mot de passe requis."; return; }
+    if (gateMode === "create" && password !== spacePwd2El.value) {
+      gateErr.textContent = "Les deux mots de passe ne correspondent pas."; return;
+    }
+    gateBtn.disabled = true;
+    gateBtn.textContent = "…";
+    try {
+      const res = await api(gateMode, { name, password });
+      enterSpace(res.space, res.data);
+    } catch (err) {
+      gateErr.textContent = err.message;
+    } finally {
+      gateBtn.disabled = false;
+      gateBtn.textContent = gateMode === "create" ? "Créer mon espace" : "Se connecter";
+    }
+  }
+
+  // Entre dans un espace : charge les données et démarre l'app
+  let appStarted = false;
+  function enterSpace(spaceName, data) {
+    SPACE = spaceName;
+    STATE = {
+      people: (data && data.people) || [],
+      settings: (data && data.settings) || {}
+    };
+    document.getElementById("spaceLabel").textContent = spaceName;
+    sessionBar.style.display = "flex";
+    gate.classList.add("hidden");
+    spacePwdEl.value = ""; spacePwd2El.value = "";
+    setUrlForSpace(spaceName); // URL propre : /anniversaire/DUPONT
+    initApp();
+  }
+
+  // Verrouille l'écran d'accueil sur un espace donné (via l'URL) :
+  // on cache la création + le champ nom, il ne reste que le mot de passe.
+  function lockGateToSpace(name) {
+    gateMode = "login";
+    spaceNameEl.value = name;
+    spaceNameEl.closest(".field").style.display = "none";
+    gate.querySelector(".tabs").style.display = "none";
+    spacePwd2Field.style.display = "none";
+    document.querySelector(".gate-sub").innerHTML = `Espace : <b>${escapeHtml(name)}</b><br>Entre le mot de passe pour continuer.`;
+    gateBtn.textContent = "Se connecter";
+    setTimeout(() => spacePwdEl.focus(), 60);
+  }
+
+  // Rétablit l'écran d'accueil normal (création + connexion libres)
+  function unlockGate() {
+    spaceNameEl.closest(".field").style.display = "";
+    gate.querySelector(".tabs").style.display = "";
+    document.querySelector(".gate-sub").textContent = "Crée ton espace ou rejoins le tien avec ton mot de passe.";
+  }
+
+  function initApp() {
+    applySettings(loadSettings());
+    render();
+    updateNoel();
+    if (!appStarted) {
+      appStarted = true;
+      setInterval(() => { tick(); updateNoel(); }, 1000); // compteurs en direct
+    }
+  }
+
+  // Déconnexion
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try { await api("logout"); } catch {}
+    SPACE = null;
+    STATE = { people: [], settings: {} };
+    sessionBar.style.display = "none";
+    spaceNameEl.value = "";
+    setUrlForSpace(null);     // revient à /anniversaire/
+    unlockGate();             // réaffiche création + champ nom
+    applyGlobalConfig(GCONFIG); // restaure l'apparence de l'accueil
+    gate.classList.remove("hidden");
+  });
+
+  /* =================== ADMIN GLOBAL DE L'ACCUEIL (mot de passe maître) =================== */
+  const GDEFAULTS = {
+    title: "🎂 Mon espace anniversaires",
+    accent: "#f472b6", accent2: "#38bdf8",
+    bg1: "#1e1b4b", bg2: "#4c1d95", titlefont: ""
+  };
+  let GCONFIG = { ...GDEFAULTS };
+
+  // Applique la config globale (styles + titre de l'accueil)
+  function applyGlobalConfig(cfg) {
+    GCONFIG = { ...GDEFAULTS, ...(cfg || {}) };
+    const root = document.documentElement.style;
+    // Thème fixe "HR Consulting" : couleurs de l'accueil non pilotées par la config.
+    root.setProperty("--titlefont", GCONFIG.titlefont || "inherit");
+    document.getElementById("gateLogo").textContent = GCONFIG.title;
+  }
+
+  const globalOverlay = document.getElementById("globalOverlay");
+  const gLoginBox = document.getElementById("gLogin");
+  const gSettingsBox = document.getElementById("gSettings");
+  const gUser = document.getElementById("gUser");
+  const gPwd = document.getElementById("gPwd");
+  const gErr = document.getElementById("gErr");
+  const gFields = {
+    newUser: document.getElementById("gNewUser"),
+    title:   document.getElementById("gTitle"),
+    accent:  document.getElementById("gAccent"),
+    accent2: document.getElementById("gAccent2"),
+    bg1:     document.getElementById("gBg1"),
+    bg2:     document.getElementById("gBg2"),
+    font:    document.getElementById("gFont"),
+    newPwd:  document.getElementById("gNewPwd")
+  };
+  const gVals = {
+    accent:  document.getElementById("gvAccent"),
+    accent2: document.getElementById("gvAccent2"),
+    bg1:     document.getElementById("gvBg1"),
+    bg2:     document.getElementById("gvBg2")
+  };
+
+  // Aperçu en direct
+  function gPreview() {
+    const root = document.documentElement.style;
+    // Thème fixe : l'aperçu global ne modifie plus les couleurs.
+    root.setProperty("--titlefont", gFields.font.value || "inherit");
+    document.getElementById("gateLogo").textContent = gFields.title.value || GDEFAULTS.title;
+    gVals.accent.textContent = gFields.accent.value;
+    gVals.accent2.textContent = gFields.accent2.value;
+    gVals.bg1.textContent = gFields.bg1.value;
+    gVals.bg2.textContent = gFields.bg2.value;
+  }
+  ["accent", "accent2", "bg1", "bg2"].forEach(k => gFields[k].addEventListener("input", gPreview));
+  gFields.font.addEventListener("change", gPreview);
+  gFields.title.addEventListener("input", gPreview);
+
+  // Thèmes prédéfinis (réutilise PRESETS)
+  const gPresetsBox = document.getElementById("gPresets");
+  PRESETS.forEach(p => {
+    const sw = document.createElement("div");
+    sw.className = "swatch";
+    sw.title = p.name;
+    sw.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
+    sw.style.boxShadow = `inset 0 0 0 3px ${p.accent}`;
+    sw.onclick = () => {
+      gFields.accent.value = p.accent;
+      gFields.accent2.value = p.accent2;
+      gFields.bg1.value = p.bg1;
+      gFields.bg2.value = p.bg2;
+      gPreview();
+    };
+    gPresetsBox.appendChild(sw);
+  });
+
+  function gFill() {
+    gFields.title.value = GCONFIG.title;
+    gFields.accent.value = GCONFIG.accent;
+    gFields.accent2.value = GCONFIG.accent2;
+    gFields.bg1.value = GCONFIG.bg1;
+    gFields.bg2.value = GCONFIG.bg2;
+    gFields.font.value = GCONFIG.titlefont;
+    gFields.newUser.value = "";
+    gFields.newPwd.value = "";
+    gVals.accent.textContent = GCONFIG.accent;
+    gVals.accent2.textContent = GCONFIG.accent2;
+    gVals.bg1.textContent = GCONFIG.bg1;
+    gVals.bg2.textContent = GCONFIG.bg2;
+  }
+
+  // Ouvre la fenêtre (écran de connexion maître)
+  document.getElementById("gateAdmin").addEventListener("click", () => {
+    gLoginBox.style.display = "block";
+    gSettingsBox.style.display = "none";
+    gErr.style.display = "none";
+    gUser.value = "";
+    gPwd.value = "";
+    globalOverlay.classList.add("open");
+    setTimeout(() => gUser.focus(), 60);
+  });
+
+  function gClose() {
+    globalOverlay.classList.remove("open");
+    applyGlobalConfig(GCONFIG); // annule tout aperçu non enregistré
+  }
+  document.getElementById("gClose1").addEventListener("click", gClose);
+  document.getElementById("gClose2").addEventListener("click", gClose);
+  globalOverlay.addEventListener("click", e => { if (e.target === globalOverlay) gClose(); });
+
+  document.getElementById("gLoginBtn").addEventListener("click", gTryLogin);
+  gPwd.addEventListener("keydown", e => { if (e.key === "Enter") gTryLogin(); });
+
+  async function gTryLogin() {
+    gErr.style.display = "none";
+    const btn = document.getElementById("gLoginBtn");
+    btn.disabled = true;
+    try {
+      await api("master_verify", { username: gUser.value, password: gPwd.value });
+      gLoginBox.style.display = "none";
+      gSettingsBox.style.display = "block";
+      gFill();
+    } catch (err) {
+      gErr.textContent = err.message || "Mot de passe incorrect.";
+      gErr.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById("gSaveBtn").addEventListener("click", async () => {
+    const cfg = {
+      title: gFields.title.value.trim() || GDEFAULTS.title,
+      accent: gFields.accent.value,
+      accent2: gFields.accent2.value,
+      bg1: gFields.bg1.value,
+      bg2: gFields.bg2.value,
+      titlefont: gFields.font.value
+    };
+    try {
+      await api("config_save", { data: cfg });
+      applyGlobalConfig(cfg);
+      const newUser = gFields.newUser.value.trim();
+      const newPwd = gFields.newPwd.value.trim();
+      if (newUser || newPwd) {
+        await api("master_change", { username: newUser, password: newPwd });
+        alert("Identifiants admin mis à jour.");
+      }
+      gClose();
+    } catch (err) {
+      gErr.textContent = err.message;
+      gErr.style.display = "block";
+    }
+  });
+
+  document.getElementById("gResetBtn").addEventListener("click", async () => {
+    if (!confirm("Réinitialiser l'apparence de l'accueil par défaut ?")) return;
+    try {
+      await api("config_save", { data: {} });
+      applyGlobalConfig(GDEFAULTS);
+      gFill();
+    } catch (err) {
+      gErr.textContent = err.message;
+      gErr.style.display = "block";
+    }
+  });
+
+  /* =================== CONNEXION ADMIN (gérer tous les espaces) =================== */
+  const adminOverlay = document.getElementById("adminOverlay");
+  const aLogin = document.getElementById("aLogin");
+  const aPanel = document.getElementById("aPanel");
+  const aDb = document.getElementById("aDb");
+  const aUser = document.getElementById("aUser");
+  const aPwd = document.getElementById("aPwd");
+  const aErr = document.getElementById("aErr");
+  const aList = document.getElementById("aList");
+  const aCount = document.getElementById("aCount");
+
+  function openAdmin() {
+    aLogin.style.display = "block";
+    aPanel.style.display = "none";
+    aErr.style.display = "none";
+    aDb.value = "anniversaire_app";
+    aUser.value = "root";
+    aPwd.value = "";
+    adminOverlay.classList.add("open");
+    setTimeout(() => aPwd.focus(), 60);
+  }
+  function closeAdmin() { adminOverlay.classList.remove("open"); }
+
+  document.getElementById("adminLoginBtn").addEventListener("click", openAdmin);
+  document.getElementById("aClose1").addEventListener("click", closeAdmin);
+  document.getElementById("aClose2").addEventListener("click", closeAdmin);
+  adminOverlay.addEventListener("click", e => { if (e.target === adminOverlay) closeAdmin(); });
+
+  document.getElementById("aLoginGo").addEventListener("click", adminLogin);
+  aPwd.addEventListener("keydown", e => { if (e.key === "Enter") adminLogin(); });
+  aUser.addEventListener("keydown", e => { if (e.key === "Enter") aPwd.focus(); });
+
+  async function adminLogin() {
+    aErr.style.display = "none";
+    const btn = document.getElementById("aLoginGo");
+    btn.disabled = true;
+    try {
+      await api("admin_db_login", { dbname: aDb.value, username: aUser.value, password: aPwd.value });
+      aLogin.style.display = "none";
+      aPanel.style.display = "block";
+      await loadAdminSpaces();
+    } catch (err) {
+      aErr.textContent = err.message || "Mot de passe incorrect.";
+      aErr.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Liste tous les espaces avec boutons Entrer / Supprimer
+  async function loadAdminSpaces() {
+    aList.innerHTML = '<p class="hint">Chargement…</p>';
+    try {
+      const res = await api("admin_list");
+      const spaces = res.spaces || [];
+      aCount.textContent = spaces.length
+        ? `${spaces.length} espace${spaces.length > 1 ? "s" : ""} au total.`
+        : "";
+      if (!spaces.length) {
+        aList.innerHTML = '<p class="empty">Aucun espace créé pour l\'instant.</p>';
+        return;
+      }
+      aList.innerHTML = "";
+      spaces.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "space-row";
+        const info = document.createElement("div");
+        info.className = "info";
+        const maj = s.updated_at ? ` · modifié le ${String(s.updated_at).slice(0, 10)}` : "";
+        info.innerHTML = `<b>${escapeHtml(s.name)}</b><small>${s.people} personne${s.people > 1 ? "s" : ""}${maj}</small>`;
+        const enter = document.createElement("button");
+        enter.className = "enter";
+        enter.textContent = "Entrer";
+        enter.onclick = () => adminEnter(s.name);
+        const del = document.createElement("button");
+        del.className = "del";
+        del.textContent = "🗑";
+        del.title = "Supprimer";
+        del.onclick = () => adminDelete(s.name);
+        row.append(info, enter, del);
+        aList.appendChild(row);
+      });
+    } catch (err) {
+      aList.innerHTML = `<p class="empty">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  // Entrer dans un espace sans son mot de passe
+  async function adminEnter(name) {
+    try {
+      const res = await api("admin_enter", { name });
+      closeAdmin();
+      enterSpace(res.space, res.data);
+    } catch (err) { alert("Impossible d'entrer : " + err.message); }
+  }
+
+  // Supprimer un espace
+  async function adminDelete(name) {
+    if (!confirm(`Supprimer définitivement l'espace « ${name} » et toutes ses données ?`)) return;
+    try {
+      await api("admin_delete", { name });
+      await loadAdminSpaces();
+    } catch (err) { alert("Suppression impossible : " + err.message); }
+  }
+
+  // Au chargement : gère l'URL /anniversaire/NOM et reprend la session
+  (async function boot() {
+    // Config globale de l'accueil (publique)
+    try {
+      const cfg = await api("config_get");
+      applyGlobalConfig(cfg.data);
+    } catch { applyGlobalConfig(GDEFAULTS); }
+
+    const urlSpace = spaceFromUrl();
+    let me = null;
+    try { me = await api("me"); } catch {}
+
+    // Déjà connecté au bon espace (ou pas d'espace dans l'URL) → on entre
+    if (me && me.ok && (!urlSpace || me.space === urlSpace)) {
+      enterSpace(me.space, me.data);
+      return;
+    }
+    // Un espace est demandé dans l'URL → on ne demande que le mot de passe
+    if (urlSpace) lockGateToSpace(urlSpace);
+    gate.classList.remove("hidden");
+  })();
+</script>
+</body>
+</html>

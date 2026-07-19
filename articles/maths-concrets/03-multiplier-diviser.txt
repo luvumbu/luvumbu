@@ -1,0 +1,53 @@
+TITRE : Chapitre 3 — Multiplier et diviser : les carreaux du carreleur
+---
+Voici Bako. Bako est carreleur : il pose des carreaux par terre.
+
+Aujourd'hui, il doit refaire le sol d'une pièce. La pièce fait 4 mètres sur 3 mètres. Ses carreaux font 1 mètre sur 1 mètre.
+
+Bako doit commander ses carreaux. S'il en commande trop, il perd de l'argent. S'il n'en commande pas assez, il doit revenir un autre jour.
+
+Alors, combien de carreaux ?
+
+Bako pourrait dessiner la pièce et compter les carreaux un par un. Il ne le fait pas. Il regarde la pièce trois secondes, il dit « douze », et il commande.
+
+Comment fait-il ?
+
+Il a vu ceci : le long du mur, il y a 4 carreaux. Cette rangée de 4, il va la répéter 3 fois pour atteindre le mur d'en face.
+
+4 + 4 + 4. Douze.
+
+
+LA MULTIPLICATION EST UNE PARESSE
+
+Voilà la grande nouvelle de ce chapitre, et elle va te soulager.
+
+4 × 3 ne veut rien dire de plus que 4 + 4 + 4.
+
+Il n'y a rien de nouveau à comprendre. C'est juste une écriture courte, inventée par des gens qui en avaient assez d'écrire la même chose plusieurs fois.
+
+Additionner 4 trois fois, c'est facile. Additionner 4 six cents fois, c'est une journée perdue et une erreur garantie.
+
+La multiplication, c'est le raccourci des paresseux. Et les paresseux, en maths, ont souvent raison.
+
+
+ET LES TABLES, ALORS
+
+Tu vas peut-être me dire : « les tables de multiplication, c'est une punition ».
+
+Non. Une table, ce n'est pas un examen de mémoire. C'est une liste de résultats déjà calculés, une fois pour toutes, il y a très longtemps, pour que personne n'ait jamais à les recalculer.
+
+Bako qui connaît ses tables ne calcule pas. Il lit.
+
+Bako qui ne les connaît pas refait, à chaque chantier, un travail que l'humanité a fini il y a trois mille ans.
+
+
+LES 10 NIVEAUX
+
+Ils arrivent bientôt. Ça commencera tout doucement : Bako posera 2 carreaux, puis 4, puis 6.
+
+Puis tu découvriras que la division pose deux questions différentes — et c'est là que tout le monde s'embrouille, parce que personne ne le dit clairement.
+
+Question 1 : je connais le nombre de rangées, je cherche combien de carreaux par rangée. C'est un partage.
+Question 2 : je connais la taille d'une rangée, je cherche combien de rangées. C'est un groupement.
+
+Tu apprendras aussi pourquoi on ne divise jamais par zéro. Ce n'est pas une interdiction. C'est juste que la question n'a pas de réponse — et Bako te le montrera avec ses carreaux, en dix secondes.

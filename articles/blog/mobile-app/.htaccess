@@ -1,0 +1,22 @@
+# Force les navigateurs à NE PAS cacher les fichiers de l'app mobile.
+# Comme ça, chaque mise à jour est récupérée directement, sans purge manuelle.
+
+<IfModule mod_headers.c>
+    # HTML, JS, CSS, manifest, service worker : jamais en cache
+    <FilesMatch "\.(html|js|css|json|webmanifest)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Les icônes PNG peuvent être cachées 1 jour (pour pas surcharger)
+    <FilesMatch "\.(png|jpg|jpeg|gif|webp|ico|svg)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+</IfModule>
+
+# Désactive ETag (qui peut interférer avec le cache)
+<IfModule mod_headers.c>
+    Header unset ETag
+</IfModule>
+FileETag None

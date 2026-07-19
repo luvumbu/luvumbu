@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Marion Delval — découvrez le blog.">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" type="image/png" sizes="192x192" href="blog/icon-192.png">
+    <title>Marion Delval</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-1: #0f172a;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-color: #16a34a;
+            --accent-dark:  #166534;
+            --blob-1: #6366f1;
+            --blob-2: #ec4899;
+            --blob-3: #22c55e;
+            --title-font: 'Playfair Display', serif;
+        }
+        html, body {
+            height: 100%;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            background: var(--bg-1);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+        }
+
+        /* Animated background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            pointer-events: none;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-blob.one {
+            top: -140px; left: -140px;
+            width: 520px; height: 520px;
+            background: radial-gradient(circle, var(--blob-1) 0%, transparent 70%);
+            opacity: 0.38;
+        }
+        .bg-blob.two {
+            bottom: -180px; right: -180px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--blob-2) 0%, transparent 70%);
+            opacity: 0.32;
+            animation-delay: -7s;
+        }
+        .bg-blob.three {
+            top: 30%; left: 60%;
+            width: 380px; height: 380px;
+            background: radial-gradient(circle, var(--blob-3) 0%, transparent 70%);
+            opacity: 0.16;
+            animation-delay: -13s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%      { transform: translate(50px, -40px) scale(1.07); }
+            66%      { transform: translate(-40px, 50px) scale(0.93); }
+        }
+
+        /* Subtle grain texture */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 3px 3px;
+            opacity: 0.7;
+        }
+
+        /* Content */
+        .stage {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 720px;
+            animation: rise 1.2s cubic-bezier(.16,.84,.44,1) both;
+        }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 999px;
+            margin-bottom: 36px;
+        }
+        .eyebrow::before {
+            content: "";
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-color);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .eyebrow.no-pulse::before { display: none; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+
+        h1 {
+            font-family: var(--title-font, 'Playfair Display', serif);
+            font-weight: 800;
+            font-size: clamp(56px, 11vw, 124px);
+            line-height: 0.98;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg,
+                var(--text) 0%,
+                color-mix(in srgb, var(--text) 65%, var(--text-muted)) 50%,
+                var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 22px;
+        }
+        .tagline {
+            font-size: clamp(16px, 1.5vw, 19px);
+            color: var(--text-muted);
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 520px;
+            margin: 0 auto 48px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px -12px color-mix(in srgb, var(--accent-color) 55%, transparent),
+                        inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: transform .35s cubic-bezier(.16,.84,.44,1),
+                        box-shadow .35s ease;
+        }
+        .cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 28px 60px -16px color-mix(in srgb, var(--accent-color) 70%, transparent),
+                        inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .cta .arrow {
+            transition: transform .3s cubic-bezier(.16,.84,.44,1);
+        }
+        .cta:hover .arrow { transform: translateX(6px); }
+        .cta svg {
+            width: 20px; height: 20px;
+            stroke-width: 2;
+        }
+
+        .meta {
+            margin-top: 56px;
+            color: var(--text-muted);
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+        .meta a {
+            color: var(--text-muted);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(255,255,255,0.15);
+            transition: border-color .25s, color .25s;
+        }
+        .meta a:hover {
+            color: var(--text);
+            border-bottom-color: rgba(255,255,255,0.45);
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 24px 16px; }
+            .eyebrow { margin-bottom: 28px; padding: 6px 14px; letter-spacing: 3px; }
+            .tagline { margin-bottom: 36px; }
+            .cta { padding: 16px 26px; font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blob one"></div>
+    <div class="bg-blob two"></div>
+    <div class="bg-blob three"></div>
+
+    <main class="stage">
+        <span class="eyebrow" id="eyebrow" hidden></span>
+        <h1 id="site-name" hidden></h1>
+        <p class="tagline" id="tagline" hidden></p>
+
+        <a class="cta" href="blog/" id="cta-link">
+            <span id="cta-label">Découvrir le blog</span>
+            <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+        </a>
+
+        <p class="meta">
+            <a id="meta-link" href="blog/"></a>
+        </p>
+    </main>
+
+    <script>
+        // Charge dynamiquement le nom du site et la baseline depuis le blog.
+        // Si une valeur n'est pas definie dans les parametres, on n'affiche rien.
+        (async () => {
+            const metaLink = document.getElementById('meta-link');
+            // Fallback : si rien n'est configure, on affiche le host courant.
+            if (metaLink) metaLink.textContent = location.host || '';
+
+            try {
+                const res = await fetch('blog/api/site_info.php', { cache: 'no-store' });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const setText = (id, value, hideIfEmpty = true) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const v = (value ?? '').toString().trim();
+                    if (v !== '') {
+                        el.textContent = v;
+                        el.hidden = false;
+                    } else if (hideIfEmpty) {
+                        el.hidden = true;
+                    }
+                };
+
+                const l = data.landing || {};
+
+                // ----- Titre : preference au landing_title, fallback site_name -----
+                const finalTitle = (l.title && l.title.trim() !== '')
+                    ? l.title
+                    : (data.site_name || '');
+                setText('site-name', finalTitle);
+                if (finalTitle) document.title = finalTitle;
+
+                // ----- Sous-titre : preference au landing_subtitle, fallback tagline -----
+                const finalSubtitle = (l.subtitle && l.subtitle.trim() !== '')
+                    ? l.subtitle
+                    : (data.tagline || '');
+                setText('tagline', finalSubtitle);
+
+                // ----- Eyebrow -----
+                const eyebrow = document.getElementById('eyebrow');
+                if (l.eyebrow && l.eyebrow.trim() !== '') {
+                    eyebrow.textContent = l.eyebrow;
+                    eyebrow.hidden = false;
+                } else {
+                    eyebrow.hidden = true;
+                }
+                if (l.show_pulse === false) eyebrow.classList.add('no-pulse');
+
+                // ----- CTA -----
+                if (l.cta_text && l.cta_text.trim() !== '') {
+                    document.getElementById('cta-label').textContent = l.cta_text;
+                }
+                if (l.cta_url && l.cta_url.trim() !== '') {
+                    document.getElementById('cta-link').href = l.cta_url;
+                }
+
+                // ----- Footer -----
+                if (metaLink) {
+                    if (l.footer_text && l.footer_text.trim() !== '') {
+                        metaLink.textContent = l.footer_text;
+                    }
+                    if (l.footer_url && l.footer_url.trim() !== '') {
+                        metaLink.href = l.footer_url;
+                    }
+                }
+
+                // ----- Couleurs (CSS vars) -----
+                const root = document.documentElement.style;
+                if (l.bg_color)     root.setProperty('--bg-1',         l.bg_color);
+                if (l.text_color)   root.setProperty('--text',         l.text_color);
+                if (l.muted_color)  root.setProperty('--text-muted',   l.muted_color);
+                if (l.accent_color) root.setProperty('--accent-color', l.accent_color);
+                if (l.accent_dark)  root.setProperty('--accent-dark',  l.accent_dark);
+                if (l.blob_1)       root.setProperty('--blob-1',       l.blob_1);
+                if (l.blob_2)       root.setProperty('--blob-2',       l.blob_2);
+                if (l.blob_3)       root.setProperty('--blob-3',       l.blob_3);
+
+                // ----- Police du titre (chargée à la demande) -----
+                // Doit rester aligné avec site_info.php et landing_settings.php.
+                const FONTS = {
+                    default: { stack: "'Playfair Display', serif", google: 'Playfair+Display:wght@600;800' },
+                    gothic:  { stack: "'UnifrakturCook', 'Playfair Display', serif", google: 'UnifrakturCook:wght@700' },
+                    neon:    { stack: "'Orbitron', system-ui, sans-serif", google: 'Orbitron:wght@600;800' },
+                    serif2:  { stack: "'DM Serif Display', 'Playfair Display', serif", google: 'DM+Serif+Display' },
+                    modern:  { stack: "'Inter', system-ui, sans-serif", google: null },
+                };
+                const font = FONTS[l.font] || FONTS.default;
+                if (font.google) {
+                    const id = 'dynfont-' + (l.font || 'default');
+                    if (!document.getElementById(id)) {
+                        const link = document.createElement('link');
+                        link.id = id;
+                        link.rel = 'stylesheet';
+                        link.href = 'https://fonts.googleapis.com/css2?family=' + font.google + '&display=swap';
+                        document.head.appendChild(link);
+                    }
+                }
+                root.setProperty('--title-font', font.stack);
+            } catch (_) {
+                // En cas d'erreur reseau, le bouton CTA et le lien de bas suffisent.
+            }
+        })();
+    </script>
+</body>
+</html>

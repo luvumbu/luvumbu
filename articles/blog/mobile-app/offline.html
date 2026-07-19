@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hors ligne — Mon Blog</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .offline-card {
+            background: rgba(255,255,255,0.1);
+            padding: 32px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            max-width: 360px;
+        }
+        .offline-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        h1 { font-size: 24px; margin-bottom: 12px; }
+        p { opacity: 0.9; margin-bottom: 20px; line-height: 1.5; }
+        button {
+            background: #fff;
+            color: #963637;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="offline-icon">📡</div>
+        <h1>Tu es hors ligne</h1>
+        <p>Pas de connexion internet pour le moment. Vérifie ton wifi ou tes données mobiles, puis réessaie.</p>
+        <button onclick="window.location.reload()">Réessayer</button>
+    </div>
+</body>
+</html>

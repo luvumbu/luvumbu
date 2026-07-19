@@ -1,0 +1,93 @@
+TITRE : 1/5 — Se situer : comprendre l'épreuve et évaluer son niveau
+---
+Avant de suivre le moindre plan, il faut savoir où tu en es. Cette partie donne le référentiel de l'épreuve, la batterie de tests qui remplace la compétition, et les correspondances de chronos qui te disent ce qu'il faut viser.
+
+
+LE RÉFÉRENTIEL DE L'ÉPREUVE
+
+Distance départ – première haie : 45 m
+Intervalle entre les haies : 35 m
+Dernière haie – arrivée : 40 m
+Hauteur : 0,914 m (hommes) / 0,762 m (femmes)
+Nombre de haies : 10
+
+Le rythme de foulées est la clé de l'épreuve. Les schémas les plus courants :
+- 13 pas sur toutes les haies : haut niveau, très grande amplitude
+- 14 pas puis 15 pas : le schéma le plus répandu chez les confirmés
+- 15 pas puis 16-17 pas : athlètes en formation
+
+Un athlète à 59s est en général sur du 16-17 pas, avec une rupture précoce. L'un des objectifs des 12 semaines est de stabiliser un schéma et de repousser le point de rupture.
+
+
+LA BATTERIE DE TESTS
+
+À refaire en semaine 4, 8 et 12, dans des conditions identiques : même piste, même heure de la journée, même échauffement, vent noté. Sans compétition, c'est cette répétabilité qui fait la valeur de la mesure.
+
+Test 1 — 400m plat chronométré
+Le prédicteur principal. C'est le test qui compte le plus.
+
+Test 2 — 400m haies complet
+Le vrai chrono, celui de l'objectif.
+
+Test 3 — 300m haies (7 haies)
+Spécifique mais moins coûteux que le 400m haies complet. Utile en semaine 4 et 8 pour ne pas se vider.
+
+Test 4 — 200m plat
+Ton plafond de vitesse. Il dit si ta marge de progression est encore devant toi ou si tu es déjà à ton maximum de vitesse pure.
+
+Test 5 — Écart plat / haies
+Ce n'est pas un test, c'est une soustraction : ton 400m haies moins ton 400m plat. C'est la mesure directe de ta technique, et c'est le chiffre sur lequel tu peux gagner le plus vite.
+
+
+LES CORRESPONDANCES
+
+Ligne « aujourd'hui » : ce à quoi ressemble typiquement un athlète à 59s.
+Ligne « cible 3 mois » : l'état visé en semaine 12.
+Ligne « pour 50s » : ce qu'il faudrait réellement, pour donner l'échelle.
+
+400m plat
+- Aujourd'hui : 53 à 55s
+- Cible 3 mois : environ 51s
+- Pour 50s haies : environ 46s
+
+400m haies
+- Aujourd'hui : 59s
+- Cible 3 mois : 56s
+- Pour 50s haies : 50s
+
+300m haies (7 haies)
+- Aujourd'hui : environ 44s
+- Cible 3 mois : environ 42s
+- Pour 50s haies : environ 36,5s
+
+200m plat
+- Aujourd'hui : 25 à 26s
+- Cible 3 mois : environ 24,5s
+- Pour 50s haies : environ 22s
+
+Écart plat / haies
+- Aujourd'hui : 5 à 7s
+- Cible 3 mois : 4 à 5s
+- Pour 50s haies : environ 3,5s
+
+Ces valeurs sont des ordres de grandeur, pas des lois. Elles servent à te situer, pas à te juger.
+
+
+LES DEUX INDICATEURS QUI VALENT PLUS QUE LE CHRONO
+
+Le chrono est bruyant : le vent, la fatigue, la piste et ton moral le font bouger d'une demi-seconde sans que rien n'ait changé dans ton niveau réel. Deux indicateurs sont bien plus fiables.
+
+1. La haie où ton schéma de pas casse.
+Si tu passes de « je casse à la haie 5 » à « je casse à la haie 7 », tu as progressé, même si le chrono n'a pas bougé d'un dixième. C'est la donnée la plus fiable de tout ton carnet, et elle ne coûte rien à collecter : il suffit de compter à voix haute.
+
+2. Ton temps de passage à 200m.
+Une course bien gérée a un second 200m plus lent de 1,5 à 2 secondes que le premier. Si ton écart est de 4 secondes, tu pars trop vite, et tu gagnes des secondes uniquement en corrigeant ta gestion de course — sans gagner un gramme de condition physique. Pour 56s, vise un passage à 200m autour de 27s.
+
+
+CHRONOMÉTRER SEUL
+
+Filme-toi au téléphone en 60 images par seconde, de profil, et compte les images. C'est plus fiable qu'un chrono à main déclenché par un ami.
+
+Sache que le chronométrage manuel est optimiste d'environ 0,24 seconde par rapport à l'électronique. Ton « 59 » à la main vaut donc plutôt 59,2 en officiel. Peu importe, tant que tu compares toujours la même méthode à elle-même : ce qui t'intéresse, c'est ta courbe, pas la valeur absolue.
+
+La vidéo a un second usage, plus important : elle te dit sur quelle haie ta technique se dégrade. Filme au moins un test complet par bloc, de profil, à hauteur de haie.

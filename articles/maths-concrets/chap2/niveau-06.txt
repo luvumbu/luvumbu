@@ -1,0 +1,86 @@
+TITRE : Chapitre 2 · Niveau 6 — L'ordre est interdit
+---
+Dans une addition, l'ordre est libre. Tu l'as vu au niveau 3.
+
+3 + 2 et 2 + 3, c'est pareil. C'est la table de Tomo, regardée d'un côté ou de l'autre.
+
+Dans une soustraction, c'est le contraire. L'ordre est INTERDIT.
+
+Et c'est très important de comprendre pourquoi.
+
+
+TOMO A 8 POMMES
+
+Tomo a 8 pommes. Une dame en achète 3.
+
+8 − 3 = 5. Il reste 5 pommes. Facile.
+
+Maintenant, essaie dans l'autre sens : 3 − 8.
+
+Tomo aurait 3 pommes, et une dame voudrait en acheter 8.
+
+Mais... il n'a que 3 pommes ! Il ne peut pas en donner 8. C'est impossible.
+
+Tu ne peux pas enlever 8 pommes d'un tas qui n'en a que 3.
+
+
+VOILÀ LA DIFFÉRENCE
+
+Additionner, c'est réunir deux tas. Peu importe l'ordre : réunir A et B, ou réunir B et A, c'est le même gros tas.
+
+Soustraire, c'est enlever d'un tas. Là, l'ordre change tout : qui enlève de qui ?
+
+8 − 3, le grand donne au petit. Ça marche.
+3 − 8, le petit devrait donner au grand. Impossible, il n'a pas assez.
+
+Alors avant chaque soustraction, pose-toi une question. Une seule :
+
+Qui est le grand ? Qui est le petit ?
+
+Le grand est toujours devant. On enlève le petit du grand.
+
+
+L'ERREUR LA PLUS FRÉQUENTE DU MONDE
+
+Voici l'erreur que font des millions de gens, petits et grands.
+
+On leur montre deux nombres, par exemple 4 et 9, et on demande la différence.
+
+Sans réfléchir, ils font 4 − 9. Parce que le 4 était écrit en premier, ou en haut.
+
+Et ils se trompent.
+
+La bonne question n'est pas « lequel est écrit en premier ». C'est « lequel est le plus grand ».
+
+9 est le plus grand. Donc c'est 9 − 4 = 5.
+
+Ne te laisse jamais avoir par l'ordre où les nombres sont écrits. Regarde qui est le grand.
+
+
+UN EXEMPLE DE TOUS LES JOURS
+
+Tu as 5 euros. Un jouet coûte 8 euros.
+
+Combien te manque-t-il ?
+
+Ne fais pas 5 − 8. Regarde qui est le grand : 8. Le manque, c'est 8 − 5 = 3.
+
+Il te manque 3 euros.
+
+Le nombre le plus grand, c'est le prix. Le plus petit, c'est ce que tu as. Le manque, c'est la différence entre les deux — et on part toujours du grand.
+
+
+À TOI DE JOUER
+
+Pour chaque paire, dis d'abord qui est le grand. Puis fais la bonne soustraction.
+
+Les nombres : 7 et 2. La différence ?
+Les nombres : 3 et 9. La différence ?
+Les nombres : 6 et 10. La différence ?
+
+Réponses :
+7 est le grand : 7 − 2 = 5.
+9 est le grand : 9 − 3 = 6.
+10 est le grand : 10 − 6 = 4.
+
+Sur le deuxième et le troisième, le grand était écrit en dernier. Si tu avais suivi l'ordre d'écriture, tu te serais trompé. Tu as regardé qui était le grand. Bravo.

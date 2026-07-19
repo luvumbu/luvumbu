@@ -1,0 +1,252 @@
+/* ═══════════════════════════════════════════════════════════
+   CARTE DES PROJETS — style rétro (écho de LUVUMBU LAND)
+   intégré au thème du portfolio. Fichier séparé.
+   ═══════════════════════════════════════════════════════════ */
+
+.section-carte{max-width:1180px;margin:0 auto}
+
+.carte-frame{
+  position:relative;
+  border:1px solid var(--border-hi);
+  border-radius:24px;
+  background:
+    radial-gradient(120% 80% at 50% -10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 60%),
+    linear-gradient(180deg,var(--card),var(--card-2));
+  padding:22px 22px 30px;
+  overflow:hidden;
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+}
+
+/* HUD rétro */
+.carte-hud{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'Press Start 2P',monospace;font-size:.62rem;letter-spacing:1px;
+  color:var(--accent-2);margin-bottom:14px;padding:0 4px;
+}
+.carte-count{color:var(--text-3)}
+
+/* La zone de carte : chemin en serpentin */
+.carte-map{
+  position:relative;
+  min-height:420px;
+  border-radius:16px;
+  background:
+    linear-gradient(var(--border) 1px,transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg,var(--border) 1px,transparent 1px) 0 0/40px 40px,
+    radial-gradient(circle at 20% 10%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 40%);
+  overflow:hidden;
+  padding:20px;
+}
+.carte-map svg.carte-path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.carte-map .path-line{
+  fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:10 12;opacity:.55;
+  animation:dashmove 18s linear infinite;
+}
+@keyframes dashmove{to{stroke-dashoffset:-220}}
+
+/* Un nœud = un projet */
+.carte-node{
+  position:absolute;z-index:2;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;text-align:center;width:120px;
+  transition:transform .25s cubic-bezier(.16,1,.3,1);
+}
+.carte-node:hover{transform:translate(-50%,-50%) scale(1.09)}
+.carte-node .node-badge{
+  width:64px;height:64px;border-radius:16px;display:grid;place-items:center;
+  font-size:1.9rem;position:relative;
+  background:linear-gradient(145deg,var(--card),var(--card-2));
+  border:2px solid var(--accent);
+  box-shadow:0 6px 0 var(--accent-dim),0 12px 24px -8px var(--glow);
+  animation:nodeBob 3.4s ease-in-out infinite;
+}
+.carte-node:nth-child(even) .node-badge{animation-delay:.7s}
+@keyframes nodeBob{50%{transform:translateY(-7px)}}
+/* Zone avec image au lieu de l'émoji */
+.node-badge.has-img{padding:0;overflow:hidden}
+.node-badge .node-img{width:100%;height:100%;object-fit:cover;border-radius:14px}
+.enter-ico .enter-img{width:76px;height:76px;object-fit:cover;border-radius:16px;border:2px solid var(--accent)}
+.carte-node .node-num{
+  position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:#fff;font-family:'Press Start 2P',monospace;
+  font-size:.5rem;display:grid;place-items:center;border:2px solid #fff;
+}
+.carte-node .node-folder{
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--accent-2);
+  background:color-mix(in srgb,var(--bg) 78%,transparent);padding:2px 6px;border-radius:6px;
+  border:1px solid var(--border);white-space:nowrap;
+}
+.carte-node .node-name{
+  font-family:'Press Start 2P',monospace;font-size:.52rem;line-height:1.5;
+  color:var(--text);letter-spacing:.5px;
+  padding:5px 9px;border-radius:8px;background:color-mix(in srgb,var(--bg) 70%,transparent);
+  border:1px solid var(--border);
+}
+/* Zone verrouillée */
+.carte-node.locked{cursor:not-allowed}
+.carte-node.locked .node-badge{border-color:var(--text-3);box-shadow:0 6px 0 rgba(0,0,0,.3);filter:grayscale(.6);opacity:.75}
+.carte-node.locked .node-badge::after{content:"🔒";position:absolute;bottom:-8px;right:-8px;font-size:.9rem}
+
+/* Légende */
+.carte-legend{
+  display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:center;
+  margin-top:18px;font-size:.82rem;color:var(--text-2);
+}
+.carte-legend i.lg{width:14px;height:14px;border-radius:4px;display:inline-block;vertical-align:-2px;margin-right:6px}
+.lg-open{background:var(--accent);box-shadow:0 0 8px var(--glow)}
+.lg-lock{background:var(--text-3);opacity:.6}
+.carte-tip{margin-left:auto;color:var(--accent-2);font-weight:600}
+
+/* iframe des autres modes, injectée DANS la carte-frame (remplace la carte intégrée).
+   Hauteur généreuse pour tout voir d'un coup, sans barre de scroll interne. */
+.carte-frame.is-embed{padding:0;overflow:hidden}
+.carte-embed{display:block;width:100%;height:min(88vh,860px);min-height:600px;border:0;border-radius:22px;background:var(--bg-2)}
+@media(max-width:640px){.carte-embed{height:82vh;min-height:460px}}
+
+/* ── Descriptions des zones (À L'EXTÉRIEUR de la carte, typo du portfolio) ── */
+.carte-desc{margin-top:26px;display:grid;gap:14px}
+.cd-card{
+  display:flex;align-items:center;gap:18px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:18px 22px;transition:.3s var(--ease);scroll-margin-top:90px;
+}
+.cd-card:hover{border-color:var(--border-hi);transform:translateX(4px)}
+.cd-card.flash{animation:cdFlash 1.4s var(--ease)}
+@keyframes cdFlash{0%{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 40%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+.cd-ico{
+  flex:0 0 auto;width:56px;height:56px;border-radius:14px;display:grid;place-items:center;
+  font-size:1.7rem;background:var(--card-2);border:1px solid var(--border);overflow:hidden;
+}
+.cd-ico img{width:100%;height:100%;object-fit:cover}
+.cd-body{flex:1 1 auto;min-width:0}
+.cd-folder{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--accent-2);margin-bottom:4px;opacity:.85}
+.cd-body h4{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.cd-num{
+  flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:.75rem;font-weight:700;display:grid;place-items:center;
+}
+.cd-body p{color:var(--text-2);font-size:.92rem;line-height:1.55}
+.cd-go{
+  flex:0 0 auto;white-space:nowrap;font-weight:600;font-size:.88rem;
+  padding:10px 18px;border-radius:12px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+  box-shadow:0 8px 24px -10px var(--glow);transition:.28s var(--ease);
+}
+.cd-go:hover{transform:translateY(-2px)}
+.cd-lock{flex:0 0 auto;white-space:nowrap;font-size:.82rem;color:var(--text-3)}
+@media(max-width:600px){
+  .cd-card{flex-wrap:wrap;gap:12px}
+  .cd-body{flex:1 1 100%;order:2}
+  .cd-go,.cd-lock{order:3}
+}
+
+/* ── Autres vues (mises en scène LUVUMBU LAND) ── */
+.carte-views{margin-top:34px}
+.cv-card.active{border-color:var(--accent);background:var(--card-2);box-shadow:0 0 0 1px var(--accent) inset}
+.cv-card.active::after{opacity:1;transform:none}
+.cv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.cv-head-txt h3{font-size:1.25rem;font-weight:700;letter-spacing:-.5px}
+.cv-head-txt p{color:var(--text-3);font-size:.9rem;margin-top:4px}
+.cv-admin{
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer;
+  font-family:inherit;font-weight:700;font-size:.9rem;
+  padding:11px 20px;border-radius:12px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+  border:1px solid var(--accent);box-shadow:0 8px 24px -10px var(--glow);
+  transition:.25s var(--ease);
+}
+.cv-admin:hover{transform:translateY(-2px);box-shadow:0 14px 32px -10px var(--glow)}
+
+/* ── Modale Espace admin (iframe LUVUMBU LAND, sans quitter le portfolio) ── */
+.admin-modal{
+  position:fixed;inset:0;z-index:1400;display:none;
+  align-items:center;justify-content:center;padding:clamp(10px,3vw,28px);
+  background:color-mix(in srgb,#000 72%,transparent);backdrop-filter:blur(6px);
+}
+.admin-modal.open{display:flex;animation:ovFade .25s ease}
+.admin-modal-inner{
+  width:min(1240px,97vw);height:min(880px,94vh);display:flex;flex-direction:column;
+  background:var(--card);border:1px solid var(--border-hi);border-radius:16px;overflow:hidden;
+  box-shadow:0 50px 120px -30px rgba(0,0,0,.75);animation:ovPop .3s var(--ease);
+}
+.admin-modal-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 16px;background:var(--card-2);border-bottom:1px solid var(--border);
+  font-weight:600;font-size:.9rem;color:var(--text);
+}
+.am-actions{display:flex;gap:8px}
+.am-btn{
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit;
+  font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:9px;text-decoration:none;
+  color:var(--text-2);background:var(--card);border:1px solid var(--border);transition:.2s var(--ease);
+}
+.am-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.am-close{color:#fb7185}
+#adminFrame{flex:1;width:100%;border:0;background:#0b1d33}
+.cv-sub{font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-2);margin:20px 0 10px}
+.cv-sub:first-of-type{margin-top:4px}
+.cv-sub-hint{font-weight:400;text-transform:none;color:var(--text-3);letter-spacing:0}
+.cv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+
+/* Puces d'apparence / univers */
+.cv-biomes{display:flex;flex-wrap:wrap;gap:9px}
+.cv-biome{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-family:inherit;
+  font-size:.86rem;font-weight:600;color:var(--text-2);
+  padding:9px 15px;border-radius:100px;
+  background:var(--card);border:1px solid var(--border);transition:.25s var(--ease);
+}
+.cv-biome .cvb-ico{font-size:1.05rem}
+.cv-biome:hover{border-color:var(--border-hi);color:var(--text);transform:translateY(-2px)}
+.cv-biome.active{border-color:var(--accent);color:var(--text);background:var(--card-2);box-shadow:0 0 0 1px var(--accent) inset}
+.cv-card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  padding:16px;border-radius:14px;cursor:pointer;font-family:inherit;
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  transition:.28s var(--ease);position:relative;overflow:hidden;
+}
+.cv-card::after{content:"▶";position:absolute;top:14px;right:14px;color:var(--accent);opacity:0;transform:translateX(-4px);transition:.28s var(--ease);font-size:.7rem}
+.cv-card:hover{transform:translateY(-5px);border-color:var(--accent);background:var(--card-2)}
+.cv-card:hover::after{opacity:1;transform:none}
+.cv-ico{font-size:1.7rem;margin-bottom:2px}
+.cv-card b{font-size:.98rem}
+.cv-card small{color:var(--text-3);font-size:.76rem;line-height:1.4}
+@media(max-width:520px){.cv-grid{grid-template-columns:1fr 1fr}}
+
+/* ── Popup d'entrée ── */
+.carte-overlay{
+  position:fixed;inset:0;z-index:1200;display:none;
+  align-items:center;justify-content:center;padding:20px;
+  background:color-mix(in srgb,#000 68%,transparent);backdrop-filter:blur(6px);
+}
+.carte-overlay.open{display:flex;animation:ovFade .25s ease}
+@keyframes ovFade{from{opacity:0}to{opacity:1}}
+.enter-card{
+  width:min(440px,100%);text-align:center;
+  background:linear-gradient(160deg,var(--card),var(--card-2));
+  border:2px solid var(--accent);border-radius:22px;padding:36px 30px;
+  box-shadow:0 40px 90px -25px rgba(0,0,0,.7);
+  animation:ovPop .35s cubic-bezier(.16,1,.3,1);
+}
+@keyframes ovPop{from{transform:scale(.9) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.enter-ico{font-size:3rem;margin-bottom:8px}
+.enter-card h2{
+  font-family:'Press Start 2P',monospace;font-size:.9rem;line-height:1.5;
+  color:var(--accent-2);margin-bottom:16px;letter-spacing:.5px;
+}
+.enter-desc{color:var(--text-2);font-size:.98rem;line-height:1.6;margin-bottom:16px}
+.enter-path{
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-3);
+  background:var(--bg-2);border:1px solid var(--border);border-radius:10px;
+  padding:8px 12px;margin-bottom:24px;word-break:break-all;
+}
+.enter-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.enter-actions .btn{text-decoration:none}
+
+@media(max-width:640px){
+  .carte-map{min-height:640px}
+  .carte-node{width:96px}
+  .carte-node .node-badge{width:54px;height:54px;font-size:1.5rem}
+  .carte-tip{margin-left:0;width:100%;text-align:center}
+}

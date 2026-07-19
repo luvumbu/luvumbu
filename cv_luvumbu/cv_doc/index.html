@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation — CV Luvumbu</title>
+<style>
+  :root{
+    --bg:#1e2c49;--panel:#2a3c5f;--panel2:#243553;--line:#3c5078;
+    --ink:#eef3fb;--muted:#aabbd6;--accent:#5b95ff;--accent2:#38d8ee;--gold:#d4a23c;--green:#34d399;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1100px 500px at 10% -10%,#335089 0%,transparent 55%),var(--bg);
+    color:var(--ink);line-height:1.6;}
+  a{color:var(--accent2);}
+  .wrap{max-width:980px;margin:0 auto;padding:34px 22px 70px;}
+  header h1{font-size:2.1rem;margin:0 0 4px;}
+  header p{color:var(--muted);margin:0 0 8px;}
+  .badges span{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+    border-radius:999px;padding:3px 12px;font-size:.8rem;color:var(--muted);margin:2px 4px 2px 0;}
+  .toc{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:22px 0;}
+  .toc b{color:var(--gold);display:block;margin-bottom:6px;}
+  .toc ul{margin:6px 0 0;padding-left:18px;columns:2;}
+  .toc a{color:#cdd9ef;text-decoration:none;}
+  .toc a:hover{color:#fff;text-decoration:underline;}
+  .part{color:var(--gold);font-size:1.5rem;margin:38px 0 6px;border-bottom:2px solid var(--gold);padding-bottom:6px;}
+  section{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:16px;padding:22px 24px;margin:18px 0;}
+  h2{font-size:1.25rem;margin:0 0 12px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  h3{font-size:1rem;color:var(--accent2);margin:18px 0 6px;}
+  code{background:#16264a;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.88em;color:#bfe9f2;}
+  pre{background:#13203f;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:.85rem;}
+  pre code{background:none;border:none;padding:0;color:#cfe5ff;}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.92rem;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--accent2);font-size:.82rem;text-transform:uppercase;letter-spacing:.03em;}
+  .tag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:.78rem;font-weight:700;margin-right:4px;}
+  .get{background:#1f3a5f;color:#7fb4ff;}
+  .post{background:#1f4a36;color:#7ee0a6;}
+  .put{background:#4a3f1f;color:#e8cf7a;}
+  .del{background:#4a2424;color:#f2a3a3;}
+  .note{background:rgba(56,216,238,.08);border:1px solid rgba(56,216,238,.3);border-radius:10px;padding:11px 14px;color:#bfe9f2;font-size:.9rem;margin:10px 0;}
+  .warn{background:rgba(212,162,60,.10);border:1px solid rgba(212,162,60,.4);border-radius:10px;padding:11px 14px;color:#f0d9a6;font-size:.9rem;margin:10px 0;}
+  ul li{margin-bottom:4px;}
+  .pdf{display:inline-flex;align-items:center;gap:8px;background:#4a2424;border:1px solid #6b3030;
+    color:#f2c9c9;text-decoration:none;font-weight:700;padding:9px 16px;border-radius:10px;margin-top:6px;}
+  .chg h3{color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:5px;}
+  footer{color:var(--muted);text-align:center;margin-top:34px;font-size:.85rem;}
+  .back{display:inline-block;margin-bottom:18px;color:#cdd9ef;text-decoration:none;}
+  .top{position:fixed;right:18px;bottom:18px;background:var(--accent);color:#06122c;border-radius:999px;
+    padding:9px 14px;text-decoration:none;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.35);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../architecture.php">← Retour à l'architecture</a>
+  <header>
+    <h1>📘 Documentation — CV Luvumbu</h1>
+    <p>Documentation unique : utilisation pas à pas, installation / exploitation technique
+       <em>et</em> journal des modifications.</p>
+    <div class="badges">
+      <span>PHP / MySQL (PDO)</span><span>Sans framework</span>
+      <span>Éditeur WYSIWYG</span><span>API REST</span><span>Version juin 2026</span>
+    </div>
+    <div><a class="pdf" href="CV-Ndenga-Luvumbu-Electricien-Tableautier-DC2Scale.pdf" target="_blank" rel="noopener">
+      📄 CV source de référence (PDF « Tableautier / DC2Scale »)</a></div>
+  </header>
+
+  <div class="toc">
+    <b>PARTIE 1 — Guide utilisateur</b>
+    <ul>
+      <li><a href="#presentation">1. Présentation</a></li>
+      <li><a href="#connexion">2. Connexion</a></li>
+      <li><a href="#dashboard">3. Tableau de bord</a></li>
+      <li><a href="#mescv">4. Mes CV</a></li>
+      <li><a href="#editeur">5. Éditeur de CV</a></li>
+      <li><a href="#apercu">6. Aperçu / PDF</a></li>
+      <li><a href="#partage">7. Partage + QR</a></li>
+      <li><a href="#corbeille">8. Corbeille</a></li>
+      <li><a href="#candidatures">9. Candidatures</a></li>
+      <li><a href="#parametres">10. Paramètres</a></li>
+      <li><a href="#google">11. Connexion Google</a></li>
+      <li><a href="#reset">12. Mot de passe oublié</a></li>
+      <li><a href="#cles">13. Clés API</a></li>
+      <li><a href="#sante">14. Matrice de santé</a></li>
+    </ul>
+  </div>
+  <div class="toc">
+    <b>PARTIE 2 — Installation & technique</b>
+    <ul>
+      <li><a href="#archi">A. Architecture</a></li>
+      <li><a href="#prerequis">B. Pré-requis</a></li>
+      <li><a href="#arbo">C. Arborescence</a></li>
+      <li><a href="#install-local">D. Installation locale</a></li>
+      <li><a href="#install-prod">E. Installation production</a></li>
+      <li><a href="#assistant">F. L'assistant install</a></li>
+      <li><a href="#config">G. Configuration</a></li>
+      <li><a href="#data">H. Base de données</a></li>
+      <li><a href="#migrations">I. Migrations auto</a></li>
+      <li><a href="#api">J. API REST</a></li>
+      <li><a href="#securite">K. Sécurité</a></li>
+      <li><a href="#backup">L. Sauvegarde</a></li>
+      <li><a href="#depannage">M. Dépannage</a></li>
+    </ul>
+  </div>
+  <div class="toc">
+    <b>PARTIE 3 — Journal des modifications</b>
+    <ul>
+      <li><a href="#chg-login">1. Login base de données</a></li>
+      <li><a href="#chg-reset">2. Mot de passe oublié</a></li>
+      <li><a href="#chg-email">3. Connexion e-mail</a></li>
+      <li><a href="#chg-google">4-5. Connexion Google</a></li>
+      <li><a href="#chg-editeur">6-8. Éditeur & modèle DC2Scale</a></li>
+      <li><a href="#chg-sante">9. Matrice de santé</a></li>
+      <li><a href="#chg-image">10. Image libre</a></li>
+      <li><a href="#chg-deploy">Mise en service</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================ PARTIE 1 ============================ -->
+  <div class="part">PARTIE 1 — Guide utilisateur</div>
+
+  <section id="presentation">
+    <h2>1. 🧭 Présentation</h2>
+    <p><b>CV Luvumbu</b> est une application web (PHP / MySQL) pour <b>créer, mettre
+       en forme, partager et suivre</b> des CV.</p>
+    <ul>
+      <li><b>Éditeur WYSIWYG</b> : l'aperçu à l'écran = le rendu imprimé / PDF.</li>
+      <li><b>Modèles</b> de CV (dont « Tableautier / DC2Scale »), couleurs, sections.</li>
+      <li><b>Export PDF</b> via l'impression du navigateur.</li>
+      <li><b>Partage public</b> par lien + <b>QR code</b> (sans compte).</li>
+      <li><b>Corbeille</b> (suppression douce, restauration).</li>
+      <li><b>Suivi de candidatures</b> et <b>API REST</b> par clé.</li>
+      <li>Connexion par <b>identifiants de base</b>, par <b>e-mail</b> ou via <b>Google</b>.</li>
+    </ul>
+  </section>
+
+  <section id="connexion">
+    <h2>2. 🔑 Connexion</h2>
+    <p>Le point d'entrée <code>index.php</code> redirige automatiquement :</p>
+    <table>
+      <tr><th>État</th><th>Redirection</th></tr>
+      <tr><td>Pas installée</td><td>→ assistant d'installation <code>install.php</code></td></tr>
+      <tr><td>Non connecté</td><td>→ connexion <code>login.php</code></td></tr>
+      <tr><td>Connecté</td><td>→ tableau de bord <code>dashboard.php</code></td></tr>
+    </table>
+    <h3>Trois façons de se connecter</h3>
+    <ul>
+      <li><b>Identifiant + mot de passe de la base de données</b> (méthode garantie, la
+        « solution ultime »). L'identifiant = l'utilisateur MySQL (ex. <code>root</code>),
+        le mot de passe = celui <b>de la base</b> (pas hPanel).</li>
+      <li><b>E-mail + mot de passe</b> si un e-mail a été enregistré dans les Paramètres.</li>
+      <li><b>Se connecter avec Google</b> (adresse devant figurer dans la liste blanche).</li>
+    </ul>
+    <div class="note">Si la vérification habituelle échoue, l'application ouvre une vraie
+      connexion MySQL avec vos identifiants : si MySQL accepte, vous êtes connecté et le
+      compte est resynchronisé automatiquement.</div>
+  </section>
+
+  <section id="dashboard">
+    <h2>3. 📊 Tableau de bord</h2>
+    <p>Page d'accueil une fois connecté (<code>dashboard.php</code>). Elle sert au
+       <b>suivi des candidatures</b> (§9) et affiche des statistiques : total, en attente,
+       réponses positives/négatives, relances programmées et <b>relances à faire</b>
+       (date atteinte ou dépassée).</p>
+  </section>
+
+  <section id="mescv">
+    <h2>4. 🗂️ Mes CV</h2>
+    <p><code>mes_cv.php</code> liste vos CV actifs. Pour chacun :
+       <b>✏️ Éditer</b>, <b>👁️ Aperçu</b>, <b>🔗 Partager</b>, <b>🗑️ Supprimer</b> (corbeille).</p>
+    <p>En haut : <b>➕ Nouveau CV</b>, <b>🗑️ Corbeille</b>, et une <b>aide contextuelle</b>
+       (pastilles <b>ⓘ</b> + un <b>Mode aide</b> qui affiche toutes les explications).</p>
+  </section>
+
+  <section id="editeur">
+    <h2>5. 🎨 Éditeur de CV (WYSIWYG)</h2>
+    <p>L'éditeur <code>cv_builder.php</code> s'appuie sur le moteur
+       <code>assets/js/cv-builder.js</code>. <b>L'aperçu à droite est exactement le rendu final.</b></p>
+    <table>
+      <tr><th>Réglage</th><th>Description</th></tr>
+      <tr><td>Modèle</td><td><code>dc2scale</code> (Tableautier), <code>moderne</code>… change toute la mise en page.</td></tr>
+      <tr><td>Couleurs</td><td>Principale + secondaire, palettes prêtes, overrides avancés.</td></tr>
+      <tr><td>📷 Photo de profil</td><td>Import, taille, forme (cercle, arrondi, carré, portrait, hexagone), position.</td></tr>
+      <tr><td>🖼️ Image libre</td><td>Bloc image posé sur la page (distinct de la photo), déplaçable / redimensionnable.</td></tr>
+      <tr><td>Titre / poste</td><td>Métier affiché sous le nom (<code>headline</code>).</td></tr>
+      <tr><td>Coordonnées</td><td>Lieu, téléphone, e-mail, permis… <b>+</b> pour ajouter, <b>✕</b> pour retirer.</td></tr>
+      <tr><td>Profil / résumé</td><td>Texte de présentation.</td></tr>
+      <tr><td>Sections</td><td>Expérience, Formation, Compétences, Logiciels, Habilitations, Langues, Loisirs — réordonnables par glisser-déposer.</td></tr>
+      <tr><td>📐 Une seule page</td><td>Compresse automatiquement la mise en page pour tenir sur une A4.</td></tr>
+      <tr><td>Disposition libre</td><td>Canvas : déplacer ✥, redimensionner ↔ ↕ ⤡, supprimer ✕.</td></tr>
+    </table>
+    <p><b>💾 Enregistrer</b> envoie le profil JSON au serveur. <b>🎓 Tutoriel</b> lance une
+       visite guidée pas à pas.</p>
+  </section>
+
+  <section id="apercu">
+    <h2>6. 🖨️ Aperçu, impression et PDF</h2>
+    <p><code>cv_view.php?id=…</code> affiche le CV au format A4, identique à l'éditeur.
+       Bouton <b>🖨 Imprimer / Enregistrer en PDF</b> → choisir « Enregistrer au format PDF »
+       comme imprimante.</p>
+    <div class="note">Activez « Tout tenir sur une seule page » avant d'imprimer pour
+      garantir une seule feuille.</div>
+  </section>
+
+  <section id="partage">
+    <h2>7. 🔗 Partage public + QR code</h2>
+    <p>Depuis <b>Mes CV → 🔗 Partager</b>, l'application crée un <b>jeton</b>
+       (<code>share_token</code>) et fournit :</p>
+    <ul>
+      <li>un <b>lien public</b> <code>cv_public.php?token=…</code> (visible sans compte) ;</li>
+      <li>un <b>QR code</b> vers ce lien ;</li>
+      <li>un partage <b>désactivable</b> à tout moment (le lien cesse de fonctionner).</li>
+    </ul>
+    <div class="note">La page publique est en <code>noindex</code> (non référencée). Le jeton
+      aléatoire de 32 caractères rend un lien non communiqué introuvable.</div>
+  </section>
+
+  <section id="corbeille">
+    <h2>8. 🗑️ Corbeille</h2>
+    <p>Supprimer un CV le place en corbeille (suppression douce, colonne <code>deleted_at</code>).
+       Depuis la corbeille : <b>♻️ Restaurer</b> ou <b>❌ Supprimer définitivement</b>.</p>
+  </section>
+
+  <section id="candidatures">
+    <h2>9. 💼 Suivi des candidatures</h2>
+    <table>
+      <tr><th>Champ</th><th>Description</th></tr>
+      <tr><td>Entreprise</td><td>Nom de l'employeur.</td></tr>
+      <tr><td>Date d'envoi</td><td>Quand le CV a été envoyé.</td></tr>
+      <tr><td>CV envoyé</td><td>CV associé (facultatif).</td></tr>
+      <tr><td>Statut</td><td>En attente / Réponse positive / Réponse négative.</td></tr>
+      <tr><td>Relance</td><td>Active/désactive + date ; passe en « à faire » à l'échéance.</td></tr>
+      <tr><td>Infos suppl.</td><td><b>+ Ajouter une information</b> : champs libres (libellé + valeur), stockés en JSON.</td></tr>
+    </table>
+  </section>
+
+  <section id="parametres">
+    <h2>10. ⚙️ Paramètres</h2>
+    <pre><code>1. Connexion avec Google
+   ├─ Statut (Activée / Désactivée)
+   ├─ Comptes Google autorisés  → liste + Ajouter / Retirer
+   └─ Configuration avancée (ID client / secret)   (replié)
+2. Mon compte administrateur
+   ├─ Adresse e-mail
+   └─ Changer le mot de passe
+3. Clés API</code></pre>
+  </section>
+
+  <section id="google">
+    <h2>11. 🟦 Connexion avec Google</h2>
+    <p>Fonctionne « clés en main ». Sécurité par <b>liste blanche</b> :</p>
+    <ol>
+      <li><i>Paramètres → Connexion avec Google → Comptes Google autorisés</i>.</li>
+      <li><b>Ajouter</b> votre adresse Gmail.</li>
+      <li>Se déconnecter, puis tester <b>« Se connecter avec Google »</b>.</li>
+    </ol>
+    <pre><code>Clic « Se connecter avec Google » → choix du compte
+   ├─ adresse autorisée → connecté
+   └─ adresse absente   → refusé</code></pre>
+  </section>
+
+  <section id="reset">
+    <h2>12. 🔁 Mot de passe oublié</h2>
+    <ol>
+      <li>Lien <b>« Mot de passe oublié ? »</b> sur la connexion.</li>
+      <li>Saisir l'identifiant ou l'e-mail.</li>
+      <li>Réception d'un lien <b>valable 1 h, à usage unique</b>.</li>
+      <li>Ouvrir <code>reset_password.php?token=…</code> et choisir un nouveau mot de passe.</li>
+    </ol>
+    <div class="warn">Pré-requis : un e-mail enregistré dans <i>Paramètres → Mon compte</i>.
+      Secours : se connecter avec les identifiants de la base.</div>
+  </section>
+
+  <section id="cles">
+    <h2>13. 🔌 Clés API (côté utilisateur)</h2>
+    <p><i>Paramètres → Clés API</i> : nom + permissions. La clé <code>cvk_…</code> n'est
+       <b>affichée qu'une fois</b> (seul son SHA-256 est stocké). Révocation immédiate possible.</p>
+    <h3>Permissions</h3>
+    <p><code>cv:read</code>, <code>cv:write</code>, <code>cv:delete</code>,
+       <code>profile:read</code>, <code>profile:write</code>.</p>
+    <pre><code>curl -H "X-API-Key: cvk_xxxx" https://luvumbu.com/cv_luvumbu/api/cv.php</code></pre>
+  </section>
+
+  <section id="sante">
+    <h2>14. 🩺 Matrice de santé</h2>
+    <p>Sur <code>architecture.php</code>, bouton <b>« Matrice de santé — Afficher »</b>.
+       Une fois ouverte, elle se rafraîchit toutes les 4 s et indique, par pastille
+       <b>🟢/🟡/🔴</b> : configuration, base, tables (présence + lignes), modules et API.
+       « Masquer » arrête le polling ; il se met aussi en pause si l'onglet est caché.</p>
+  </section>
+
+  <!-- ============================ PARTIE 2 ============================ -->
+  <div class="part">PARTIE 2 — Installation & technique</div>
+
+  <section id="archi">
+    <h2>A. 🏗️ Architecture technique</h2>
+    <p>Application <b>PHP procédurale</b>, sans framework :</p>
+    <ul>
+      <li><b>Pages</b> (<code>*.php</code> racine) : écrans visibles.</li>
+      <li><b>Modules</b> (<code>includes/</code>) : logique réutilisable.</li>
+      <li><b>API</b> (<code>api/</code>) : endpoints JSON.</li>
+      <li><b>Assets</b> (<code>assets/</code>) : CSS, JS (dont <code>cv-builder.js</code>), images.</li>
+      <li><b>Config</b> (<code>config/config.php</code>) : généré, jamais versionné.</li>
+    </ul>
+    <div class="note"><b>Principe central :</b> login du site = identifiant + mot de passe
+      de la <b>base de données</b>. Pas de compte séparé à créer.</div>
+  </section>
+
+  <section id="prerequis">
+    <h2>B. 📋 Pré-requis</h2>
+    <table>
+      <tr><th>Élément</th><th>Recommandation</th></tr>
+      <tr><td>PHP</td><td>8.0+ (<code>str_contains</code>, <code>random_bytes</code>, <code>password_hash</code>).</td></tr>
+      <tr><td>Extensions</td><td><code>pdo_mysql</code>, <code>openssl</code>, <code>mbstring</code>, <code>json</code>.</td></tr>
+      <tr><td>Base</td><td>MySQL 5.7+ / MariaDB 10.3+ (<code>utf8mb4</code>).</td></tr>
+      <tr><td>Serveur</td><td>Apache / Nginx ; en local : XAMPP.</td></tr>
+      <tr><td>E-mail</td><td><code>mail()</code> opérationnel (mot de passe oublié).</td></tr>
+      <tr><td>HTTPS</td><td>Recommandé (requis pour Google).</td></tr>
+    </table>
+  </section>
+
+  <section id="arbo">
+    <h2>C. 📁 Arborescence</h2>
+    <pre><code>cv_luvumbu/
+├── index.php / install.php / login.php / logout.php
+├── forgot_password.php / reset_password.php
+├── google_login.php / google_callback.php
+├── dashboard.php / mes_cv.php / cv_builder.php
+├── cv_view.php / cv_public.php / parametres.php / architecture.php
+├── config/config.php          ⚙️ généré — NE PAS versionner
+├── includes/  (db, guard, auth, account, password_reset,
+│               google_auth, settings, cv, applications, api_keys)
+├── api/       (cv.php, cv_profile.php, health.php)
+├── assets/    (css, js/cv-builder.js, img)
+└── cv_doc/    (index.html  ← cette documentation unique,
+                CV-...DC2Scale.pdf  ← CV source,
+                _archive/  ← anciens guides conservés pour référence)</code></pre>
+  </section>
+
+  <section id="install-local">
+    <h2>D. 💻 Installation locale (XAMPP)</h2>
+    <ol>
+      <li>Démarrer <b>Apache</b> + <b>MySQL</b> dans XAMPP.</li>
+      <li>Placer le projet dans <code>htdocs/luvumbu/cv_luvumbu</code>.</li>
+      <li>Ouvrir <code>http://localhost/luvumbu/cv_luvumbu/</code>.</li>
+      <li>Assistant : Hôte <code>127.0.0.1</code>, Base <code>cv_luvumbu</code>,
+        Utilisateur <code>root</code>, Mot de passe <i>vide</i>.</li>
+      <li><b>Installer et continuer</b> → se connecter avec <code>root</code> + mot de passe vide.</li>
+    </ol>
+  </section>
+
+  <section id="install-prod">
+    <h2>E. 🌐 Installation en production (Hostinger)</h2>
+    <ol>
+      <li>Créer la base MySQL dans hPanel ; noter <b>nom</b>, <b>utilisateur</b>,
+        <b>mot de passe de la base</b> (≠ mot de passe hPanel).</li>
+      <li>Uploader les fichiers (<b>sans</b> <code>config/config.php</code> ; dossier
+        <code>config/</code> inscriptible).</li>
+      <li>Ouvrir l'URL → assistant → hôte (souvent <code>localhost</code>), base, utilisateur, mot de passe.</li>
+      <li><b>Installer et continuer</b>, puis se connecter.</li>
+    </ol>
+    <div class="warn">Sur hébergement mutualisé, l'utilisateur n'a pas toujours
+      <code>CREATE DATABASE</code> : la base doit donc <b>déjà exister</b> dans hPanel ;
+      l'assistant l'utilise telle quelle.</div>
+  </section>
+
+  <section id="assistant">
+    <h2>F. 🛠️ L'assistant d'installation (<code>install.php</code>)</h2>
+    <ol>
+      <li>Connexion MySQL (essaie l'hôte saisi <b>puis</b> <code>localhost</code>↔<code>127.0.0.1</code>).</li>
+      <li>Création de la base si le droit existe, sinon utilisation de l'existante.</li>
+      <li>Table <code>users</code> : nettoyage des tables résiduelles si incompatible (évite errno 150), puis création propre.</li>
+      <li>Table <code>api_keys</code>.</li>
+      <li>Compte admin : <code>username</code> = utilisateur BDD, mot de passe = mot de passe BDD (<code>ON DUPLICATE KEY UPDATE</code>).</li>
+      <li>Écriture de <code>config/config.php</code> si tout a réussi.</li>
+    </ol>
+    <div class="note">Base OK + déjà installée → redirige vers l'app (sauf <code>?reconfigure=1</code>).
+      Base KO → ré-affiche l'assistant <b>sans</b> détruire la config existante. Le mot de
+      passe est « trimé » (espaces retirés).</div>
+  </section>
+
+  <section id="config">
+    <h2>G. ⚙️ Fichier de configuration</h2>
+    <pre><code>&lt;?php
+return array (
+  'host'   =&gt; '127.0.0.1',
+  'port'   =&gt; 3306,
+  'dbname' =&gt; 'cv_luvumbu',
+  'user'   =&gt; 'root',
+  'pass'   =&gt; '',
+);</code></pre>
+    <div class="warn">Contient le mot de passe BDD en clair → <b>jamais</b> versionné ni
+      public (déjà dans <code>.gitignore</code>). Reconfigurer : <code>install.php?reconfigure=1</code>.</div>
+  </section>
+
+  <section id="data">
+    <h2>H. 🗄️ Base de données</h2>
+    <p>Toutes les tables : InnoDB, <code>utf8mb4_unicode_ci</code>.</p>
+    <h3>Table <code>users</code></h3>
+    <p><code>id</code>, <code>username</code> (unique), <code>email</code> (unique, migration),
+       <code>password_hash</code>, <code>must_change_password</code> (migration), <code>created_at</code>.</p>
+    <h3>Table <code>cvs</code></h3>
+    <p><code>id</code>, <code>user_id</code> (FK→users, cascade), <code>full_name</code>,
+       <code>title</code>, <code>email</code>, <code>phone</code>, <code>summary</code>,
+       <code>skills</code>, <code>experience</code>, <code>education</code>,
+       <code>profile_json</code> (profil riche, migration), <code>deleted_at</code> (corbeille, migration),
+       <code>share_token</code> (partage, migration), <code>created_at</code>, <code>updated_at</code>.</p>
+    <h3>Table <code>applications</code></h3>
+    <p><code>id</code>, <code>user_id</code> (FK, cascade), <code>cv_id</code> (FK→cvs, set null),
+       <code>company</code>, <code>sent_at</code>, <code>status</code>, <code>followup</code>,
+       <code>followup_date</code> (migration), <code>notes</code>, <code>extra_json</code> (migration),
+       <code>created_at</code>, <code>updated_at</code>.</p>
+    <h3>Table <code>api_keys</code></h3>
+    <p><code>id</code>, <code>user_id</code> (FK, cascade), <code>label</code>,
+       <code>scopes</code> (migration), <code>key_prefix</code>, <code>key_hash</code> (SHA-256, unique),
+       <code>created_at</code>, <code>last_used_at</code>, <code>revoked_at</code>.</p>
+    <h3>Tables <code>password_resets</code> &amp; <code>settings</code></h3>
+    <p>Créées automatiquement : jetons de réinitialisation (usage unique, 1 h) ; réglages
+       clé/valeur (config Google, liste blanche).</p>
+  </section>
+
+  <section id="migrations">
+    <h2>I. 🔄 Migrations automatiques</h2>
+    <p>Aucune migration manuelle. Les fonctions <code>ensure_*</code> créent les tables
+       manquantes et ajoutent les colonnes au fil des versions. On déploie par simple
+       upload des fichiers, sans toucher à phpMyAdmin.</p>
+    <p>Colonnes ajoutées : <code>users.email</code>, <code>users.must_change_password</code>,
+       <code>cvs.profile_json</code>, <code>cvs.deleted_at</code>, <code>cvs.share_token</code>,
+       <code>applications.followup_date</code>, <code>applications.extra_json</code>,
+       <code>api_keys.scopes</code>.</p>
+  </section>
+
+  <section id="api">
+    <h2>J. 🔌 API REST <code>(api/cv.php)</code></h2>
+    <p>Auth par en-tête <code>X-API-Key</code> (ou <code>Authorization: Bearer</code>). JSON entrant/sortant.</p>
+    <table>
+      <tr><th>Méthode</th><th>Permission</th><th>Description</th></tr>
+      <tr><td><span class="tag get">GET</span> <code>/api/cv.php</code></td><td>cv:read</td><td>Liste les CV.</td></tr>
+      <tr><td><span class="tag get">GET</span> <code>?id=N</code></td><td>cv:read</td><td>Détail texte.</td></tr>
+      <tr><td><span class="tag get">GET</span> <code>?id=N&amp;profile=1</code></td><td>cv:read</td><td>CV + profil riche.</td></tr>
+      <tr><td><span class="tag get">GET</span> <code>?whoami=1</code></td><td>—</td><td>user_id + scopes.</td></tr>
+      <tr><td><span class="tag post">POST</span> <code>/api/cv.php</code></td><td>cv:write</td><td>Crée un CV.</td></tr>
+      <tr><td><span class="tag put">PUT</span> <code>/api/cv.php</code></td><td>cv:write</td><td>Met à jour ; <code>{"share":true}</code> → <code>share_url</code>.</td></tr>
+      <tr><td><span class="tag del">DELETE</span> <code>?id=N[&amp;force=1]</code></td><td>cv:write / cv:delete</td><td>Corbeille ou suppression définitive.</td></tr>
+    </table>
+    <p><b>Codes :</b> 200/201 OK · 401 clé KO · 403 permission · 404 introuvable ·
+       405 méthode · 422 champ manquant · 500 serveur.</p>
+    <pre><code># Créer un CV
+curl -X POST -H "X-API-Key: cvk_xxxx" -H "Content-Type: application/json" \
+  -d '{"full_name":"Jean Dupont","title":"Électricien"}' \
+  https://luvumbu.com/cv_luvumbu/api/cv.php
+
+# Activer le partage et récupérer l'URL publique
+curl -X PUT -H "X-API-Key: cvk_xxxx" -H "Content-Type: application/json" \
+  -d '{"id":12,"share":true}' https://luvumbu.com/cv_luvumbu/api/cv.php</code></pre>
+    <div class="note">Autres endpoints : <code>api/cv_profile.php</code> (éditeur, auth
+      session + CSRF) et <code>api/health.php</code> (santé JSON, utilisateurs connectés
+      uniquement → 401 sinon).</div>
+  </section>
+
+  <section id="securite">
+    <h2>K. 🔒 Sécurité</h2>
+    <ul>
+      <li>Mots de passe hachés (<code>password_hash</code> / bcrypt).</li>
+      <li>Sessions régénérées à la connexion ; jeton <b>CSRF</b> sur formulaires + API profil.</li>
+      <li>Requêtes <b>préparées</b> PDO partout (<code>EMULATE_PREPARES=false</code>).</li>
+      <li>Clés API : seul le SHA-256 stocké ; clé en clair affichée une fois ; révocation immédiate.</li>
+      <li>Partage : jeton aléatoire 32 car. ; page publique <code>noindex</code>.</li>
+      <li>Isolation : toutes les requêtes filtrent par <code>user_id</code>.</li>
+      <li><b>Ne jamais exposer</b> : <code>config/config.php</code>, <code>includes/google_auth.php</code> (secret Google).</li>
+    </ul>
+  </section>
+
+  <section id="backup">
+    <h2>L. 💾 Sauvegarde & restauration</h2>
+    <p>Sauvegarder la <b>base</b> + <code>config/config.php</code>.</p>
+    <pre><code># Sauvegarde
+mysqldump -u UTILISATEUR -p NOM_BASE &gt; sauvegarde.sql
+# Restauration
+mysql -u UTILISATEUR -p NOM_BASE &lt; sauvegarde.sql</code></pre>
+    <p><b>Déploiement d'une mise à jour :</b> sauvegarder → uploader les fichiers (sans
+       écraser <code>config.php</code>) → recharger une page (migrations auto) → vérifier
+       via la matrice de santé.</p>
+  </section>
+
+  <section id="depannage">
+    <h2>M. 🚑 Dépannage</h2>
+    <table>
+      <tr><th>Symptôme</th><th>Solution</th></tr>
+      <tr><td>1045 Access denied (install)</td><td>Mot de passe <b>de la base</b> (pas hPanel) ; ressaisir sans espace.</td></tr>
+      <tr><td>1049 Unknown database</td><td>Créer la base dans hPanel ; vérifier le nom exact.</td></tr>
+      <tr><td>2002 / refused</td><td>Essayer <code>localhost</code> ↔ <code>127.0.0.1</code>.</td></tr>
+      <tr><td>Config non écrite</td><td>Rendre <code>config/</code> inscriptible.</td></tr>
+      <tr><td>Connexion site impossible</td><td>Se connecter avec identifiant + mot de passe BDD (resync auto).</td></tr>
+      <tr><td>E-mail reset non reçu</td><td>Enregistrer un e-mail (Paramètres) ; vérifier spams / SMTP.</td></tr>
+      <tr><td>Google refusé</td><td>Ajouter l'adresse à la liste blanche ; vérifier origines/URI console Google.</td></tr>
+    </table>
+    <div class="note">Reconfigurer sans réinstaller : <code>install.php?reconfigure=1</code>
+      (la config existante n'est pas détruite).</div>
+  </section>
+
+  <!-- ============================ PARTIE 3 ============================ -->
+  <div class="part">PARTIE 3 — Journal des modifications</div>
+
+  <section class="chg">
+    <h2>🗒️ Historique des fonctionnalités</h2>
+    <p>Récapitulatif des évolutions du système, avec les fichiers concernés.</p>
+
+    <h3 id="chg-login">1. Connexion par les identifiants de la base — « solution ultime »</h3>
+    <p>Toujours pouvoir se connecter en admin avec l'<b>identifiant + mot de passe de la
+       base</b>, même si le mot de passe applicatif est désynchronisé. Si la vérification
+       normale échoue, une vraie connexion MySQL est tentée ; si elle réussit, le compte est
+       resynchronisé automatiquement.<br>
+       <b>Fichiers :</b> <code>includes/account.php</code> (<code>db_login_fallback</code>), <code>login.php</code>.</p>
+
+    <h3 id="chg-reset">2. Mot de passe oublié (par e-mail)</h3>
+    <p><code>forgot_password.php</code> envoie un lien <b>valable 1 h, à usage unique</b>
+       (message toujours générique) ; <code>reset_password.php?token=…</code> valide le lien.
+       Pré-requis : e-mail renseigné dans <i>Paramètres → Mon compte</i>.<br>
+       <b>Fichiers :</b> <code>includes/password_reset.php</code>, <code>forgot_password.php</code>,
+       <code>reset_password.php</code>, table <code>password_resets</code> (auto).</p>
+
+    <h3 id="chg-email">3. Connexion avec un e-mail</h3>
+    <p>La page de connexion accepte l'<b>identifiant OU l'e-mail</b> + mot de passe. Ce même
+       e-mail sert au mot de passe oublié et à Google.<br>
+       <b>Fichiers :</b> <code>includes/account.php</code> (<code>update_account_email</code>,
+       <code>find_user_by_login</code>), <code>parametres.php</code>.</p>
+
+    <h3 id="chg-google">4-5. Connexion Google + gestion de la liste blanche</h3>
+    <p>Bouton <b>« Se connecter avec Google »</b> « clés en main » (ID client + secret
+       intégrés). Sécurité par <b>liste blanche</b> gérée dans <i>Paramètres → Comptes Google
+       autorisés</i> (ajout/retrait, insensible à la casse, refus des doublons/adresses
+       invalides, effet immédiat).<br>
+       <b>Console Google :</b> origines <code>https://luvumbu.com</code>, <code>http://localhost</code> ;
+       URI de redirection <code>…/google_callback.php</code> (prod + local).<br>
+       <b>Fichiers :</b> <code>includes/google_auth.php</code>, <code>includes/settings.php</code>,
+       <code>google_login.php</code>, <code>google_callback.php</code>, <code>login.php</code>,
+       <code>parametres.php</code>, table <code>settings</code> (auto).</p>
+
+    <h3 id="chg-editeur">6-8. Éditeur WYSIWYG, page unique garantie & modèle « Tableautier (DC2Scale) »</h3>
+    <ul>
+      <li><b>Éditeur WYSIWYG</b> : profil riche en base (<code>cvs.profile_json</code>), aperçu
+        live strictement identique au rendu. Moteur repris de l'ancien <code>cv_enligne</code>
+        (désormais supprimé). Enregistrement via <code>api/cv_profile.php</code> (session + CSRF).</li>
+      <li><b>Une seule page garantie</b> : case « 📐 Tout tenir sur une seule page » — compression
+        itérative du <code>zoom</code> sans plancher bloquant.</li>
+      <li><b>Modèle DC2Scale</b> fidèle au CV PDF d'origine : colonne bleu nuit + or, <code>headline</code>,
+        <code>summary</code>, <code>contact</code>, et sections <i>Habilitations</i>, <i>Compétences</i>,
+        <i>Logiciels</i>.</li>
+    </ul>
+    <p><b>Fichiers :</b> <code>assets/js/cv-builder.js</code>, <code>cv_builder.php</code>,
+       <code>api/cv_profile.php</code>, <code>includes/cv.php</code>, <code>cv_view.php</code>,
+       <code>mes_cv.php</code>.</p>
+
+    <h3 id="chg-sante">9. Matrice de santé en temps réel</h3>
+    <p>Sur <code>architecture.php</code>, <b>à la demande</b> : bouton « 🩺 Afficher », rafraîchi
+       toutes les 4 s via <code>api/health.php</code>, suspendu quand l'onglet est caché, bloc
+       réservé (pas de saut de mise en page). <code>api/health.php</code> réservé aux utilisateurs
+       connectés (<code>401</code> sinon).<br>
+       <b>Fichiers :</b> <code>api/health.php</code> (nouveau), <code>architecture.php</code>.</p>
+
+    <h3 id="chg-image">10. Élément « image » séparé de la photo de profil</h3>
+    <p>Nouveau bouton <b>« 🖼️ Ajouter une image »</b> : bloc image libre sur le canvas
+       (déplaçable ✥, redimensionnable ↔ ↕ ⤡, supprimable ✕), distinct de la photo de profil.
+       Stocké dans <code>profile.canvasBlocks</code> (<code>type:'image'</code>, <code>src</code> dataURL).<br>
+       <b>Fichiers :</b> <code>cv_builder.php</code>, <code>assets/js/cv-builder.js</code>.</p>
+
+    <h3 id="chg-deploy">Mise en service rapide (serveur)</h3>
+    <ol>
+      <li>Se connecter : <code>…/login.php</code> (identifiant + mot de passe de la base).</li>
+      <li>Aller dans <code>…/parametres.php</code>.</li>
+      <li><b>Connexion avec Google → Ajouter</b> son adresse Gmail.</li>
+      <li>Se déconnecter, puis tester <b>« Se connecter avec Google »</b>.</li>
+    </ol>
+    <div class="warn">Ne <b>jamais</b> uploader <code>config/config.php</code> (généré par le serveur)
+      ni publier <code>includes/google_auth.php</code> (secret Google). Les tables
+      <code>password_resets</code> / <code>settings</code> et la colonne <code>cvs.profile_json</code>
+      se créent automatiquement au premier usage.</div>
+  </section>
+
+  <footer>
+    CV Luvumbu — Documentation unique (<code>cv_doc/index.html</code>). Les anciens guides
+    séparés sont conservés dans <code>cv_doc/_archive/</code> pour référence.
+  </footer>
+</div>
+<a class="top" href="#">↑ Haut</a>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Lecture des photos et vidéos : Android 13+ (API 33) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Lecture des médias : Android 12 et antérieur -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Notifications du worker (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:name=".SyncApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PhotoSync">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AuthActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".GalleryActivity"
+            android:label="@string/gallery_title"
+            android:exported="false" />
+
+        <activity
+            android:name=".FullImageActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CleanupActivity"
+            android:label="@string/cleanup_title"
+            android:exported="false" />
+
+        <activity
+            android:name=".MatrixActivity"
+            android:label="@string/matrix_open"
+            android:exported="false" />
+
+        <activity
+            android:name=".ServerDeletionsActivity"
+            android:label="@string/deletions_title"
+            android:exported="false" />
+    </application>
+</manifest>

@@ -1,0 +1,112 @@
+TITRE : Chapitre 2 · Niveau 10 — L'emprunt, le contraire de la retenue
+---
+Dernier niveau du chapitre 2. Le plus difficile, et le plus satisfaisant.
+
+Tu sais faire la retenue : un paquet de 10 qui monte quand une colonne déborde.
+
+L'emprunt, c'est exactement l'inverse : un paquet de 10 qu'on casse quand une colonne manque.
+
+
+LE CALCUL QUI COINCE
+
+Tomo avait 42 pommes. Il en vend 15. Combien lui en reste-t-il ?
+
+  42
+- 15
+----
+
+On commence par la droite, les restes : 2 − 5.
+
+Aïe. Il faut enlever 5, mais il n'y a que 2.
+
+Tomo n'a que 2 pommes toutes seules, et une cliente veut en emporter 5. Comme au niveau 6 : on ne peut pas enlever 5 d'un tas de 2.
+
+Qu'est-ce qu'on fait ?
+
+
+TOMO CASSE UN PAQUET
+
+Tomo a 42 pommes : 4 paquets de 10, et 2 toutes seules.
+
+Il ne peut pas donner 5 pommes avec ses paquets fermés. Alors il en ouvre un.
+
+Il prend un paquet de 10 et il le casse. Le paquet redevient 10 pommes toutes seules.
+
+Maintenant Tomo a :
+3 paquets (il en a cassé un, il en reste 3).
+2 + 10 = 12 pommes toutes seules.
+
+Il a toujours 42 pommes ! Il n'a rien perdu. Il a juste ouvert un paquet.
+
+
+MAINTENANT ÇA MARCHE
+
+La colonne des restes a maintenant 12. On peut enlever 5.
+
+12 − 5 = 7.
+
+La colonne des paquets a maintenant 3 (on en a cassé un). On enlève 1 :
+
+3 − 1 = 2.
+
+Résultat : 2 paquets et 7 restes. 27.
+
+42 − 15 = 27.
+
+
+C'EST ÇA, L'EMPRUNT
+
+À l'école, on dit qu'on « emprunte » ou qu'on « retient » sur la colonne d'à côté.
+
+En vrai, on casse un paquet de 10 pour avoir assez de restes.
+
+Ce n'est pas une règle magique. C'est Tomo qui ouvre une boîte de pommes parce qu'il n'en a pas assez de détachées.
+
+La retenue (niveau 9) : une colonne déborde, un paquet monte.
+L'emprunt (niveau 10) : une colonne manque, un paquet descend et se casse.
+
+C'est le même déménagement de paquet, dans les deux sens. Monter, descendre. Rien de plus.
+
+
+LE SOUVENIR DU CHAPITRE 1
+
+Tu as déjà vu ça, exactement.
+
+Chapitre 1, niveau 9 : Ilo avait 1000 moutons et devait en enlever 1. Il n'avait qu'un seul caillou rouge. Il l'a cassé en 10 noirs, puis un noir en 10 blancs, puis un blanc en 10 petits.
+
+C'était déjà l'emprunt. Casser un gros caillou pour avoir de la monnaie.
+
+Tu ne découvres rien de nouveau aujourd'hui. Tu retrouves une vieille connaissance.
+
+
+TU AS FINI LE CHAPITRE 2
+
+Regarde le chemin.
+
+Tu es parti de deux tas de pommes qu'on pousse ensemble. Une addition.
+
+Tu as appris à ne pas tout recompter, à mettre les nombres dans l'ordre qui t'arrange, à connaître les amis du 10.
+
+Tu as découvert que la soustraction a deux visages : enlever, et mesurer l'écart. Et que Tomo rend la monnaie en montant, pas en reculant.
+
+Et tu as compris la retenue et l'emprunt : un paquet de 10 qui monte, un paquet de 10 qui se casse.
+
+Tout ça reposait sur une seule idée, celle du chapitre 1 : les nombres sont des paquets de 10 et des restes.
+
+Une idée. Encore une fois. C'est toujours pareil, en maths : une bonne idée ouvre cent portes.
+
+
+À TOI DE JOUER
+
+Soustrais. Regarde d'abord la colonne des restes : si le chiffre du haut est trop petit, il faut casser un paquet.
+
+  53 − 27
+  41 − 16
+  62 − 38
+  30 − 12
+
+Réponses : 26, 25, 24, 18.
+
+Vérifions 30 − 12. Restes : 0 − 2, impossible. Je casse un paquet : 0 devient 10, et les 3 paquets deviennent 2. Restes : 10 − 2 = 8. Paquets : 2 − 1 = 1. Résultat : 18.
+
+Ce calcul était un piège : il fallait casser un paquet alors que la colonne des restes était à zéro. Si tu l'as réussi, tu as vraiment compris l'emprunt. Bravo — le chapitre 2 est à toi.

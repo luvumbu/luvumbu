@@ -1,0 +1,102 @@
+TITRE : Chapitre 1 · Niveau 7 — Le trou : à quoi sert le zéro
+---
+Ce niveau raconte l'invention la plus difficile de toute l'histoire des maths.
+
+Pas la plus compliquée. La plus difficile à avoir. Elle a mis des milliers d'années à venir, alors qu'elle a l'air de rien.
+
+Tu vas voir pourquoi.
+
+
+LE JOUR OÙ ILO NE PEUT PLUS ÉCRIRE
+
+Ilo pose son sac sur la planche.
+
+Colonne des centaines : 2 cailloux noirs.
+Colonne des dizaines : rien du tout. Aucun caillou.
+Colonne des unités : 7 petits cailloux.
+
+Ilo doit écrire ce nombre pour Nara. Il écrit ce qu'il voit : un 2, puis un espace, puis un 7.
+
+2 7
+
+Il envoie le message.
+
+
+NARA NE COMPREND RIEN
+
+Nara reçoit la planche. Elle lit « 2 7 ».
+
+Elle réfléchit. Et elle se rend compte qu'elle ne peut pas savoir ce qu'Ilo a voulu dire.
+
+Est-ce que ça veut dire 2 dizaines et 7 unités ? Ça ferait 27 moutons.
+Ou 2 centaines et 7 unités ? Ça ferait 207 moutons.
+
+27 ou 207 ? La différence est énorme. C'est presque dix fois plus !
+
+Nara ne peut pas deviner. Le message est inutilisable.
+
+Le problème, c'est le trou. La colonne vide. Rien ne dit à Nara où est ce trou, ni même s'il existe.
+
+
+L'IDÉE QUI CHANGE TOUT
+
+Il a fallu que quelqu'un ait une idée très étrange.
+
+Cette idée, c'est : inventer un signe pour dire qu'il n'y a rien.
+
+Prends deux secondes pour voir à quel point c'est bizarre. Personne n'a envie d'inventer un dessin pour ce qui n'existe pas. Pourquoi dessiner du vide ?
+
+Et pourtant, c'est exactement ce qu'il fallait faire.
+
+On a inventé le zéro : 0.
+
+Ilo écrit maintenant : 207.
+
+Le 0 est au milieu, dans la colonne des dizaines. Il dit à Nara : « ici, il n'y a aucun caillou — mais cette colonne existe, et elle a sa place. »
+
+Grâce au 0, le 2 est bien obligé de rester dans la colonne des centaines. Le message est clair. 207 moutons.
+
+
+LE ZÉRO NE VEUT PAS DIRE « RIEN »
+
+C'est le point le plus important du niveau, et beaucoup d'adultes ne savent pas l'expliquer.
+
+Le zéro ne veut pas dire « rien ». S'il voulait dire « rien », on ne l'écrirait pas. On n'écrit pas ce qui n'existe pas.
+
+Le zéro veut dire : « cette colonne est vide, mais elle est là, et les colonnes à côté sont à leur bonne place. »
+
+C'est un gardien de place. Il tient la place vide pour que les autres chiffres ne glissent pas.
+
+Regarde ce qui arrive si on enlève le gardien :
+
+207 sans le 0 devient 27. Le 2 a glissé d'une colonne. Il ne vaut plus 200, il ne vaut plus que 20.
+
+Le zéro n'ajoute rien du tout au nombre. Et pourtant, sans lui, tout s'effondre.
+
+
+DES ZÉROS PARTOUT
+
+340 : le 0 dit qu'il n'y a aucune unité. 3 centaines, 4 dizaines, 0 unité.
+500 : aucune dizaine, aucune unité. Deux gardiens qui tiennent le 5 dans sa colonne.
+408 : aucune dizaine. Mais 4 centaines et 8 unités.
+
+Chaque fois, le 0 ne dit qu'une chose : « colonne vide, mais elle compte ».
+
+
+À TOI DE JOUER
+
+Ilo écrit ces sacs. Trouve le nombre.
+
+Sac 1 : 3 cailloux noirs, 0 caillou blanc, 5 petits cailloux.
+Sac 2 : 6 cailloux noirs, 2 cailloux blancs, 0 petit caillou.
+Sac 3 : 1 caillou noir, 0 caillou blanc, 0 petit caillou.
+
+Réponses : 305, 620, 100.
+
+Maintenant la vraie question, celle qui compte.
+
+Dans le nombre 305, si on efface le 0, qu'est-ce qui se passe ?
+
+Tu obtiens 35. Le 3 a glissé de deux colonnes vers la droite. Ilo passe de 305 moutons à 35 moutons.
+
+Il vient de perdre 270 moutons. À cause d'un signe qui ne veut rien dire. Tu comprends pourquoi le zéro est une invention géniale ?

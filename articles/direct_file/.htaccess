@@ -1,0 +1,14 @@
+# Routage : toutes les requêtes passent par le front controller (index.php),
+# sauf les fichiers réellement présents (assets, etc.).
+RewriteEngine On
+
+# Bloque l'accès direct aux dossiers internes (code source, config, données).
+RewriteRule ^(app|config|database|storage)/ - [F,L]
+
+# Sert directement les fichiers et dossiers existants.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Tout le reste → index.php
+RewriteRule ^ index.php [QSA,L]

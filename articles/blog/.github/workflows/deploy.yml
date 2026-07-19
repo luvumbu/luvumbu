@@ -1,0 +1,60 @@
+name: Deploy to Hostinger via FTP
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    name: Sync files to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1) Deploy main blog to subdomain folder /public_html/blog/
+      - name: FTP Deploy blog (subdomain blog.mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: /public_html/blog/
+          local-dir: ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/node_modules/**
+            config/config.php
+            uploads/**
+            APK/**
+            *.apk
+            *.aab
+            *.keystore
+            signing-key-info.txt
+            _diagnostic.php
+            _fix_db.php
+            mobile-app/generate-icons.ps1
+            generate-site-icons.ps1
+            empty-root/**
+            **/.htaccess.local
+            README.md
+            .gitignore
+
+      # 2) Deploy a blank index.html to /public_html/ root
+      - name: FTP Deploy blank root page (mariondelval.com)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: /public_html/
+          local-dir: ./empty-root/
+          dangerous-clean-slate: false
