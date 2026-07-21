@@ -157,7 +157,7 @@ return [
     'source'   => 'scan',
     'scan_dir' => '.',                                     // racine du portfolio (portefolio/)
     // dossiers ignorés (infra du portfolio + moteur + libs) — le reste = projets
-    'exclude'  => ['luvumbu', 'config', 'css', 'js', 'inc', 'images', 'vendor', 'node_modules'],
+    'exclude'  => ['luvumbu', 'config', 'css', 'js', 'inc', 'images', 'vendor', 'node_modules', '_gestion'],
 
     // Habillage par sous-projet détecté (icône / nom / image facultatifs).
     // Si un dossier n'est pas listé ici → nom = dossier, description reprise

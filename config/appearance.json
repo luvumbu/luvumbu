@@ -1,8 +1,11 @@
 {
-    "accent": "#fbbf24",
-    "accent_dim": "#f59e0b",
-    "dark": true,
-    "particules": true,
+    "accent": "#5b8cff",
+    "accent_dim": "#3a6bff",
+    "dark": false,
+    "particules": false,
     "carte_mode": "default",
-    "carte_biome": ""
+    "carte_biome": "",
+    "world_size": 6,
+    "world_names": [],
+    "carte_apparence": ""
 }

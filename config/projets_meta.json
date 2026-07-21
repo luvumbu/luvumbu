@@ -1,0 +1,82 @@
+{
+    "anniversaire": {
+        "icon": "🎬",
+        "nom": "Anniversaire",
+        "desc": "Application de comptes à rebours d'anniversaires (PWA installable sur Android/iOS). Espaces personnels protégés par mot de passe ou compte Google, partage d'espaces entre utilisateurs (voir + modifier), thème personnalisable et assistant d'installation autonome. Sécurité durcie (cookies HttpOnly/Secure, anti-XSS).",
+        "img": "images/projets/anniversaire.webp?v=1784546730",
+        "details": "## Présentation\nApplication de **comptes à rebours d'anniversaires** avec espaces personnels protégés, partage entre utilisateurs et installation sur mobile (PWA).\n\n## Fonctionnement\n- On se connecte par **nom + mot de passe** OU par **compte Google**.\n- Chaque espace peut être **partagé** avec d'autres utilisateurs (voir + modifier).\n- L'app est une **PWA installable** (Android / iOS) et fonctionne hors ligne.\n- Si la base est injoignable, un **assistant d'installation** guide l'admin pour saisir les identifiants MySQL puis crée les tables.\n\n## Fonctionnalités\n- Double authentification (mot de passe ou Google).\n- Partage d'espaces, invitations.\n- Personnalisation par espace (thème clair/sombre, couleurs, police).\n- Sécurité durcie : cookies HttpOnly/SameSite/Secure, anti-XSS.\n\n## Technologies\nPHP · MySQL · JavaScript · OAuth Google · PWA (manifest, service worker)."
+    },
+    "articles": {
+        "nom": "ARTICLES",
+        "desc": "Plateforme éditoriale et moteur de blog : rédaction d'articles, API et export du contenu en JSON, application mobile associée (APK). Contient des contenus pédagogiques dédiés — un programme d'entraînement 400 m haies structuré en blocs et des \"maths concrets\".",
+        "img": "images/projets/articles.webp?v=1784546730",
+        "details": "## Présentation\nEspace éditorial et **plateforme de blog** (« Marion Delval ») avec contenus pédagogiques et sportifs.\n\n## Fonctionnement\n- Un **moteur de blog** gère la rédaction d'articles, avec une **API** et un **export JSON** du contenu.\n- Une **application mobile** (APK) accompagne le blog.\n\n## Fonctionnalités\n- Rédaction d'articles, API, export JSON.\n- Contenus dédiés : programme d'entraînement **400 m haies** (structuré en blocs) et **« maths concrets »**.\n- Outils de maintenance (diagnostic, réparation de base, génération d'icônes).\n\n## Technologies\nHTML/CSS/JS · PHP · JSON · application Android."
+    },
+    "bokonzi": {
+        "icon": "🏟️",
+        "nom": "BOKONZI",
+        "desc": "Plateforme de données sur l'athlétisme, conçue et déployée de A à Z. Une seule API REST (20+ endpoints JSON, cache, CORS) alimente un site web public, une application mobile Android (Capacitor) et un espace professionnel B2B. Recherche multi-critères, fiches auto-générées, data-visualisation et paiement en ligne.",
+        "details": "## Présentation\nBOKONZI est une **plateforme de données sur l'athlétisme**, conçue, développée et déployée de A à Z. Une seule source de données (une API) alimente plusieurs surfaces : un site web public, une application mobile et un espace professionnel.\n\n## Fonctionnement\n- Un **moteur de données central** (API REST, 20+ endpoints JSON) sert toutes les interfaces.\n- La même API est branchée sur le **site web**, l'**application mobile Android** (Capacitor) et l'**espace pro** : une source, plusieurs surfaces.\n- Un **cache fichier de 24 h** et le **CORS** permettent des réponses rapides et des intégrations externes.\n\n## Fonctionnalités\n- Recherche **multi-critères** d'athlètes et **fiches auto-générées**.\n- **Data-visualisation** : statistiques et indicateurs croisés.\n- **Paiement en ligne** pour les services premium.\n- **Espace Pro (B2B)** : tableau de bord, effectifs, indicateurs, export CSV.\n\n## Technologies\nPHP · MySQL · JavaScript · API REST (JSON) · Capacitor (Android) · intégration de paiement."
+    },
+    "Cours_complet_canvas": {
+        "icon": "🎨",
+        "nom": "Cours HTML5 Canvas",
+        "desc": "Support de cours interactif qui enseigne l'API Canvas de HTML5, étape par étape : progression du plus simple au plus avancé avec démonstrations de dessin 2D en direct.",
+        "details": "## Présentation\nSupport de cours **interactif** qui enseigne l'**API Canvas de HTML5**, étape par étape.\n\n## Fonctionnement\n- Progression pédagogique du plus simple au plus avancé.\n- Démonstrations et exemples de **dessin 2D** en direct dans le navigateur.\n\n## Technologies\nHTML5 Canvas · JavaScript · CSS."
+    },
+    "cv_luvumbu": {
+        "icon": "📄",
+        "nom": "CV Luvumbu",
+        "desc": "Application PHP/MySQL pour créer, mettre en forme, partager et suivre des CV : éditeur visuel (WYSIWYG), plusieurs modèles, rendu imprimable/PDF, liens de partage publics avec QR code, connexion Google (OAuth) et suivi de candidatures.",
+        "details": "## Présentation\nApplication web pour **créer, mettre en forme, partager et suivre des CV**, avec suivi des candidatures associées.\n\n## Fonctionnement\n- Un **éditeur visuel (WYSIWYG)** permet de composer son CV sans code.\n- Plusieurs **modèles** sont disponibles ; le rendu est **imprimable / exportable en PDF**.\n- Chaque CV peut être **partagé publiquement** via un lien et un **QR code**.\n- La connexion se fait par mot de passe ou **compte Google (OAuth 2.0)**.\n\n## Fonctionnalités\n- Éditeur WYSIWYG, modèles multiples, export PDF.\n- Liens de partage publics + QR code.\n- Suivi des candidatures.\n- Connexion Google configurable depuis l'admin ; secrets stockés hors du dépôt Git.\n\n## Technologies\nPHP · MySQL · JavaScript · OAuth Google · génération PDF · QR codes."
+    },
+    "dropbox": {
+        "icon": "📸",
+        "nom": "PhotoSync",
+        "desc": "PhotoSync : une app Android qui envoie les médias en arrière-plan et un serveur PHP qui les reçoit, les range et les sert (HTTP / JSON + multipart). Chaque utilisateur a son compte et ne voit que ses propres photos.",
+        "details": "## Présentation\n**PhotoSync** sauvegarde automatiquement les médias d'un téléphone vers un serveur personnel. L'application mobile **et** le serveur ont été développés de bout en bout.\n\n## Fonctionnement\n- L'app Android **envoie les photos/vidéos en arrière-plan** vers le serveur.\n- Le serveur PHP **reçoit, range et sert** les médias (HTTP, JSON + multipart).\n- Chaque utilisateur a son **compte** et ne voit **que ses propres photos** (cloisonnement).\n\n## Fonctionnalités\n- Envoi automatique en arrière-plan depuis Android.\n- Gestion multi-utilisateurs cloisonnée.\n- Transfert de fichiers volumineux (multipart).\n\n## Technologies\nAndroid · PHP · HTTP (JSON + multipart) · comptes utilisateurs."
+    },
+    "DualCam": {
+        "icon": "📷",
+        "nom": "DualCam",
+        "desc": "Service de capture et partage de photos à backend totalement indépendant (base, stockage et code dédiés). Comptes utilisateurs avec connexion Google, envoi, flux, partage et suppression de photos, et assistant d'installation web qui crée tout automatiquement (tables préfixées, dossier d'upload).",
+        "details": "## Présentation\nService de **capture et partage de photos** doté d'un **backend totalement autonome** : sa propre base de données, son propre stockage et son propre code (rien de partagé avec les autres apps).\n\n## Fonctionnement\n- Un **assistant d'installation web** (install.php) écrit la configuration, crée les tables (préfixe `dualcam_`) et le dossier d'upload automatiquement.\n- Les utilisateurs s'inscrivent / se connectent (dont **connexion Google**), envoient et partagent des photos.\n- Le code est organisé en librairie : `Api`, `Auth`, `Db`, `Photos`.\n\n## Fonctionnalités\n- Comptes utilisateurs + connexion Google.\n- Envoi, flux (feed), partage et suppression de photos.\n- Installation guidée, service isolé et réutilisable.\n\n## Technologies\nPHP · MySQL · API · OAuth Google · installateur web."
+    },
+    "ELECTRONIQUE": {
+        "icon": "🎵",
+        "nom": "Arduino Nano — Lecteur MP3",
+        "desc": "Projet maker : un lecteur MP3 piloté par un Arduino Nano via un module DFPlayer Mini (lecture de MP3 sur carte micro-SD, liaison série D10/D11). Page de documentation avec schéma de câblage et code Arduino (.ino) commenté.",
+        "details": "## Présentation\nProjet **maker** : un **lecteur MP3** piloté par un **Arduino Nano**.\n\n## Fonctionnement\n- Un module **DFPlayer Mini** lit des fichiers MP3 sur carte micro-SD.\n- L'Arduino le pilote par **liaison série** (broches D10/D11).\n- Une page documente le **schéma de câblage** et le **code Arduino (.ino)** commenté.\n\n## Technologies\nArduino (C/C++) · DFPlayer Mini · électronique embarquée · page HTML de documentation."
+    },
+    "rpn": {
+        "icon": "🌐",
+        "nom": "RPN",
+        "desc": "Plateforme communautaire (architecture MVC) pour membres : articles et quiz, connexion Google, espace administrateur complet, sécurité anti-bruteforce et thèmes personnalisables. Ouverte aux services tiers via une API JSON authentifiée par clé (création d'articles et de quiz à distance).",
+        "details": "## Présentation\n**Plateforme communautaire** pour membres (articles, quiz), avec espace d'administration complet et ouverture aux services tiers via une API.\n\n## Fonctionnement\n- Architecture **MVC** (séparation claire des responsabilités).\n- Les membres se connectent via **Google (OAuth)**.\n- Une **API JSON authentifiée par clé** permet de créer des articles et des quiz à distance, avec sa documentation.\n\n## Fonctionnalités\n- Espace administrateur complet.\n- Sécurité **anti-bruteforce**, thèmes personnalisables.\n- API JSON par clé (articles & quiz).\n\n## Technologies\nPHP · MySQL · JavaScript · architecture MVC · OAuth Google · API JSON par clé."
+    },
+    "softwaire_programes": {
+        "icon": "🗂️",
+        "nom": "Mes programmes",
+        "desc": "Portail cliquable qui regroupe et présente des programmes et projets, facilement extensible : il suffit d'ajouter une ligne de configuration pour référencer un nouveau dossier.",
+        "details": "## Présentation\n**Portail cliquable** qui regroupe et présente des programmes et projets, facilement extensible.\n\n## Fonctionnement\n- Il suffit d'**ajouter une ligne de configuration** pour référencer un nouveau dossier/programme.\n\n## Technologies\nPHP · HTML/CSS."
+    },
+    "tamagotchi": {
+        "icon": "🥚",
+        "nom": "Tamagotchi",
+        "desc": "Jeu de créature virtuelle et démonstration d'architecture back-end propre : API REST en couches (Core, Models, Repositories, Services, Controllers), noyau PHP fait maison (autoloader, routeur, PDO), migrations et données de départ versionnées, gameplay paramétrable, décliné en application Android.",
+        "details": "## Présentation\nJeu de **créature virtuelle**, doublé d'une **démonstration d'architecture back-end propre**.\n\n## Fonctionnement\n- **API REST en couches** : Core, Models, Repositories, Services, Controllers.\n- Noyau PHP « fait maison » : autoloader, routeur, connexion PDO, réponses JSON normalisées.\n- Seul le dossier `public/` est exposé au navigateur (bonne pratique de sécurité).\n- L'**équilibrage du gameplay** (faim, santé, énergie…) est externalisé en configuration.\n\n## Fonctionnalités\n- Migrations et données de départ (seed) versionnées.\n- Décliné en **application Android** (APK).\n- Base technique documentée et extensible.\n\n## Technologies\nPHP (API REST) · JavaScript · MySQL · Android · PDO · routeur maison."
+    },
+    "zt": {
+        "icon": "🚀",
+        "nom": "ztransfert",
+        "desc": "Service d'envoi de fichiers volumineux (type WeTransfer) : on dépose un fichier, on reçoit un lien de téléchargement par e-mail. Jusqu'à plusieurs Go sans inscription, avec espace d'administration des envois et gestion du cycle de vie des fichiers.",
+        "details": "## Présentation\nService d'**envoi de fichiers volumineux** (type WeTransfer) : on dépose un fichier, on reçoit un **lien de téléchargement par e-mail**. Jusqu'à plusieurs Go, sans inscription.\n\n## Fonctionnement\n- Upload de gros fichiers depuis le navigateur.\n- Génération d'un **lien de téléchargement** et **notification par e-mail**.\n- Un espace d'administration suit les envois.\n\n## Fonctionnalités\n- Envoi sans inscription, gros volumes.\n- Liens par e-mail, gestion du cycle de vie des fichiers.\n- Espace admin des envois.\n\n## Technologies\nPHP · JavaScript · MySQL · envoi d'e-mails · gestion de fichiers."
+    },
+    "ztransfert": {
+        "icon": "🚀",
+        "nom": "ztransfert",
+        "desc": "Service d'envoi de fichiers volumineux (type WeTransfer) : on dépose un fichier, on reçoit un lien de téléchargement par e-mail. Jusqu'à plusieurs Go sans inscription, avec espace d'administration des envois et gestion du cycle de vie des fichiers.",
+        "details": "## Présentation\nService d'**envoi de fichiers volumineux** (type WeTransfer) : on dépose un fichier, on reçoit un **lien de téléchargement par e-mail**. Jusqu'à plusieurs Go, sans inscription.\n\n## Fonctionnement\n- Upload de gros fichiers depuis le navigateur.\n- Génération d'un **lien de téléchargement** et **notification par e-mail**.\n- Un espace d'administration suit les envois.\n\n## Fonctionnalités\n- Envoi sans inscription, gros volumes.\n- Liens par e-mail, gestion du cycle de vie des fichiers.\n- Espace admin des envois.\n\n## Technologies\nPHP · JavaScript · MySQL · envoi d'e-mails · gestion de fichiers."
+    },
+    "objectifs": null
+}

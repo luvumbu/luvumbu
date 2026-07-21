@@ -1,3 +1,11 @@
 
 ztransfert/ztransfert/uploads/1757930089091.mkv
 cv_luvumbu/includes/google_secrets.local.php
+
+# Gestionnaire de fichiers : secret et verrou (jamais versionnes)
+_gestion/password.local.php
+_gestion/.lockout.json
+_gestion/apikey.local.php
+
+# SSO Luvumbu ID : secret partagé (jamais versionné)
+sso/secret.local.php

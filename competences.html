@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luvumbu — Développeur Full-Stack · Compétences & Projets</title>
+<meta name="description" content="Fiche de compétences et portfolio de Luvumbu, développeur full-stack : PHP, JavaScript, MySQL, API REST, mobile, sécurité et déploiement.">
+<style>
+  :root{
+    --bg:#0a0f1c; --bg2:#0e1526; --panel:#131c31; --panel2:#182444; --line:#26324f;
+    --text:#eaf0ff; --muted:#98a7c8; --dim:#6f80a4;
+    --accent:#5b8cff; --accent2:#22d3ee; --gold:#ffcf5b; --green:#34d399;
+    --shadow:0 20px 55px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);line-height:1.55;
+    background:
+      radial-gradient(1100px 520px at 82% -8%,rgba(91,140,255,.22),transparent 60%),
+      radial-gradient(900px 500px at 5% 0%,rgba(34,211,238,.14),transparent 55%),
+      var(--bg);}
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* ── En-tête ── */
+  header.hero{padding:60px 0 34px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent2);border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px;background:rgba(34,211,238,.06)}
+  .kicker b{color:var(--green);font-weight:700}
+  h1{font-size:clamp(2.1rem,5.4vw,3.4rem);margin:16px 0 6px;line-height:1.05;letter-spacing:-.02em}
+  h1 .g{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .role{font-size:clamp(1.05rem,2.4vw,1.35rem);color:var(--text);font-weight:600;margin:0}
+  .role small{color:var(--muted);font-weight:500}
+  .pitch{max-width:70ch;color:var(--muted);margin:16px 0 0;font-size:1.02rem}
+
+  .cta{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 4px}
+  .btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:600;
+    font-size:.95rem;padding:11px 17px;border-radius:11px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);transition:.18s}
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),#4f7bff);border-color:transparent;color:#fff;
+    box-shadow:0 10px 26px rgba(91,140,255,.35)}
+  .btn.gold{background:linear-gradient(90deg,#f6b73c,var(--gold));border-color:transparent;color:#2a1e00}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:34px 0 0}
+  .stat{background:linear-gradient(180deg,var(--panel),rgba(19,28,49,.5));border:1px solid var(--line);
+    border-radius:14px;padding:16px 16px}
+  .stat b{display:block;font-size:1.5rem;color:#fff;line-height:1;letter-spacing:-.01em}
+  .stat span{color:var(--muted);font-size:.85rem;display:block;margin-top:7px}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ── Sections ── */
+  section{padding:40px 0}
+  .head{display:flex;align-items:baseline;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+  .head h2{font-size:clamp(1.4rem,3.4vw,1.9rem);margin:0;letter-spacing:-.01em}
+  .head .n{color:var(--accent2);font-variant-numeric:tabular-nums;font-weight:700}
+  .head p{color:var(--muted);margin:0;font-size:.95rem}
+
+  /* Compétences */
+  .skills{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:760px){.skills{grid-template-columns:1fr}}
+  .skill{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px}
+  .skill h3{margin:0 0 12px;font-size:1.02rem;display:flex;align-items:center;gap:10px}
+  .skill h3 .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:1.05rem;
+    background:radial-gradient(circle at 30% 25%,rgba(91,140,255,.35),rgba(34,211,238,.12));border:1px solid var(--line)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-size:.82rem;color:var(--text);background:var(--panel2);border:1px solid var(--line);
+    padding:5px 10px;border-radius:8px;white-space:nowrap}
+
+  /* Filtres */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
+  .filters button{font:inherit;cursor:pointer;font-size:.9rem;font-weight:600;padding:8px 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.16s}
+  .filters button:hover{border-color:var(--accent);color:var(--text)}
+  .filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* Projets */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--panel),rgba(19,28,49,.55));border:1px solid var(--line);
+    border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;transition:.18s;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+  .card.flag{grid-column:1 / -1;border-color:rgba(255,207,91,.4);
+    background:linear-gradient(120deg,rgba(255,207,91,.08),var(--panel) 45%)}
+  .card.flag::after{content:"★ Réalisation phare";position:absolute;top:14px;right:-34px;transform:rotate(38deg);
+    background:linear-gradient(90deg,#f6b73c,var(--gold));color:#2a1e00;font-size:.7rem;font-weight:800;
+    letter-spacing:.04em;padding:5px 44px}
+  .c-top{display:flex;align-items:center;gap:14px}
+  .avatar{width:52px;height:52px;flex:0 0 52px;border-radius:14px;display:grid;place-items:center;font-size:1.7rem;
+    background:radial-gradient(circle at 30% 25%,rgba(91,140,255,.4),rgba(34,211,238,.15));border:1px solid var(--line)}
+  .card.flag .avatar{background:radial-gradient(circle at 30% 25%,rgba(255,207,91,.45),rgba(246,183,60,.15))}
+  .c-top h3{margin:0;font-size:1.16rem;letter-spacing:-.01em}
+  .c-top .sub{color:var(--muted);font-size:.85rem;margin-top:2px}
+  .context{color:var(--text);opacity:.92;margin:0;font-size:.95rem}
+  .role-l{font-size:.85rem;color:var(--dim)}
+  .role-l b{color:var(--muted);font-weight:600}
+  .skills-l{margin:2px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .skills-l li{position:relative;padding-left:20px;font-size:.9rem;color:var(--muted)}
+  .skills-l li::before{content:"";position:absolute;left:3px;top:.55em;width:7px;height:7px;border-radius:50%;
+    background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .result{font-size:.9rem;color:var(--green);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.22);
+    border-radius:10px;padding:9px 12px;margin-top:auto}
+  .result b{color:var(--green)}
+  .c-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .link{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-weight:700;font-size:.9rem;
+    color:#2a1200;background:linear-gradient(90deg,#ff7a00,#ff9d2f);border:1px solid transparent;
+    padding:8px 14px;border-radius:10px;box-shadow:0 6px 20px rgba(255,122,0,.5);transition:.16s}
+  .link:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(255,122,0,.65);
+    background:linear-gradient(90deg,#ff8c1a,#ffae4d)}
+  .badges{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{font-size:.72rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent2);
+    border:1px solid var(--line);border-radius:7px;padding:3px 8px;background:rgba(34,211,238,.05)}
+
+  /* Pied de page */
+  footer{border-top:1px solid var(--line);margin-top:20px;padding:34px 0 60px;text-align:center}
+  footer .oneline{max-width:60ch;margin:0 auto 18px;color:var(--muted)}
+  footer .oneline b{color:var(--text)}
+  .print-note{color:var(--dim);font-size:.82rem;margin-top:18px}
+
+  /* ── Impression / PDF ── */
+  @media print{
+    :root{--text:#101828;--muted:#3d4a63;--dim:#64748b;--line:#d7deea}
+    body{background:#fff;color:#101828}
+    .cta,.filters,.print-note,.card.flag::after{display:none!important}
+    .card,.skill,.stat{break-inside:avoid;box-shadow:none;background:#fff;border-color:#d7deea}
+    .card:hover{transform:none;box-shadow:none}
+    header.hero{padding:10px 0 6px}
+    h1 .g{color:#1d4ed8;-webkit-text-fill-color:#1d4ed8}
+    section{padding:16px 0}
+    .grid,.skills{gap:12px}
+    a[href^="http"]::after{content:" (" attr(href) ")";font-size:.7em;color:#64748b}
+    .chip,.badge{background:#f1f5f9;color:#334155}
+    .result{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <span class="kicker">Fiche de compétences · <b>Disponible</b></span>
+  <h1>Luvumbu — <span class="g">Développeur Full-Stack</span></h1>
+  <p class="role">PHP · JavaScript · MySQL — de l&#039;idée à la production</p>
+  <p class="pitch">Je conçois, développe et déploie des produits web &amp; mobiles de bout en bout : interfaces, API REST, bases de données, authentification, sécurité et mise en ligne. Mon écosystème BOKONZI, en production, réunit un site, une application mobile, un espace professionnel et une API publique alimentés par une seule source de données.</p>
+
+  <div class="cta">
+    <a class="btn primary" href="https://bokonzi.com" target="_blank" rel="noopener">🏟️ Voir BOKONZI</a>
+    <a class="btn" href="https://luvumbu.com" target="_blank" rel="noopener">🗺️ Portfolio</a>
+    <a class="btn" href="https://luvumbu.com/cv_luvumbu/" target="_blank" rel="noopener">📄 Mon CV</a>
+    <button class="btn gold" onclick="window.print()">🖨️ Imprimer / PDF</button>
+  </div>
+
+  <div class="stats">
+          <div class="stat"><b>12</b><span>projets réalisés</span></div>
+          <div class="stat"><b>5+</b><span>applications en production</span></div>
+          <div class="stat"><b>×4</b><span>projets avec OAuth Google</span></div>
+          <div class="stat"><b>Web · Mobile · API</b><span>du front au déploiement</span></div>
+      </div>
+</div></header>
+
+<section id="competences"><div class="wrap">
+  <div class="head">
+    <h2>Compétences</h2>
+    <p>Savoir-faire transversaux, démontrés par les projets ci-dessous.</p>
+  </div>
+  <div class="skills">
+          <div class="skill">
+        <h3><span class="ic">🧩</span>Langages &amp; technologies</h3>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">JavaScript</span><span class="chip">SQL / MySQL</span><span class="chip">HTML5 / CSS3</span><span class="chip">JSON</span><span class="chip">HTML5 Canvas</span><span class="chip">Arduino (C/C++)</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">⚙️</span>Back-end &amp; API</h3>
+        <div class="chips"><span class="chip">API REST (JSON · CORS · cache · clé)</span><span class="chip">Architecture MVC</span><span class="chip">Architecture en couches</span><span class="chip">PDO · migrations · seed</span><span class="chip">Autoloader &amp; routeur « maison »</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">📱</span>Front-end &amp; mobile</h3>
+        <div class="chips"><span class="chip">Interfaces web dynamiques</span><span class="chip">Éditeurs WYSIWYG</span><span class="chip">Android (natif + Capacitor)</span><span class="chip">PWA installable &amp; hors ligne</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">🔒</span>Authentification &amp; sécurité</h3>
+        <div class="chips"><span class="chip">OAuth 2.0 / « Google Sign-In »</span><span class="chip">Anti-bruteforce</span><span class="chip">Cookies durcis (HttpOnly/SameSite/Secure)</span><span class="chip">Prévention XSS</span><span class="chip">Uploads sécurisés (whitelist · realpath)</span><span class="chip">Secrets hors dépôt Git</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">🔌</span>Intégrations &amp; services</h3>
+        <div class="chips"><span class="chip">Paiement en ligne</span><span class="chip">E-mails transactionnels</span><span class="chip">Transfert de fichiers volumineux</span><span class="chip">Génération PDF</span><span class="chip">QR codes</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">🚀</span>DevOps &amp; déploiement</h3>
+        <div class="chips"><span class="chip">Mise en production (Hostinger)</span><span class="chip">Noms de domaine</span><span class="chip">Assistants d&#039;installation web</span><span class="chip">Environnements local / prod</span><span class="chip">Git · config · secrets séparés</span></div>
+      </div>
+          <div class="skill">
+        <h3><span class="ic">🎯</span>Méthode &amp; posture</h3>
+        <div class="chips"><span class="chip">Autonomie : idée → production</span><span class="chip">Composants réutilisables</span><span class="chip">Documentation (README · archi)</span><span class="chip">UX utilisateur ET admin non-technicien</span></div>
+      </div>
+      </div>
+</div></section>
+
+<section id="projets"><div class="wrap">
+  <div class="head">
+    <h2>Projets réalisés <span class="n">12</span></h2>
+    <p>Chaque projet : contexte, rôle, stack et compétences démontrées.</p>
+  </div>
+
+  <div class="filters" id="filters">
+          <button data-cat="Tous" class="on">Tous</button>
+          <button data-cat="Web">Web</button>
+          <button data-cat="Mobile">Mobile</button>
+          <button data-cat="API">API</button>
+          <button data-cat="PWA">PWA</button>
+          <button data-cat="Jeu">Jeu</button>
+          <button data-cat="Pédagogie">Pédagogie</button>
+          <button data-cat="Électronique">Électronique</button>
+      </div>
+
+  <div class="grid" id="grid">
+          <article class="card flag" data-cats="Web,Mobile,API">
+        <div class="c-top">
+          <div class="avatar">🏟️</div>
+          <div>
+            <h3>BOKONZI</h3>
+            <div class="sub">Plateforme data (athlétisme) · en production</div>
+          </div>
+        </div>
+        <p class="context">Écosystème complet de données sur l&#039;athlétisme : une seule API REST alimente un site web public, une application mobile Android et un espace professionnel B2B.</p>
+        <div class="role-l"><b>Rôle :</b> Conception, développement et déploiement de A à Z (produit + infrastructure).</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">MySQL</span><span class="chip">JavaScript</span><span class="chip">API REST</span><span class="chip">Capacitor</span><span class="chip">CORS</span><span class="chip">Paiement en ligne</span></div>
+        <ul class="skills-l"><li>API REST : 20+ endpoints JSON, cache 24 h, CORS</li><li>Architecture multi-surfaces (web · mobile · B2B) sur une source unique</li><li>Recherche multi-critères &amp; fiches auto-générées</li><li>Data-visualisation (indicateurs croisés)</li><li>Espace B2B : tableau de bord, effectifs, export CSV</li><li>Intégration d&#039;un paiement en ligne</li></ul>
+        <div class="result"><b>Résultat —</b> Site public, application mobile, espace pro et API publique interconnectés, en ligne.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">Mobile</span><span class="badge">API</span></div>
+                      <a class="link" href="https://bokonzi.com" target="_blank" rel="noopener">Voir en ligne · bokonzi.com ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web">
+        <div class="c-top">
+          <div class="avatar">🗺️</div>
+          <div>
+            <h3>Portfolio « Luvumbu Land »</h3>
+            <div class="sub">Site vitrine ludique + back-office</div>
+          </div>
+        </div>
+        <p class="context">Portfolio qui transforme les dossiers-projets en un « monde de jeu » rétro (façon Mario/Sonic), doublé d&#039;un back-office pour tout piloter sans toucher au code.</p>
+        <div class="role-l"><b>Rôle :</b> Conception, développement et administration.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">JavaScript</span><span class="chip">JSON</span><span class="chip">Upload d&#039;images</span><span class="chip">iframe / postMessage</span></div>
+        <ul class="skills-l"><li>Back-office : apparence du site + éditeur d&#039;habillage par projet</li><li>Configuration en cascade (défauts + surcharges JSON, fusion intelligente)</li><li>Upload d&#039;images sécurisé (whitelist, taille max, realpath)</li><li>Authentification admin multi-méthodes</li></ul>
+        <div class="result"><b>Résultat —</b> Portfolio en ligne, entièrement administrable via une interface dédiée.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span></div>
+                      <a class="link" href="https://luvumbu.com" target="_blank" rel="noopener">Voir en ligne · luvumbu.com ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,API">
+        <div class="c-top">
+          <div class="avatar">📄</div>
+          <div>
+            <h3>CV Luvumbu</h3>
+            <div class="sub">Création &amp; suivi de CV</div>
+          </div>
+        </div>
+        <p class="context">Application web pour créer, mettre en forme, partager et suivre des CV, avec suivi des candidatures.</p>
+        <div class="role-l"><b>Rôle :</b> Développement full-stack et déploiement.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">MySQL</span><span class="chip">JavaScript</span><span class="chip">OAuth Google</span><span class="chip">Génération PDF</span><span class="chip">QR codes</span></div>
+        <ul class="skills-l"><li>Éditeur visuel WYSIWYG &amp; modèles multiples</li><li>Rendu imprimable / export PDF</li><li>Partage public avec QR code</li><li>Connexion Google (OAuth 2.0) configurable depuis l&#039;admin</li><li>Secrets stockés hors du dépôt Git</li></ul>
+        <div class="result"><b>Résultat —</b> Application fonctionnelle, connexion Google opérationnelle en production.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">API</span></div>
+                      <a class="link" href="https://luvumbu.com/cv_luvumbu/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/cv_luvumbu ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="API,Mobile,Jeu">
+        <div class="c-top">
+          <div class="avatar">🥚</div>
+          <div>
+            <h3>Tamagotchi</h3>
+            <div class="sub">Jeu + démonstration d&#039;architecture</div>
+          </div>
+        </div>
+        <p class="context">Jeu de créature virtuelle servant de démonstration d&#039;une architecture back-end propre et évolutive.</p>
+        <div class="role-l"><b>Rôle :</b> Conception de l&#039;architecture et développement.</div>
+        <div class="chips"><span class="chip">PHP (API REST)</span><span class="chip">JavaScript</span><span class="chip">MySQL</span><span class="chip">Android</span><span class="chip">PDO</span><span class="chip">Routeur maison</span></div>
+        <ul class="skills-l"><li>Architecture en couches (Core / Models / Repositories / Services / Controllers)</li><li>Noyau PHP « maison » : autoloader, routeur, PDO, JSON normalisé</li><li>Seule la couche public/ exposée (bonne pratique de sécurité)</li><li>Migrations &amp; données de départ (seed) versionnées</li><li>Gameplay externalisé en configuration</li></ul>
+        <div class="result"><b>Résultat —</b> Base technique propre et documentée (docs/ARCHITECTURE.md), extensible.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">API</span><span class="badge">Mobile</span><span class="badge">Jeu</span></div>
+                      <a class="link" href="https://luvumbu.com/tamagotchi/public/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/tamagotchi ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,API">
+        <div class="c-top">
+          <div class="avatar">🌐</div>
+          <div>
+            <h3>RPN</h3>
+            <div class="sub">Plateforme communautaire (MVC)</div>
+          </div>
+        </div>
+        <p class="context">Plateforme communautaire pour membres (articles, quiz), avec espace d&#039;administration complet et ouverture aux services tiers via API.</p>
+        <div class="role-l"><b>Rôle :</b> Développement full-stack, architecture et sécurisation.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">MySQL</span><span class="chip">JavaScript</span><span class="chip">MVC</span><span class="chip">OAuth Google</span><span class="chip">API JSON par clé</span></div>
+        <ul class="skills-l"><li>Architecture MVC (responsabilités séparées, code maintenable)</li><li>Connexion Google pour les membres</li><li>Espace administrateur complet</li><li>API JSON authentifiée par clé (articles &amp; quiz à distance), documentée</li><li>Sécurité anti-bruteforce, thèmes personnalisables</li></ul>
+        <div class="result"><b>Résultat —</b> Plateforme en ligne, documentée, ouverte aux intégrations externes.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">API</span></div>
+                      <a class="link" href="https://bokonzi.com/rpn/" target="_blank" rel="noopener">Voir en ligne · bokonzi.com/rpn ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,PWA">
+        <div class="c-top">
+          <div class="avatar">🎬</div>
+          <div>
+            <h3>Anniversaire</h3>
+            <div class="sub">Compte à rebours partagé (PWA)</div>
+          </div>
+        </div>
+        <p class="context">Comptes à rebours d&#039;anniversaires avec espaces personnels protégés, partage entre utilisateurs et installation sur mobile.</p>
+        <div class="role-l"><b>Rôle :</b> Développement full-stack, sécurisation et packaging PWA.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">MySQL</span><span class="chip">JavaScript</span><span class="chip">OAuth Google</span><span class="chip">PWA</span><span class="chip">cURL</span></div>
+        <ul class="skills-l"><li>Double authentification : mot de passe OU compte Google</li><li>Partage d&#039;espaces (voir + modifier, invitations)</li><li>PWA installable Android/iOS, hors ligne</li><li>Assistant d&#039;installation forcé (saisie &amp; test des identifiants MySQL, création des tables)</li><li>Cookies durcis, anti-XSS, pas de fuite d&#039;erreurs DB</li></ul>
+        <div class="result"><b>Résultat —</b> Application déployée, partageable et installable, installation autonome pour non-technicien.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">PWA</span></div>
+                      <a class="link" href="https://luvumbu.com/anniversaire" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/anniversaire ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,API">
+        <div class="c-top">
+          <div class="avatar">📷</div>
+          <div>
+            <h3>DualCam</h3>
+            <div class="sub">Backend photo indépendant</div>
+          </div>
+        </div>
+        <p class="context">Service de capture/partage photo doté de son propre backend totalement autonome (base, stockage et code dédiés).</p>
+        <div class="role-l"><b>Rôle :</b> Conception du backend et de son installateur.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">MySQL</span><span class="chip">API</span><span class="chip">OAuth Google</span><span class="chip">Installateur web</span></div>
+        <ul class="skills-l"><li>Service isolé et réutilisable (base + uploads + code dédiés)</li><li>Assistant d&#039;installation web (config + tables + dossier d&#039;upload auto)</li><li>Préfixage des tables (dualcam_) pour cohabitation propre</li><li>Documentation de déploiement pour un tiers</li></ul>
+        <div class="result"><b>Résultat —</b> Backend déployable de façon indépendante, avec installation guidée.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">API</span></div>
+                      <a class="link" href="https://luvumbu.com/DualCam/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/DualCam ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Mobile,API">
+        <div class="c-top">
+          <div class="avatar">📸</div>
+          <div>
+            <h3>PhotoSync</h3>
+            <div class="sub">Synchro photos Android → serveur</div>
+          </div>
+        </div>
+        <p class="context">Sauvegarde automatique des médias d&#039;un téléphone vers un serveur personnel, chacun ne voyant que ses propres photos.</p>
+        <div class="role-l"><b>Rôle :</b> Développement de l&#039;application mobile ET du serveur (bout en bout).</div>
+        <div class="chips"><span class="chip">Android</span><span class="chip">PHP</span><span class="chip">HTTP (JSON + multipart)</span><span class="chip">Comptes utilisateurs</span></div>
+        <ul class="skills-l"><li>Client mobile Android avec envoi en arrière-plan</li><li>API serveur de réception, rangement et service de fichiers</li><li>Multi-utilisateurs avec cloisonnement des données</li><li>Transfert de fichiers volumineux (multipart)</li></ul>
+        <div class="result"><b>Résultat —</b> Chaîne complète mobile → serveur fonctionnelle, cloisonnée par compte.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Mobile</span><span class="badge">API</span></div>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web">
+        <div class="c-top">
+          <div class="avatar">🚀</div>
+          <div>
+            <h3>ztransfert</h3>
+            <div class="sub">Envoi de fichiers volumineux</div>
+          </div>
+        </div>
+        <p class="context">Service type WeTransfer : on dépose un fichier, on reçoit un lien de téléchargement par e-mail.</p>
+        <div class="role-l"><b>Rôle :</b> Développement full-stack.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">JavaScript</span><span class="chip">MySQL</span><span class="chip">Envoi d&#039;e-mails</span><span class="chip">Gestion de fichiers</span></div>
+        <ul class="skills-l"><li>Upload de gros fichiers côté navigateur</li><li>Génération de liens + notification par e-mail</li><li>Espace d&#039;administration des envois</li><li>Gestion du stockage et du cycle de vie des fichiers</li></ul>
+        <div class="result"><b>Résultat —</b> Service de transfert fonctionnel avec parcours d&#039;envoi complet.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span></div>
+                      <a class="link" href="https://luvumbu.com/zt/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/zt ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,Pédagogie">
+        <div class="c-top">
+          <div class="avatar">🎨</div>
+          <div>
+            <h3>Cours HTML5 Canvas</h3>
+            <div class="sub">Support de cours interactif</div>
+          </div>
+        </div>
+        <p class="context">Support de cours interactif qui enseigne l&#039;API Canvas de HTML5, étape par étape.</p>
+        <div class="role-l"><b>Rôle :</b> Conception pédagogique et développement.</div>
+        <div class="chips"><span class="chip">HTML5 Canvas</span><span class="chip">JavaScript</span><span class="chip">CSS</span></div>
+        <ul class="skills-l"><li>Vulgarisation technique &amp; pédagogie</li><li>Dessin 2D en direct dans le navigateur</li><li>Progression du simple à l&#039;avancé</li></ul>
+        <div class="result"><b>Résultat —</b> Cours interactif de dessin 2D, prêt à l&#039;emploi.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">Pédagogie</span></div>
+                      <a class="link" href="https://luvumbu.com/Cours_complet_canvas/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/…/canvas ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Électronique">
+        <div class="c-top">
+          <div class="avatar">🎵</div>
+          <div>
+            <h3>Arduino Nano — Lecteur MP3</h3>
+            <div class="sub">Projet maker / électronique</div>
+          </div>
+        </div>
+        <p class="context">Lecteur MP3 piloté par un Arduino Nano via un module DFPlayer Mini (micro-SD, liaison série).</p>
+        <div class="role-l"><b>Rôle :</b> Montage, code et documentation.</div>
+        <div class="chips"><span class="chip">Arduino (C/C++)</span><span class="chip">DFPlayer Mini</span><span class="chip">Électronique embarquée</span></div>
+        <ul class="skills-l"><li>Électronique embarquée</li><li>Liaison série (D10/D11)</li><li>Documentation de projet maker (schéma + code .ino commenté)</li></ul>
+        <div class="result"><b>Résultat —</b> Montage documenté et reproductible.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Électronique</span></div>
+                      <a class="link" href="https://luvumbu.com/ELECTRONIQUE/arduino-nano-musique.html" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/…/arduino ↗</a>
+                  </div>
+      </article>
+          <article class="card" data-cats="Web,Mobile,Pédagogie">
+        <div class="c-top">
+          <div class="avatar">✍️</div>
+          <div>
+            <h3>Articles / Blog</h3>
+            <div class="sub">Espace éditorial + app mobile</div>
+          </div>
+        </div>
+        <p class="context">Moteur de blog (rédaction d&#039;articles, API et export JSON) avec application mobile et contenus pédagogiques dédiés.</p>
+        <div class="role-l"><b>Rôle :</b> Développement full-stack.</div>
+        <div class="chips"><span class="chip">PHP</span><span class="chip">JavaScript</span><span class="chip">JSON</span><span class="chip">Android</span></div>
+        <ul class="skills-l"><li>Gestion de contenu (CMS léger)</li><li>API &amp; export du contenu en JSON</li><li>Application mobile associée</li><li>Rédaction et structuration de contenus pédagogiques</li></ul>
+        <div class="result"><b>Résultat —</b> Espace éditorial en ligne, ouvert par API, décliné en app.</div>
+        <div class="c-foot">
+          <div class="badges"><span class="badge">Web</span><span class="badge">Mobile</span><span class="badge">Pédagogie</span></div>
+                      <a class="link" href="https://luvumbu.com/articles/" target="_blank" rel="noopener">Voir en ligne · luvumbu.com/articles ↗</a>
+                  </div>
+      </article>
+      </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p class="oneline"><b>En une phrase :</b> développeur full-stack autonome, capable de porter un produit
+    de l'idée à la production — conception, développement web &amp; mobile, API, sécurité et déploiement —
+    comme le montre l'écosystème <b>BOKONZI</b>, en ligne et complet.</p>
+  <div class="cta" style="justify-content:center">
+    <a class="btn primary" href="https://luvumbu.com" target="_blank" rel="noopener">🗺️ Portfolio complet</a>
+  </div>
+  <p class="print-note">💡 Astuce : « Imprimer / PDF » génère une fiche propre à envoyer aux entreprises.</p>
+</div></footer>
+
+<script>
+  const filters = document.querySelector('#filters');
+  const cards = [...document.querySelectorAll('#grid .card')];
+  filters.addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    filters.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    const cat = b.dataset.cat;
+    cards.forEach(c => {
+      const show = cat === 'Tous' || c.dataset.cats.split(',').includes(cat);
+      c.style.display = show ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Protection du dossier de gestion.
+# Empêche l'accès direct aux fichiers internes (lib, secrets, verrou).
+# index.php et api.php restent accessibles.
+
+<FilesMatch "^(lib\.php|password\.local\.php|apikey\.local\.php|\.lockout\.json)$">
+    Require all denied
+</FilesMatch>
+
+# Interdit le listing du dossier
+Options -Indexes

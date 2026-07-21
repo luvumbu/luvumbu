@@ -33,42 +33,137 @@
     return pts;
   }
 
-  var pts = positions(projets.length);
+  /* ── Découpage en MONDES (façon Mario : WORLD 1, 2, 3…) ──
+     Paramétrable depuis l'admin : data-world-size (zones/monde) + data-world-names. */
+  var WORLD_SIZE = parseInt(map.getAttribute('data-world-size'), 10);
+  if (!(WORLD_SIZE >= 2)) WORLD_SIZE = (mobile ? 4 : 6);       // repli si non réglé
+  var worldNames = [];
+  try { worldNames = JSON.parse(map.getAttribute('data-world-names') || '[]'); } catch (e) { worldNames = []; }
+  var WT_COUNT = 6;                                     // nombre de biomes Mario (wt-0..wt-5)
+  var WORLD_DOT = ['#00a800', '#d07c1c', '#0078f8', '#a81000', '#3a3a8f', '#3c78c8']; // couleur d'onglet par biome
+  var worlds = [];
+  for (var wi = 0; wi < projets.length; wi += WORLD_SIZE) {
+    worlds.push(projets.slice(wi, wi + WORLD_SIZE));
+  }
+  var worldCount = worlds.length;
+  var curWorld = 0;
 
-  /* ── Chemin SVG reliant les nœuds ── */
   var svgNS = 'http://www.w3.org/2000/svg';
-  var svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('class', 'carte-path');
-  svg.setAttribute('viewBox', '0 0 100 100');
-  svg.setAttribute('preserveAspectRatio', 'none');
-  var d = 'M ' + pts.map(function (p) { return p.x + ' ' + p.y; }).join(' L ');
-  var path = document.createElementNS(svgNS, 'path');
-  path.setAttribute('class', 'path-line');
-  path.setAttribute('d', d);
-  path.setAttribute('vector-effect', 'non-scaling-stroke');
-  svg.appendChild(path);
-  map.appendChild(svg);
+  var worldLabel  = document.getElementById('worldLabel');
+  var worldCountEl = document.getElementById('worldCount');
+  var worldPrev = document.getElementById('worldPrev');
+  var worldNext = document.getElementById('worldNext');
+  var worldDots = document.getElementById('worldDots');
+  var worldBar  = document.getElementById('worldBar');
+  /* Apparence définie par l'ADMIN (data-appearance) :
+     '' → neutre (défaut) · 'auto' → un biome par monde · '0'..'5' → biome fixe. */
+  var APPEARANCE = (map.getAttribute('data-appearance') || '').trim();
 
-  /* ── Nœuds ── */
-  projets.forEach(function (p, idx) {
-    var locked = (p.etat === 'verrou');
-    var node = document.createElement('div');
-    node.className = 'carte-node' + (locked ? ' locked' : '');
-    node.style.left = pts[idx].x + '%';
-    node.style.top = pts[idx].y + '%';
-    node.style.animationDelay = (idx * 0.08) + 's';
-    var badgeInner = p.img
-      ? '<img class="node-img" src="' + escapeHtml(p.img) + '" alt="' + escapeHtml(p.nom || '') + '">'
-      : (p.icon || '★');
-    node.innerHTML =
-      (p.folder ? '<div class="node-folder">📁 ' + escapeHtml(p.folder) + '</div>' : '') +
-      '<div class="node-badge' + (p.img ? ' has-img' : '') + '"><span class="node-num">' + (idx + 1) + '</span>' + badgeInner + '</div>' +
-      '<div class="node-name">' + escapeHtml(p.nom || 'ZONE') + '</div>';
-    node.style.cursor = 'pointer';
-    node.title = locked ? 'Zone privée' : ('Entrer : ' + (p.nom || ''));
-    node.addEventListener('click', function () { enterProject(p, locked, idx); });
-    map.appendChild(node);
-  });
+  /* Rendu du monde courant : (re)construit le chemin + les nœuds. */
+  function renderWorld() {
+    map.innerHTML = '';
+    applyTheme();                                       // apparence : choisie à la main, sinon biome du monde
+    var group = worlds[curWorld] || [];
+    var startIdx = curWorld * WORLD_SIZE;      // pour garder une numérotation GLOBALE (alignée sur les fiches)
+    var pts = positions(group.length);
+
+    /* chemin SVG reliant les nœuds du monde */
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'carte-path');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    var d = 'M ' + pts.map(function (p) { return p.x + ' ' + p.y; }).join(' L ');
+    var path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('class', 'path-line');
+    path.setAttribute('d', d);
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(path);
+    map.appendChild(svg);
+
+    /* nœuds du monde */
+    group.forEach(function (p, j) {
+      var idx = startIdx + j;                  // index global (numéro affiché + lien vers la fiche)
+      var locked = (p.etat === 'verrou');
+      var node = document.createElement('div');
+      node.className = 'carte-node' + (locked ? ' locked' : '');
+      node.style.left = pts[j].x + '%';
+      node.style.top = pts[j].y + '%';
+      node.style.animationDelay = (j * 0.08) + 's';
+      var badgeInner = p.img
+        ? '<img class="node-img" src="' + escapeHtml(p.img) + '" alt="' + escapeHtml(p.nom || '') + '">'
+        : (p.icon || '★');
+      node.innerHTML =
+        (p.folder ? '<div class="node-folder">📁 ' + escapeHtml(p.folder) + '</div>' : '') +
+        '<div class="node-badge' + (p.img ? ' has-img' : '') + '"><span class="node-num">' + (idx + 1) + '</span>' + badgeInner + '</div>' +
+        '<div class="node-name">' + escapeHtml(p.nom || 'ZONE') + '</div>';
+      node.style.cursor = 'pointer';
+      node.title = locked ? 'Zone privée' : ('Entrer : ' + (p.nom || ''));
+      node.addEventListener('click', function () { enterProject(p, locked, idx); });
+      map.appendChild(node);
+    });
+
+    /* HUD (nom du monde si fourni, sinon numéro) */
+    var wname = worldNames[curWorld];
+    if (worldLabel)   worldLabel.textContent = '★ ' + (wname ? String(wname).toUpperCase() : ('WORLD ' + (curWorld + 1)));
+    if (worldCountEl) worldCountEl.textContent = group.length + ' ZONE' + (group.length > 1 ? 'S' : '');
+    if (worldPrev) worldPrev.disabled = (curWorld === 0);
+    if (worldNext) worldNext.disabled = (curWorld === worldCount - 1);
+    if (worldDots) {
+      worldDots.querySelectorAll('.world-dot').forEach(function (dot, k) {
+        dot.classList.toggle('active', k === curWorld);
+      });
+    }
+  }
+
+  function goWorld(i) {
+    if (i < 0 || i >= worldCount || i === curWorld) return;
+    curWorld = i;
+    renderWorld();
+  }
+
+  /* Flèches ◀ ▶ */
+  if (worldPrev) worldPrev.addEventListener('click', function () { goWorld(curWorld - 1); });
+  if (worldNext) worldNext.addEventListener('click', function () { goWorld(curWorld + 1); });
+
+  /* Onglets de mondes (seulement s'il y en a plusieurs) */
+  if (worldCount > 1 && worldDots) {
+    if (worldBar) worldBar.style.display = '';          // affiche la barre de sélection
+    for (var k = 0; k < worldCount; k++) {
+      (function (kk) {
+        var dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'world-dot';
+        var nm = worldNames[kk];
+        dot.setAttribute('aria-label', nm || ('Monde ' + (kk + 1)));
+        dot.title = nm || ('Monde ' + (kk + 1));
+        dot.textContent = nm ? nm : ('MONDE ' + (kk + 1));
+        dot.style.setProperty('--dot', WORLD_DOT[kk % WORLD_DOT.length]);   // couleur = biome du monde
+        dot.addEventListener('click', function () { goWorld(kk); });
+        worldDots.appendChild(dot);
+      })(k);
+    }
+  } else {
+    /* un seul monde : on masque toute la navigation */
+    if (worldBar)  worldBar.style.display = 'none';
+    if (worldPrev) worldPrev.style.display = 'none';
+    if (worldNext) worldNext.style.display = 'none';
+  }
+
+  /* ── Apparence (choisie par l'admin) appliquée à la carte ──
+     Défaut vide → aucune classe → look NEUTRE d'origine.
+     'auto' → un biome doux par monde. Nombre 0..5 → biome fixe pour tous. */
+  function applyTheme() {
+    map.classList.remove('mario');
+    for (var t = 0; t < WT_COUNT; t++) map.classList.remove('wt-' + t);
+    if (APPEARANCE === '' || APPEARANCE === 'default') return;   // neutre
+    var idx = (APPEARANCE === 'auto') ? (curWorld % WT_COUNT)
+                                      : (parseInt(APPEARANCE, 10) % WT_COUNT);
+    if (isNaN(idx)) return;
+    map.classList.add('mario');
+    map.classList.add('wt-' + idx);
+  }
+
+  renderWorld();
 
   /* ── Clic sur une zone → ENTRE DIRECTEMENT dans le projet ── */
   function enterProject(p, locked, idx) {

@@ -1,0 +1,5 @@
+# Protège les données utilisateurs : aucun accès direct aux fichiers JSON.
+<FilesMatch "\.json$">
+    Require all denied
+</FilesMatch>
+Options -Indexes

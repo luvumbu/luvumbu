@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.luvumbu.elan",
+      "sha256_cert_fingerprints": [
+        "32:85:4A:4C:48:6A:18:EA:F5:87:8D:B8:0E:67:1E:8E:0C:9C:52:0F:FE:E7:D6:F5:17:CF:FA:80:77:12:DF:F3"
+      ]
+    }
+  }
+]

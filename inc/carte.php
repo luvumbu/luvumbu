@@ -60,6 +60,16 @@ if (($C['source'] ?? 'manuel') === 'scan') {
         if (is_array($tmp)) $projTargets = $tmp;
     }
 
+    // Habillage réglé depuis l'espace admin (config/projets_meta.json) — icône,
+    // nom, image, description par dossier. Surcharge le 'meta' du config ci-dessus.
+    // Format : { "dossier": { "icon":"📸", "nom":"…", "img":"images/…", "desc":"…" } }.
+    $metaOverride = [];
+    $metaFile = $root . '/config/projets_meta.json';
+    if (is_file($metaFile)) {
+        $tmp = json_decode(file_get_contents($metaFile), true);
+        if (is_array($tmp)) $metaOverride = $tmp;
+    }
+
     $folders = [];
     if (is_dir($scanAbs)) {
         foreach (scandir($scanAbs) as $e) {
@@ -72,7 +82,9 @@ if (($C['source'] ?? 'manuel') === 'scan') {
     }
 
     foreach ($folders as $f) {
-        $m = $meta[$f] ?? [];
+        // meta du config, surchargé par les réglages admin (valeurs vides ignorées).
+        $ov = array_filter($metaOverride[$f] ?? [], fn($v) => $v !== '' && $v !== null);
+        $m  = array_merge($meta[$f] ?? [], $ov);
         // Point d'entrée, par ordre de priorité :
         //   1) choix admin (config/projets.json)  2) 'target' du config  3) auto-détection
         //   (index à la racine du dossier, ou dans un sous-dossier type public_html / api).
@@ -100,8 +112,18 @@ if (($C['source'] ?? 'manuel') === 'scan') {
             'etat'   => $m['etat'] ?? 'ouvert',
             'url'    => $m['url']  ?? $autoUrl,
             'desc'   => $m['desc'] ?? 'Projet détecté automatiquement.',
+            'ordre'  => (int)($m['ordre'] ?? 0),        // position choisie dans l'admin (0 = auto)
         ];
     }
+    /* Tri par POSITION choisie dans l'admin : les projets numérotés d'abord
+       (dans l'ordre du n°), puis les « Auto » en ordre alphabétique. */
+    usort($projets, function ($a, $b) {
+        $oa = $a['ordre'] ?? 0; $ob = $b['ordre'] ?? 0;
+        if ($oa && $ob && $oa !== $ob) return $oa <=> $ob;
+        if ($oa && !$ob) return -1;
+        if ($ob && !$oa) return 1;
+        return strcasecmp($a['nom'] ?? $a['folder'], $b['nom'] ?? $b['folder']);
+    });
 }
 
 /* ─── Repli : liste manuelle si le scan n'a rien donné ─── */
@@ -159,11 +181,24 @@ if (!$projets) { $projets = array_values($C['projets'] ?? []); }
   <div class="carte-frame reveal" id="carteFrame" data-luvumbu="<?= e($luvumbuUrl) ?>" data-default-mode="<?= e($defaultMode) ?>" data-default-biome="<?= e($defaultBiome) ?>">
     <div id="carteDefault">
       <div class="carte-hud">
-        <span>★ WORLD 1</span>
-        <span class="carte-count"><?= count($projets) ?> ZONES</span>
+        <span class="world-ctrl">
+          <button type="button" class="world-nav" id="worldPrev" aria-label="Monde précédent" title="Monde précédent">◀</button>
+          <span id="worldLabel">★ WORLD 1</span>
+          <button type="button" class="world-nav" id="worldNext" aria-label="Monde suivant" title="Monde suivant">▶</button>
+        </span>
+        <span class="carte-count" id="worldCount"><?= count($projets) ?> ZONES</span>
+      </div>
+
+      <!-- Sélecteur de mondes (bien visible, généré en JS s'il y a +1 monde) -->
+      <div class="world-bar" id="worldBar" style="display:none">
+        <span class="world-bar-label">🌍 Mondes :</span>
+        <div class="world-dots" id="worldDots"></div>
       </div>
 
       <div class="carte-map" id="carteMap"
+           data-appearance="<?= e((string)($C['apparence'] ?? '')) ?>"
+           data-world-size="<?= (int)($C['world_size'] ?? 6) ?>"
+           data-world-names='<?= e(json_encode(array_values($C['world_names'] ?? []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'
            data-projets='<?= e(json_encode($projets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'>
         <!-- chemin + nœuds générés en JS (js/carte.js) -->
       </div>
@@ -189,6 +224,9 @@ if (!$projets) { $projets = array_values($C['projets'] ?? []); }
         <?php if (!empty($p['folder'])): ?><div class="cd-folder">📁 <?= e($p['folder']) ?></div><?php endif; ?>
         <h4><span class="cd-num"><?= (int)$i + 1 ?></span> <?= e($p['nom'] ?? 'Zone') ?></h4>
         <p><?= e($p['desc'] ?? '') ?></p>
+        <?php if (!empty($p['folder'])): ?>
+        <a class="cd-more" href="projet.php?p=<?= e(rawurlencode($p['folder'])) ?>">📖 En savoir plus →</a>
+        <?php endif; ?>
       </div>
       <?php if (!$locked && !empty($p['url'])): ?>
       <a class="cd-go" href="<?= e($p['url']) ?>"<?= strpos($p['url'], 'http') === 0 ? ' target="_blank" rel="noopener"' : '' ?>>Entrer ▶</a>

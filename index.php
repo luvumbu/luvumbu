@@ -17,6 +17,9 @@ if (is_file($__appFile)) {
         if (isset($__app['particules']))  $CFG['theme']['particules']    = (bool)$__app['particules'];
         if (!empty($__app['carte_mode']))  $CFG['carte']['default_mode']  = $__app['carte_mode'];
         if (!empty($__app['carte_biome'])) $CFG['carte']['default_biome'] = $__app['carte_biome'];
+        if (!empty($__app['world_size']))  $CFG['carte']['world_size']  = (int)$__app['world_size'];
+        if (!empty($__app['world_names']) && is_array($__app['world_names'])) $CFG['carte']['world_names'] = $__app['world_names'];
+        if (isset($__app['carte_apparence'])) $CFG['carte']['apparence'] = (string)$__app['carte_apparence'];
     }
 }
 function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
@@ -46,7 +49,7 @@ $sombre = !empty($CFG['theme']['defaut_sombre']);
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=5">
-<link rel="stylesheet" href="css/carte.css?v=6">
+<link rel="stylesheet" href="css/carte.css?v=12">
 <style>
   :root{ --accent:<?= e($CFG['theme']['accent']) ?>; --accent-dim:<?= e($CFG['theme']['accent_dim']) ?>; }
 </style>
@@ -73,6 +76,7 @@ $sombre = !empty($CFG['theme']['defaut_sombre']);
     <a href="#bokonzi"><?= e($CFG['projet']['nom']) ?></a>
     <a href="#skills">Savoir-faire</a>
     <a href="#carte">Projets</a>
+    <a href="https://luvumbu.com/competences.html">📄 Compétences</a>
     <a href="#contact">Contact</a>
     <a class="js-admin-open" style="cursor:pointer">🔒 Admin</a>
   </nav>
@@ -87,6 +91,9 @@ $sombre = !empty($CFG['theme']['defaut_sombre']);
 </main>
 
 <footer class="footer">
+  <p style="margin:0 0 16px">
+    <a href="https://luvumbu.com/competences.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:1rem;padding:13px 24px;border-radius:999px;color:#fff;background:linear-gradient(90deg,#5b8cff,#22d3ee);box-shadow:0 8px 24px rgba(91,140,255,.38)">📄 Voir ma fiche de compétences</a>
+  </p>
   <p>© <span id="year"><?= date('Y') ?></span> <?= e($ID['nom']) ?> — <?= e($ID['titre']) ?>. Développement web sur-mesure.</p>
 </footer>
 
@@ -109,18 +116,20 @@ $sombre = !empty($CFG['theme']['defaut_sombre']);
       c=document.getElementById('pfAdminClose'),f=document.getElementById('pfAdminFrame');
   if(!opens.length||!m)return;
   function openM(){ if(f&&!f.getAttribute('src'))f.setAttribute('src',f.getAttribute('data-src')); m.classList.add('open'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
-  function closeM(){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  function closeM(){
+    m.classList.remove('open'); m.setAttribute('aria-hidden','true'); document.body.style.overflow='';
+    /* un réglage a été enregistré dans l'admin → on rafraîchit le portfolio pour l'appliquer */
+    try{ if(sessionStorage.getItem('pf_admin_dirty')){ sessionStorage.removeItem('pf_admin_dirty'); location.reload(); } }catch(e){}
+  }
   opens.forEach(function(o){ o.addEventListener('click',openM); });
   if(c)c.addEventListener('click',closeM);
   m.addEventListener('click',function(e){ if(e.target===m) closeM(); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeM(); });
-  /* rouvrir la modale après un enregistrement admin (le portfolio vient de se recharger) */
-  try{ if(sessionStorage.getItem('pf_admin_reopen')){ sessionStorage.removeItem('pf_admin_reopen'); openM(); } }catch(e){}
 })();
 </script>
 
 <script>window.PF_DARK_DEFAULT = <?= $sombre ? 'true' : 'false' ?>;</script>
 <script src="js/main.js?v=5"></script>
-<script src="js/carte.js?v=9"></script>
+<script src="js/carte.js?v=15"></script>
 </body>
 </html>

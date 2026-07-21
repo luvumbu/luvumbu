@@ -1,0 +1,363 @@
+================================================================================
+                        CARNET DE COMPÉTENCES
+                  Développeur Full-Stack Freelance
+================================================================================
+
+Nom              : Luvumbu
+Profil           : Développeur Full-Stack (PHP / JavaScript / MySQL)
+                   Conception, développement et déploiement de bout en bout.
+Portfolio        : https://luvumbu.com
+Réalisation phare : https://bokonzi.com
+
+--------------------------------------------------------------------------------
+COMMENT LIRE CE CARNET
+--------------------------------------------------------------------------------
+Chaque projet est décrit avec le vocabulaire attendu en entreprise :
+  • CONTEXTE / OBJECTIF  – le besoin auquel le projet répond
+  • RÔLE                 – ce que j'ai personnellement pris en charge
+  • STACK TECHNIQUE      – les technologies mises en œuvre
+  • COMPÉTENCES DÉMONTRÉES – savoir-faire concrets, prêts à être réutilisés
+  • RÉSULTAT             – ce qui est livré et fonctionnel
+
+Une synthèse des compétences transversales figure en fin de document.
+
+
+################################################################################
+#  1. BOKONZI — Plateforme data (athlétisme)                                    #
+#     Écosystème complet, en production : https://bokonzi.com                   #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Plateforme de données autour de l'athlétisme : recherche d'athlètes,
+  fiches détaillées, visualisation de statistiques et services payants.
+  Un écosystème complet (web, mobile, B2B, API) alimenté par une seule
+  source de données.
+
+RÔLE
+  Conception, développement et déploiement de A à Z (produit + infrastructure).
+
+STACK TECHNIQUE
+  PHP · MySQL · JavaScript · API REST (JSON) · Capacitor (Android) · CORS ·
+  cache fichier · intégration de paiement en ligne · hébergement mutualisé.
+
+COMPÉTENCES DÉMONTRÉES
+  • Conception d'une API REST : 20+ endpoints JSON, cache 24 h, CORS —
+    « moteur de données » unique partagé par toutes les surfaces.
+  • Architecture multi-surfaces : une même API branchée sur un site web,
+    une application mobile Android (Capacitor) et un espace professionnel.
+  • Recherche multi-critères et génération automatique de fiches.
+  • Data-visualisation (indicateurs, statistiques croisées).
+  • Espace B2B : tableau de bord, effectifs, indicateurs, export CSV.
+  • Intégration d'un paiement en ligne (parcours d'achat).
+  • Mise en production et exploitation d'un nom de domaine dédié.
+
+RÉSULTAT
+  Écosystème en ligne et opérationnel : site public, application mobile,
+  espace pro et API publique interconnectés.
+
+
+################################################################################
+#  2. CV LUVUMBU — Application de création et suivi de CV                        #
+#     En ligne : https://luvumbu.com/cv_luvumbu/                                #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Application web permettant de créer, mettre en forme, partager et suivre
+  des CV, avec suivi des candidatures associées.
+
+RÔLE
+  Développement full-stack et déploiement.
+
+STACK TECHNIQUE
+  PHP · MySQL · JavaScript · OAuth Google (Sign-In) · génération PDF ·
+  QR codes · gestion de configuration hors dépôt (.gitignore / secrets).
+
+COMPÉTENCES DÉMONTRÉES
+  • Éditeur visuel WYSIWYG et système de modèles multiples.
+  • Rendu imprimable / export PDF.
+  • Liens de partage publics avec QR code.
+  • Suivi de candidatures.
+  • Authentification « Se connecter avec Google » (OAuth 2.0), configurable
+    depuis un panneau d'administration (ID client + secret, URI de redirection).
+  • Bonne hygiène de sécurité : secrets stockés hors du dépôt Git.
+  • Organisation de projet maîtrisée (séparation pages / outils / documents).
+
+RÉSULTAT
+  Application fonctionnelle, connexion Google opérationnelle en production.
+
+
+################################################################################
+#  3. PHOTOSYNC — Synchronisation photos (Android + serveur)                     #
+#     Dossier : dropbox → public_html                                           #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Sauvegarder automatiquement les médias d'un téléphone vers un serveur
+  personnel, chaque utilisateur ne voyant que ses propres photos.
+
+RÔLE
+  Développement de l'application mobile ET du serveur (bout en bout).
+
+STACK TECHNIQUE
+  Android · PHP · HTTP (JSON + multipart) · comptes utilisateurs · stockage
+  de fichiers côté serveur.
+
+COMPÉTENCES DÉMONTRÉES
+  • Développement d'un client mobile Android avec envoi en arrière-plan.
+  • API serveur de réception, rangement et service de fichiers.
+  • Gestion multi-utilisateurs avec cloisonnement des données (chacun ses médias).
+  • Transfert de fichiers volumineux (upload multipart).
+
+RÉSULTAT
+  Chaîne complète mobile → serveur fonctionnelle, cloisonnée par compte.
+
+
+################################################################################
+#  4. DUALCAM — Backend photo indépendant                                       #
+#     En ligne : https://luvumbu.com/DualCam/                                   #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Service de capture/partage photo doté de son propre backend totalement
+  autonome (base de données, stockage et code dédiés, rien de partagé).
+
+RÔLE
+  Conception du backend et de son installateur.
+
+STACK TECHNIQUE
+  PHP · MySQL · API · assistant d'installation web · préfixage de tables.
+
+COMPÉTENCES DÉMONTRÉES
+  • Conception d'un service isolé et réutilisable (base + uploads + code dédiés).
+  • Assistant d'installation web (install.php) qui écrit la configuration,
+    crée les tables et le dossier d'upload automatiquement.
+  • Préfixage des tables (dualcam_) pour cohabitation propre en base.
+  • Documentation de déploiement claire pour un tiers.
+
+RÉSULTAT
+  Backend déployable de façon indépendante, avec installation guidée.
+
+
+################################################################################
+#  5. ANNIVERSAIRE — Compte à rebours partagé (PWA)                              #
+#     En ligne : https://luvumbu.com/anniversaire                               #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Application de comptes à rebours d'anniversaires, avec espaces personnels
+  protégés, partage entre utilisateurs et installation sur mobile.
+
+RÔLE
+  Développement full-stack, sécurisation et packaging PWA.
+
+STACK TECHNIQUE
+  PHP · MySQL · JavaScript · OAuth Google · PWA (manifest, service worker,
+  icônes) · cURL (vérification de token).
+
+COMPÉTENCES DÉMONTRÉES
+  • Double authentification : nom + mot de passe OU compte Google.
+  • Partage d'espaces entre utilisateurs (droits voir + modifier, invitations).
+  • Application installable (PWA) sur Android / iOS, fonctionnant hors ligne.
+  • Assistant d'installation forcé : si la base est injoignable, l'app guide
+    l'admin pour saisir et tester les identifiants MySQL, puis crée les tables.
+  • Personnalisation par espace (thème clair/sombre, couleurs, coins, police).
+  • Sécurité applicative : cookies durcis (HttpOnly / SameSite / Secure),
+    protection anti-XSS, pas de fuite d'erreurs de base de données.
+  • Gestion des environnements local / production (base d'URL auto-détectée).
+
+RÉSULTAT
+  Application déployée, partageable et installable, avec parcours d'installation
+  autonome pour le non-technicien.
+
+
+################################################################################
+#  6. RPN — Plateforme communautaire (MVC)                                       #
+#     En ligne : https://bokonzi.com/rpn/                                        #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Plateforme communautaire pour membres (articles, quiz), avec espace
+  d'administration complet et ouverture aux services tiers via API.
+
+RÔLE
+  Développement full-stack, architecture et sécurisation.
+
+STACK TECHNIQUE
+  PHP · MySQL · JavaScript · architecture MVC · OAuth Google · API JSON
+  par clé · thèmes personnalisables · hébergement Hostinger.
+
+COMPÉTENCES DÉMONTRÉES
+  • Architecture MVC (séparation des responsabilités, code maintenable).
+  • Connexion Google (OAuth) pour les membres.
+  • Espace administrateur complet.
+  • API JSON authentifiée par clé (création d'articles et de quiz à distance),
+    avec documentation dédiée (routes, sécurité, tests, motifs de blocage).
+  • Sécurité : protection anti-bruteforce.
+  • Système de thèmes et personnalisation.
+
+RÉSULTAT
+  Plateforme en ligne, documentée, ouverte aux intégrations externes.
+
+
+################################################################################
+#  7. TAMAGOTCHI — Jeu de créature virtuelle (architecture en couches)           #
+#     Dossier : tamagotchi                                                       #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Jeu de créature virtuelle, servant aussi de démonstration d'une
+  architecture back-end propre et évolutive.
+
+RÔLE
+  Conception de l'architecture et développement.
+
+STACK TECHNIQUE
+  PHP (API REST) · JavaScript · MySQL · Android · PWA · architecture en couches
+  (Core, Models, Repositories, Services, Controllers) · PDO · autoloader ·
+  routeur maison.
+
+COMPÉTENCES DÉMONTRÉES
+  • Architecture en couches soignée (séparation Core / Modèles / Dépôts /
+    Services / Contrôleurs) — code structuré et testable.
+  • Noyau PHP « fait maison » : autoloader, routeur, connexion PDO,
+    réponses JSON normalisées.
+  • Exposition d'une seule couche publique au navigateur (bonne pratique de
+    sécurité : seul public/ est visible).
+  • Migrations et données de départ (seed) versionnées.
+  • Paramétrage / équilibrage du gameplay externalisé en configuration.
+
+RÉSULTAT
+  Base technique propre et documentée (docs/ARCHITECTURE.md), extensible.
+
+
+################################################################################
+#  8. ZTRANSFERT — Envoi de fichiers volumineux                                  #
+#     Dossier : ztransfert                                                       #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Service d'envoi de fichiers volumineux (type WeTransfer) : on dépose un
+  fichier, on reçoit un lien de téléchargement par e-mail.
+
+RÔLE
+  Développement full-stack.
+
+STACK TECHNIQUE
+  PHP · JavaScript (upload) · MySQL · envoi d'e-mails · gestion de fichiers ·
+  espace d'administration.
+
+COMPÉTENCES DÉMONTRÉES
+  • Upload de gros fichiers côté navigateur.
+  • Génération de liens de téléchargement et notification par e-mail.
+  • Espace d'administration des envois.
+  • Gestion du stockage et du cycle de vie des fichiers.
+
+RÉSULTAT
+  Service de transfert fonctionnel avec parcours d'envoi complet.
+
+
+################################################################################
+#  9. PORTFOLIO « LUVUMBU LAND » — Site vitrine ludique + back-office            #
+#     En ligne : https://luvumbu.com                                            #
+################################################################################
+
+CONTEXTE / OBJECTIF
+  Portfolio original qui transforme les dossiers-projets en un « monde de jeu »
+  rétro (façon Mario / Sonic), doublé d'un back-office pour tout piloter
+  sans toucher au code.
+
+RÔLE
+  Conception, développement et administration.
+
+STACK TECHNIQUE
+  PHP · JavaScript · JSON (configuration) · upload d'images · iframe /
+  postMessage · scan récursif de l'arborescence.
+
+COMPÉTENCES DÉMONTRÉES
+  • Interface d'administration (admin.php) : gestion de l'apparence du site
+    et éditeur d'habillage par projet (nom, icône/émoji, image, description,
+    page d'entrée) — le contenu se pilote sans éditer le code.
+  • Système de configuration en cascade (valeurs par défaut + surcharges JSON,
+    fusion intelligente ignorant les champs vides).
+  • Upload d'images sécurisé : extensions en liste blanche, taille maximale,
+    noms de fichiers assainis, validation des chemins par realpath.
+  • Authentification admin multi-méthodes (identifiants MySQL / identifiants
+    partagés / mot de passe de secours).
+  • Attention à l'expérience utilisateur (gestion fine du rafraîchissement
+    dans une modale pour ne pas perdre le retour « enregistré »).
+
+RÉSULTAT
+  Portfolio en ligne, entièrement administrable via une interface dédiée.
+
+
+################################################################################
+#  10. AUTRES RÉALISATIONS (contenus & pédagogie)                                #
+################################################################################
+
+  • COURS COMPLET — HTML5 CANVAS
+    Support de cours interactif « étape par étape » sur l'API Canvas HTML5.
+    → Compétences : vulgarisation technique, JavaScript/Canvas, pédagogie.
+
+  • ARDUINO NANO / ÉLECTRONIQUE
+    Pages autour d'un montage Arduino Nano (musique).
+    → Compétences : électronique embarquée, documentation de projet maker.
+
+  • ARTICLES / BLOG
+    Espace éditorial (articles, export de contenu en JSON, accès par API).
+    → Compétences : gestion de contenu, formats d'échange (JSON), rédaction.
+
+  • MES PROGRAMMES (vitrine)
+    Page de présentation regroupant des programmes.
+    → Compétences : mise en vitrine, organisation de portfolio.
+
+
+================================================================================
+                 SYNTHÈSE DES COMPÉTENCES TRANSVERSALES
+================================================================================
+
+LANGAGES & TECHNOLOGIES
+  PHP · JavaScript · SQL / MySQL · HTML5 / CSS3 · JSON · HTML5 Canvas ·
+  bases d'électronique embarquée (Arduino).
+
+BACK-END
+  • API REST (conception, endpoints JSON, CORS, cache, authentification par clé)
+  • Architecture MVC et architecture en couches (Core/Models/Repositories/
+    Services/Controllers)
+  • Base de données : modélisation, PDO, migrations, données de départ (seed)
+  • Autoloader, routeur et noyau applicatif « faits maison »
+
+FRONT-END & MOBILE
+  • Interfaces web dynamiques, éditeurs WYSIWYG
+  • Applications mobiles Android (natif + Capacitor)
+  • PWA : applications installables et hors ligne (manifest, service worker)
+
+AUTHENTIFICATION & SÉCURITÉ
+  • OAuth 2.0 / « Se connecter avec Google » (plusieurs projets)
+  • Protection anti-bruteforce, cookies durcis (HttpOnly / SameSite / Secure)
+  • Prévention XSS, non-fuite des erreurs, secrets hors dépôt Git
+  • Uploads sécurisés (liste blanche, taille max, assainissement, realpath)
+
+INTÉGRATIONS & SERVICES
+  • Paiement en ligne
+  • Envoi d'e-mails transactionnels
+  • Transfert de fichiers volumineux (multipart)
+  • Génération PDF, QR codes
+
+DEVOPS & DÉPLOIEMENT
+  • Mise en production sur hébergement mutualisé (Hostinger), noms de domaine
+  • Assistants d'installation web autonomes (config + création des tables)
+  • Gestion des environnements local (XAMPP) / production
+  • Versionnement Git, séparation code / configuration / secrets
+
+MÉTHODE & POSTURE PROFESSIONNELLE
+  • Autonomie complète : du besoin jusqu'au déploiement et à l'exploitation
+  • Réutilisabilité : composants et services conçus pour être indépendants
+  • Documentation des projets (README, docs d'architecture, guides de déploiement)
+  • Souci de l'expérience utilisateur final ET de l'administrateur non-technicien
+
+--------------------------------------------------------------------------------
+En une phrase :
+  Développeur full-stack autonome, capable de porter un produit de l'idée
+  à la production — conception, développement web & mobile, API, sécurité
+  et déploiement — comme le montre l'écosystème BOKONZI, en ligne et complet.
+--------------------------------------------------------------------------------

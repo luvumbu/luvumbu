@@ -71,6 +71,14 @@ if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_appea
         'particules'  => !empty($_POST['particules']),
         'carte_mode'  => ($cm === 'default' || in_array($cm, $modeKeys, true))  ? $cm : 'default',
         'carte_biome' => in_array($cb, $biomeKeys, true) ? $cb : '',
+        // Mondes de la carte : nb de zones par monde + noms optionnels.
+        'world_size'  => max(2, min(12, (int)($_POST['world_size'] ?? 6))),
+        'world_names' => array_values(array_filter(array_map('trim',
+                            explode(',', (string)($_POST['world_names'] ?? ''))), fn($x) => $x !== '')),
+        // Apparence de la carte (choisie par l'admin) : '' = neutre par défaut.
+        'carte_apparence' => in_array((string)($_POST['carte_apparence'] ?? ''),
+                                ['', 'auto', '0', '1', '2', '3', '4', '5'], true)
+                                ? (string)($_POST['carte_apparence'] ?? '') : '',
     ];
     if (@file_put_contents($appFile, json_encode($new, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false) {
         $app = $new; $saved = true;
@@ -79,6 +87,34 @@ if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_appea
 
 /* Réinitialisation (retour aux valeurs par défaut du config) */
 if ($authed && isset($_GET['reset']) && is_file($appFile)) { @unlink($appFile); $app = []; header('Location: admin.php?ok=reset'); exit; }
+
+/* ═══════════════════════════════════════════════════════════
+   CLÉ D'API du gestionnaire distant (_gestion/apikey.local.php).
+   C'est ICI que TU génères / révoques la clé. Elle n'est affichée
+   qu'UNE fois, au moment de la génération. Toi seul la contrôles.
+   ═══════════════════════════════════════════════════════════ */
+$KEY_FILE   = __DIR__ . '/_gestion/apikey.local.php';
+$keySet     = is_file($KEY_FILE);
+$newKey     = null;        // clé en clair affichée une seule fois après génération
+$keyMsg     = '';
+if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['gen_apikey'])) {
+    $k = bin2hex(random_bytes(24));                     // 48 caractères hexa
+    if (@file_put_contents($KEY_FILE, "<?php return '$k';\n") !== false) {
+        $newKey = $k; $keySet = true;
+        $keyMsg = 'ok';
+    } else {
+        $keyMsg = 'err';                                // dossier _gestion/ absent ou non inscriptible
+    }
+}
+if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_apikey'])) {
+    if (is_file($KEY_FILE)) @unlink($KEY_FILE);
+    $keySet = false; $keyMsg = 'revoked';
+}
+/* Afficher la clé active (lecture à la demande) — pour la retrouver quand on veut. */
+$showKey = null;
+if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['show_apikey'])) {
+    if (is_file($KEY_FILE)) { $k = require $KEY_FILE; $showKey = is_string($k) ? $k : ''; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    PROJETS — point d'entrée (sous-dossier) de chaque dossier de la racine.
@@ -99,24 +135,44 @@ $pf_has_index = function ($dir) {
     }
     return false;
 };
-/* points d'entrée SUGGÉRÉS : racine, sous-dossiers immédiats, et leurs fichiers index.*
+/* points d'entrée SUGGÉRÉS : la racine + TOUS les dossiers/sous-dossiers (récursif)
+   et leurs fichiers index.* — parcours complet de l'arborescence du projet.
    (le champ reste LIBRE : on peut taper n'importe quel chemin exact fichier/dossier). */
-$pf_targets = function ($absDir) use ($pf_has_index) {
+$PF_SKIP_DIRS = ['node_modules', 'vendor', '.git', '.svn', '.hg', 'cache', '.cache',
+                 'tmp', 'temp', '.idea', '.vscode', 'dist', 'build', '.next', 'bower_components'];
+$PF_MAX_DEPTH = 8;      // profondeur maximale explorée
+$PF_MAX_ITEMS = 600;    // nb max de suggestions par projet (garde-fou)
+$pf_targets = function ($absDir) use ($pf_has_index, $PF_SKIP_DIRS, $PF_MAX_DEPTH, $PF_MAX_ITEMS) {
     $idx = ['index.php', 'index.html', 'index.htm'];
     $out = [['path' => '', 'file' => false, 'hasIndex' => $pf_has_index($absDir)]];
     foreach ($idx as $f) if (is_file($absDir . '/' . $f)) $out[] = ['path' => $f, 'file' => true, 'hasIndex' => true];
-    foreach (glob($absDir . '/*', GLOB_ONLYDIR) ?: [] as $sub) {
-        $b = basename($sub);
-        $out[] = ['path' => $b, 'file' => false, 'hasIndex' => $pf_has_index($sub)];
-        foreach ($idx as $f) if (is_file($sub . '/' . $f)) $out[] = ['path' => $b . '/' . $f, 'file' => true, 'hasIndex' => true];
-    }
+    $walk = function ($dir, $rel, $depth) use (&$walk, $idx, $pf_has_index, $PF_SKIP_DIRS, $PF_MAX_DEPTH, $PF_MAX_ITEMS, &$out) {
+        if ($depth > $PF_MAX_DEPTH || count($out) >= $PF_MAX_ITEMS) return;
+        $subs = glob($dir . '/*', GLOB_ONLYDIR) ?: [];
+        natcasesort($subs);
+        foreach ($subs as $sub) {
+            if (count($out) >= $PF_MAX_ITEMS) return;
+            $b = basename($sub);
+            if ($b === '' || $b[0] === '.' || in_array(strtolower($b), $PF_SKIP_DIRS, true)) continue;
+            $r = ($rel === '' ? '' : $rel . '/') . $b;
+            $out[] = ['path' => $r, 'file' => false, 'hasIndex' => $pf_has_index($sub)];
+            foreach ($idx as $f) if (is_file($sub . '/' . $f)) $out[] = ['path' => $r . '/' . $f, 'file' => true, 'hasIndex' => true];
+            $walk($sub, $r, $depth + 1);
+        }
+    };
+    $walk($absDir, '', 1);
     return $out;
 };
-/* auto-détection (identique à inc/carte.php) — sert de valeur par défaut du menu */
+/* auto-détection : index à la racine, sinon le dossier avec index le MOINS profond */
 $pf_auto = function ($cands) {
     if (!empty($cands[0]['hasIndex'])) return '';                 // index à la racine
-    foreach ($cands as $c) { if ($c['path'] !== '' && !empty($c['hasIndex'])) return $c['path']; }
-    return '';
+    $best = ''; $bestDepth = PHP_INT_MAX;
+    foreach ($cands as $c) {
+        if ($c['path'] === '' || empty($c['hasIndex']) || !empty($c['file'])) continue;
+        $d = substr_count($c['path'], '/');
+        if ($d < $bestDepth) { $bestDepth = $d; $best = $c['path']; }
+    }
+    return $best;
 };
 
 /* dossiers-projets de la racine */
@@ -129,15 +185,45 @@ foreach (scandir($pfRoot) ?: [] as $e) {
 }
 sort($pfProjects, SORT_NATURAL | SORT_FLAG_CASE);
 
-/* choix déjà enregistrés */
+/* choix déjà enregistrés (points d'entrée) */
 $pfChoice = is_file($PROJ_FILE) ? (json_decode(file_get_contents($PROJ_FILE), true) ?: []) : [];
 
-/* enregistrement du point d'entrée par projet */
+/* habillage par projet (icône / nom / image / description) — surcharges admin */
+$PMETA_FILE = __DIR__ . '/config/projets_meta.json';
+$pfMeta     = is_file($PMETA_FILE) ? (json_decode(file_get_contents($PMETA_FILE), true) ?: []) : [];
+$cfgMeta    = $CFG['carte']['meta'] ?? [];          // valeurs par défaut (config/portfolio.php)
+$IMG_DIR    = __DIR__ . '/images/projets';           // destination des images uploadées
+$IMG_EXTS   = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
+$IMG_MAX    = 5 * 1024 * 1024;                        // 5 Mo max par image
+
+/* Palette d'émojis proposés pour l'icône d'un projet (cliquables dans l'admin) */
+$EMOJI_SUGGESTIONS = [
+    '🕹️','🎮','📱','💻','🖥️','🌐','🔌','🛰️','📡','🔗',
+    '📸','🎨','🖼️','🎬','🎵','🎧','📷','🎥','🖌️','✨',
+    '📊','📈','📉','🗂️','📁','📂','📄','📝','🗒️','📋',
+    '🛠️','⚙️','🧰','🔧','🔨','🧪','🔬','🧲','🧮','🤖',
+    '🚀','🛸','⚡','🔥','💡','🌟','⭐','🎯','🏆','🥇',
+    '🔒','🔑','🛡️','👁️','🧠','💳','💰','🏢','🏟️','🏰',
+    '📦','🧩','🎓','📚','🌱','🐧','🐳','🍄','🎲','♟️',
+];
+
+/* enregistrement du point d'entrée + habillage (icône/nom/image/desc) par projet */
 $savedProj = false; $projErr = '';
 if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_projects'])) {
-    $tsel = (array)($_POST['target'] ?? []);
-    $new  = [];
+    $tsel     = (array)($_POST['target'] ?? []);
+    $iconsIn  = (array)($_POST['icon'] ?? []);
+    $nomsIn   = (array)($_POST['nom'] ?? []);
+    $descsIn  = (array)($_POST['desc'] ?? []);
+    $ordreIn  = (array)($_POST['ordre'] ?? []);
+    $detailsIn = (array)($_POST['details'] ?? []);
+    $urlAppIn  = (array)($_POST['url_app'] ?? []);
+    $lienLabIn = (array)($_POST['lien_label'] ?? []);
+    $lienUrlIn = (array)($_POST['lien_url'] ?? []);
+    $imgClear = (array)($_POST['imgclear'] ?? []);
+    $newEntry = [];
+    $newMeta  = [];
     foreach ($pfProjects as $p) {
+        /* — 1) point d'entrée (identique à avant) — */
         $path = isset($tsel[$p]) ? trim(str_replace('\\', '/', (string)$tsel[$p]), '/') : '';
         if ($path !== '') {
             // sécurité : la cible (fichier OU dossier) doit exister SOUS le projet, sans en sortir
@@ -146,12 +232,62 @@ if ($authed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_proje
             $inside = $base && $full && strncmp($full, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) === 0;
             if (!$inside || !(is_file($full) || is_dir($full))) $path = '';   // invalide → racine
         }
-        $new[$p] = $path;                                   // '' = on entre à la racine
+        $newEntry[$p] = $path;                              // '' = on entre à la racine
+
+        /* — 2) habillage — */
+        $row  = [];
+        $ic   = trim((string)($iconsIn[$p] ?? ''));
+        $nm   = trim((string)($nomsIn[$p] ?? ''));
+        $ds   = trim((string)($descsIn[$p] ?? ''));
+        if ($ic !== '') $row['icon'] = mb_substr($ic, 0, 16);
+        if ($nm !== '') $row['nom']  = mb_substr($nm, 0, 80);
+        if ($ds !== '') $row['desc'] = mb_substr($ds, 0, 800);
+        $or = (int)($ordreIn[$p] ?? 0);                    // position choisie (0 = automatique)
+        if ($or > 0) $row['ordre'] = $or;
+        /* — page détaillée : texte long, lien appli, liens plus d'infos — */
+        $dt = trim((string)($detailsIn[$p] ?? ''));
+        if ($dt !== '') $row['details'] = mb_substr($dt, 0, 8000);
+        $ua = trim((string)($urlAppIn[$p] ?? ''));
+        if ($ua !== '' && preg_match('~^https?://~i', $ua)) $row['url_app'] = mb_substr($ua, 0, 300);
+        $labs = (array)($lienLabIn[$p] ?? []); $urls = (array)($lienUrlIn[$p] ?? []);
+        $liens = [];
+        foreach ($urls as $k => $u) {
+            $u = trim((string)$u);
+            if ($u === '' || !preg_match('~^https?://~i', $u)) continue;
+            $l = trim((string)($labs[$k] ?? ''));
+            $liens[] = ['label' => ($l !== '' ? mb_substr($l, 0, 80) : $u), 'url' => mb_substr($u, 0, 300)];
+        }
+        if ($liens) $row['liens'] = $liens;
+
+        /* image : on repart de l'existante, sauf si on la retire ou qu'on en envoie une neuve */
+        $imgPath = (string)($pfMeta[$p]['img'] ?? '');
+        if (!empty($imgClear[$p])) $imgPath = '';
+        if (isset($_FILES['img']) && ($_FILES['img']['error'][$p] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $tmp  = $_FILES['img']['tmp_name'][$p];
+            $ext  = strtolower(pathinfo((string)$_FILES['img']['name'][$p], PATHINFO_EXTENSION));
+            $size = (int)($_FILES['img']['size'][$p] ?? 0);
+            if (in_array($ext, $IMG_EXTS, true) && $size > 0 && $size <= $IMG_MAX && is_uploaded_file($tmp)) {
+                if (!is_dir($IMG_DIR)) @mkdir($IMG_DIR, 0775, true);
+                $safe = preg_replace('/[^a-zA-Z0-9_-]/', '_', $p);
+                $dest = $IMG_DIR . '/' . $safe . '.' . $ext;
+                // supprime les anciennes versions (autre extension) du même projet
+                foreach ($IMG_EXTS as $e) { $old = $IMG_DIR . '/' . $safe . '.' . $e; if ($old !== $dest && is_file($old)) @unlink($old); }
+                if (@move_uploaded_file($tmp, $dest)) $imgPath = 'images/projets/' . $safe . '.' . $ext . '?v=' . time();
+            } else {
+                $projErr = "Image ignorée pour « $p » : formats acceptés " . implode(', ', $IMG_EXTS) . " · 5 Mo max.";
+            }
+        }
+        if ($imgPath !== '') $row['img'] = $imgPath;
+
+        if ($row) $newMeta[$p] = $row;
     }
-    if (@file_put_contents($PROJ_FILE, json_encode($new, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) {
-        $pfChoice = $new; $savedProj = true;
-    } else {
-        $projErr = "Impossible d'écrire config/projets.json (droits ?).";
+
+    $okE = @file_put_contents($PROJ_FILE,  json_encode($newEntry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+    $okM = @file_put_contents($PMETA_FILE, json_encode($newMeta,  JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+    if ($okE && $okM) {
+        $pfChoice = $newEntry; $pfMeta = $newMeta; $savedProj = true;
+    } elseif (!$projErr) {
+        $projErr = "Impossible d'écrire config/projets.json ou projets_meta.json (droits ?).";
     }
 }
 
@@ -162,6 +298,17 @@ foreach ($pfProjects as $p) {
     $pfCurrent[$p]    = array_key_exists($p, $pfChoice) ? (string)$pfChoice[$p] : $pf_auto($pfCandidates[$p]);
 }
 
+/* habillage courant de chaque projet (surcharge admin → défaut config → repli) */
+$pfIcon = $pfNom = $pfDesc = $pfImg = [];
+foreach ($pfProjects as $p) {
+    $ov = $pfMeta[$p]  ?? [];
+    $cf = $cfgMeta[$p] ?? [];
+    $pfIcon[$p] = (string)($ov['icon'] ?? $cf['icon'] ?? '');
+    $pfNom[$p]  = (string)($ov['nom']  ?? $cf['nom']  ?? '');
+    $pfDesc[$p] = (string)($ov['desc'] ?? $cf['desc'] ?? '');
+    $pfImg[$p]  = (string)($ov['img']  ?? $cf['img']  ?? '');
+}
+
 /* Valeurs courantes */
 $accent     = $app['accent']     ?? $CFG['theme']['accent'];
 $dim        = $app['accent_dim'] ?? $CFG['theme']['accent_dim'];
@@ -169,6 +316,9 @@ $dark       = $app['dark']       ?? $CFG['theme']['defaut_sombre'];
 $particules = $app['particules'] ?? $CFG['theme']['particules'];
 $carteMode  = $app['carte_mode']  ?? 'default';
 $carteBiome = $app['carte_biome'] ?? '';
+$worldSize  = (int)($app['world_size'] ?? 6);
+$worldNames = is_array($app['world_names'] ?? null) ? $app['world_names'] : [];
+$carteApp   = (string)($app['carte_apparence'] ?? '');   // '' = neutre par défaut
 $hasLuvumbu = is_dir(__DIR__ . '/luvumbu');
 
 /* Thèmes complets prêts à l'emploi : [clé, label, accent, accent_dim, sombre] */
@@ -242,7 +392,46 @@ $themes = [
   .proj-row select.sel{padding:9px 8px;font-size:.8rem}
   .vis-cell{display:flex;justify-content:center;align-items:center}
   .vis-cell input{width:18px;height:18px;accent-color:var(--acc);cursor:pointer}
-  @media(max-width:520px){.row2{grid-template-columns:1fr}}
+  /* Éditeur d'habillage par projet — cartes repliables compactes */
+  .pm-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .pm-card{border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#0d1018;overflow:hidden}
+  .pm-card[open]{border-color:color-mix(in srgb,var(--acc) 45%,transparent);background:#0f1420}
+  .pm-sum{display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;list-style:none;user-select:none}
+  .pm-sum::-webkit-details-marker{display:none}
+  .pm-sum:hover{background:rgba(255,255,255,.03)}
+  .pm-thumb{flex:0 0 auto;width:40px;height:40px;border-radius:10px;overflow:hidden;display:flex;
+    align-items:center;justify-content:center;background:#0b0e15;border:1px solid rgba(255,255,255,.1);font-size:1.3rem}
+  .pm-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .pm-sumtxt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .pm-sumname{font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pm-folder{font-size:.72rem;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pm-chev{flex:0 0 auto;color:#8b93a7;font-size:.9rem;transition:transform .2s}
+  .pm-card[open] .pm-chev{transform:rotate(180deg)}
+  .pm-body{padding:2px 12px 14px;display:flex;flex-direction:column;gap:12px;border-top:1px solid rgba(255,255,255,.06)}
+  .pm-field{display:block}
+  .pm-lab{display:block;font-size:.78rem;font-weight:600;color:#c9d1d9;margin:0 0 5px}
+  .pm-hint{font-weight:400;color:#8b93a7}
+  .pm-grid{display:grid;grid-template-columns:1fr 120px;gap:12px;margin-top:10px}
+  .pm-field-icon input{text-align:center;font-size:1.05rem}
+  .pm-emojis{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto;padding:8px;
+    border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#0b0e15}
+  .pm-emo{width:36px;height:36px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    font-size:1.15rem;line-height:1;border-radius:9px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.08);background:#121826;transition:.12s}
+  .pm-emo:hover{border-color:var(--acc);transform:translateY(-1px);background:#1a2233}
+  .pm-emo.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset;background:#1a2233}
+  .pm-file{width:100%;font-size:.78rem;color:#c9d1d9}
+  .pm-file::file-selector-button{font-family:inherit;font-size:.78rem;padding:7px 12px;margin-right:10px;border-radius:9px;
+    border:1px solid rgba(255,255,255,.14);background:#151a26;color:#eef1f8;cursor:pointer}
+  .pm-file::file-selector-button:hover{border-color:var(--acc)}
+  .pm-clear{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#c9d1d9;margin-top:8px;cursor:pointer}
+  .pm-clear input{width:16px;height:16px;accent-color:var(--acc);cursor:pointer}
+  .pm-desc{width:100%;padding:10px 12px;border-radius:12px;font-size:.85rem;line-height:1.4;
+    background:#0b0e15;border:1px solid rgba(255,255,255,.1);color:#eef1f8;font-family:inherit;resize:vertical}
+  .pm-desc:focus{outline:none;border-color:var(--acc)}
+  .pm-savebar{position:sticky;bottom:0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;
+    padding:12px 0 4px;background:linear-gradient(to top,#121620 70%,transparent)}
+  @media(max-width:520px){.row2{grid-template-columns:1fr}.pm-grid{grid-template-columns:1fr}}
   .carte-preview{margin-top:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;background:#0b1d33;position:relative;height:210px}
   .cp-label{position:absolute;top:8px;left:10px;z-index:2;font-size:.72rem;color:#eef1f8;background:rgba(0,0,0,.55);padding:4px 9px;border-radius:7px;pointer-events:none}
   #cartePreviewFrame{width:100%;height:100%;border:0;display:none;background:#0b1d33}
@@ -276,6 +465,77 @@ $themes = [
 <?php else: ?>
   <h1>🎨 <span>Apparence</span> du portfolio</h1>
   <p class="sub">Les changements s'appliquent à tout le site, pour tous les visiteurs.</p>
+
+  <a href="_gestion/index.php" target="_blank" rel="noopener"
+     style="display:flex;align-items:center;gap:12px;margin:16px 0;padding:14px 16px;
+            border:1px solid rgba(255,255,255,.15);border-radius:12px;text-decoration:none;
+            color:inherit;background:linear-gradient(135deg,rgba(91,140,255,.18),rgba(58,107,255,.10))">
+    <span style="font-size:1.6rem">🗂️</span>
+    <span style="flex:1">
+      <b style="display:block;font-size:.98rem">Gérer tous les fichiers du site</b>
+      <small style="opacity:.8">Parcourir, envoyer, éditer, renommer, supprimer — tous les dossiers de luvumbu.com</small>
+    </span>
+    <span style="font-size:1.2rem;opacity:.7">↗</span>
+  </a>
+
+  <div style="margin:16px 0;padding:14px 16px;border:1px solid rgba(255,255,255,.15);border-radius:12px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:1.3rem">🔑</span>
+      <b>Accès API distant (gestion en ligne)</b>
+    </div>
+    <p class="sub" style="margin:0 0 12px;font-size:.82rem">
+      Clé secrète qui autorise la gestion des fichiers à distance. <b>Toi seul la contrôles.</b>
+      Génère-la, copie-la, et ne la donne qu'à qui doit s'en servir. Régénère pour couper l'accès.
+    </p>
+
+    <?php if ($keyMsg === 'err'): ?>
+      <div class="msg err">Impossible d'écrire la clé (le dossier <code>_gestion/</code> est-il en ligne et inscriptible ?).</div>
+    <?php elseif ($keyMsg === 'revoked'): ?>
+      <div class="msg ok">✔ Clé révoquée — tout accès par API est coupé.</div>
+    <?php endif; ?>
+
+    <?php if ($newKey): ?>
+      <div class="msg ok" style="margin-bottom:10px">
+        ✔ Nouvelle clé générée. <b>Copie-la maintenant</b> — elle ne sera plus jamais réaffichée :
+      </div>
+      <input type="text" readonly value="<?= ea($newKey) ?>" onclick="this.select()"
+             style="width:100%;font-family:monospace;font-size:.9rem;padding:10px;border-radius:8px;
+                    border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#fff">
+    <?php endif; ?>
+
+    <?php if ($showKey !== null): ?>
+      <div class="msg ok" style="margin-bottom:8px">🔑 Clé active — copie-la pour la donner quand tu veux :</div>
+      <input type="text" readonly value="<?= ea($showKey) ?>" onclick="this.select()"
+             style="width:100%;font-family:monospace;font-size:.9rem;padding:10px;border-radius:8px;
+                    border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#fff;margin-bottom:6px">
+      <?php if ($showKey === ''): ?><div class="sub" style="font-size:.8rem">(aucune clé enregistrée)</div><?php endif; ?>
+    <?php endif; ?>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px">
+      <span class="sub" style="font-size:.82rem">
+        État : <b><?= $keySet ? '🟢 Clé active' : '🔴 Aucune clé (accès API désactivé)' ?></b>
+      </span>
+      <span style="flex:1"></span>
+      <?php if ($keySet): ?>
+      <form method="post" style="margin:0">
+        <button class="btn" type="submit" name="show_apikey" value="1">👁 Voir la clé active</button>
+      </form>
+      <?php endif; ?>
+      <form method="post" style="margin:0" onsubmit="return confirm('<?= $keySet
+        ? 'Générer une NOUVELLE clé ? L\'ancienne cessera aussitôt de fonctionner.'
+        : 'Générer une clé d\'accès API ?' ?>')">
+        <button class="btn" type="submit" name="gen_apikey" value="1">
+          <?= $keySet ? '↻ Régénérer la clé' : '＋ Générer une clé' ?>
+        </button>
+      </form>
+      <?php if ($keySet): ?>
+      <form method="post" style="margin:0" onsubmit="return confirm('Révoquer la clé ? Tout accès API sera coupé.')">
+        <button class="btn" type="submit" name="revoke_apikey" value="1"
+                style="border-color:#ff5d6c;color:#ff5d6c;background:transparent">🗑 Révoquer</button>
+      </form>
+      <?php endif; ?>
+    </div>
+  </div>
   <?php if ($saved): ?><div class="msg ok">✔ Apparence enregistrée.</div><?php endif; ?>
   <?php if (($_GET['ok'] ?? '') === 'reset'): ?><div class="msg ok">✔ Réinitialisé aux valeurs par défaut.</div><?php endif; ?>
   <?php if ($saveErr): ?><div class="msg err"><?= ea($saveErr) ?></div><?php endif; ?>
@@ -310,6 +570,35 @@ $themes = [
 
     <label class="toggle"><input type="checkbox" name="dark" <?= $dark ? 'checked' : '' ?>> Thème sombre par défaut</label>
     <label class="toggle"><input type="checkbox" name="particules" <?= $particules ? 'checked' : '' ?>> Fond animé à particules</label>
+
+    <label style="margin-top:26px">🎨 Apparence de la carte</label>
+    <?php $appOpts = ['' => '⬜ Défaut (neutre)', 'auto' => '🎲 Auto (un biome par monde)',
+      '0' => '🌳 Plaine', '1' => '🏜️ Désert', '2' => '🌊 Océan', '3' => '🏰 Château',
+      '4' => '🌙 Nuit', '5' => '☁️ Ciel']; ?>
+    <select name="carte_apparence" class="sel">
+      <?php foreach ($appOpts as $val => $lbl): ?>
+      <option value="<?= ea($val) ?>"<?= (string)$carteApp === (string)$val ? ' selected' : '' ?>><?= ea($lbl) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <p class="sub" style="margin:6px 0 0;font-size:.78rem">
+      « Défaut » = look d'origine neutre. Les autres appliquent une ambiance (couleurs douces) à toute la carte, pour tous les visiteurs.
+    </p>
+
+    <label style="margin-top:26px">🗺️ Mondes de la carte (façon Mario)</label>
+    <div class="row2">
+      <div>
+        <span class="sub2">Zones (projets) par monde</span>
+        <input type="number" name="world_size" class="sel" min="2" max="12" step="1" value="<?= (int)$worldSize ?>">
+      </div>
+      <div>
+        <span class="sub2">Noms des mondes <small>(optionnel, séparés par des virgules)</small></span>
+        <input type="text" name="world_names" class="sel" value="<?= ea(implode(', ', $worldNames)) ?>" placeholder="Web, Jeux, Outils…">
+      </div>
+    </div>
+    <p class="sub" style="margin:6px 0 0;font-size:.78rem">
+      Les projets sont répartis en mondes de ce nombre de zones. Si tu nommes les mondes,
+      le titre affiche « ★ WEB » au lieu de « ★ WORLD 1 » ; sinon la numérotation est automatique.
+    </p>
 
     <?php if ($hasLuvumbu && $CARTE_VUES): ?>
     <label style="margin-top:26px">🎮 Carte des projets (affichage par défaut)</label>
@@ -350,44 +639,143 @@ $themes = [
 
   <?php if ($pfProjects): ?>
   <div class="proj-section">
-    <label>📂 Projets — point d'entrée (chemin exact)</label>
-    <p class="sub2">Pour chaque dossier de la racine, la page ouverte <b>au clic</b> : laisse <b>vide</b> pour la racine, ou tape le <b>chemin exact</b> d'un dossier <u>ou d'un fichier</u> (ex. <code>public_html/app.php</code>, <code>api/index.php</code>). La liste te suggère les entrées détectées (<b>★</b> = un index s'y trouve). Le choix s'applique à la carte et aux fiches.</p>
-    <?php if ($savedProj): ?><div class="msg ok">✔ Points d'entrée enregistrés.</div><?php endif; ?>
+    <label>📂 Projets — icône, image &amp; page d'entrée</label>
+    <p class="sub2">Clique un projet pour le <b>déplier</b> et changer son icône (émoji), son image, son nom, sa description ou la page ouverte au clic. Tout est optionnel. Puis <b>💾 Enregistrer</b> en bas.</p>
+    <?php if ($savedProj): ?><div class="msg ok">✔ Projets enregistrés.</div><?php endif; ?>
     <?php if ($projErr): ?><div class="msg err"><?= ea($projErr) ?></div><?php endif; ?>
-    <form method="post" id="fp">
+    <form method="post" id="fp" enctype="multipart/form-data">
       <input type="hidden" name="save_projects" value="1">
-      <div class="proj-scroll">
-        <div class="proj-table" style="min-width:420px">
-          <div class="proj-row proj-head-row" style="grid-template-columns:1fr 1.5fr">
-            <span>Projet</span><span>Point d'entrée</span>
+      <div class="pm-list">
+        <?php foreach ($pfProjects as $i => $p):
+          $cands = $pfCandidates[$p];
+          $cur   = (string)$pfCurrent[$p];
+          $dlId  = 'cd-' . $i;
+          $img   = $pfImg[$p];
+          $dispNom = $pfNom[$p] !== '' ? $pfNom[$p] : $p;
+        ?>
+        <details class="pm-card">
+          <summary class="pm-sum">
+            <span class="pm-thumb" id="thumb-<?= $i ?>">
+              <?php if ($img !== ''): ?><img src="<?= ea($img) ?>" alt=""><?php else: ?><span class="pm-emoji"><?= ea($pfIcon[$p] !== '' ? $pfIcon[$p] : '🕹️') ?></span><?php endif; ?>
+            </span>
+            <span class="pm-sumtxt">
+              <span class="pm-sumname" id="sumname-<?= $i ?>"><?= ea($dispNom) ?></span>
+              <span class="pm-folder">📁 <?= ea($p) ?></span>
+            </span>
+            <span class="pm-chev" aria-hidden="true">▾</span>
+          </summary>
+
+          <div class="pm-body">
+            <div class="pm-grid">
+              <label class="pm-field">
+                <span class="pm-lab">Nom affiché</span>
+                <input type="text" name="nom[<?= ea($p) ?>]" value="<?= ea($pfNom[$p]) ?>" class="pin" data-sum="sumname-<?= $i ?>" data-folder="<?= ea($p) ?>"
+                       placeholder="<?= ea($p) ?>" maxlength="80" autocomplete="off">
+              </label>
+              <label class="pm-field pm-field-icon">
+                <span class="pm-lab">Icône (émoji)</span>
+                <input type="text" name="icon[<?= ea($p) ?>]" id="icon-<?= $i ?>" value="<?= ea($pfIcon[$p]) ?>" class="pin"
+                       placeholder="🕹️" maxlength="16" autocomplete="off" data-thumb="thumb-<?= $i ?>">
+              </label>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">🔢 Position (n° sur la carte) <span class="pm-hint">— « Auto » = ordre alphabétique</span></span>
+              <select name="ordre[<?= ea($p) ?>]" class="pin">
+                <option value="0"<?= (int)($pfMeta[$p]['ordre'] ?? 0) === 0 ? ' selected' : '' ?>>Auto</option>
+                <?php for ($k = 1; $k <= count($pfProjects); $k++): ?>
+                <option value="<?= $k ?>"<?= (int)($pfMeta[$p]['ordre'] ?? 0) === $k ? ' selected' : '' ?>><?= $k ?></option>
+                <?php endfor; ?>
+              </select>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">Ou choisis une icône <span class="pm-hint">— clique pour l'appliquer</span></span>
+              <div class="pm-emojis">
+                <?php foreach ($EMOJI_SUGGESTIONS as $emo): ?>
+                <button type="button" class="pm-emo" data-emo="<?= ea($emo) ?>" data-target="icon-<?= $i ?>" data-thumb="thumb-<?= $i ?>" title="<?= ea($emo) ?>"><?= ea($emo) ?></button>
+                <?php endforeach; ?>
+              </div>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">🖼️ Image <span class="pm-hint">— remplace l'émoji · png, jpg, webp, gif, svg · 5 Mo max</span></span>
+              <input type="file" name="img[<?= ea($p) ?>]" accept="image/*" class="pm-file" data-thumb="thumb-<?= $i ?>">
+              <?php if ($img !== ''): ?>
+              <label class="pm-clear"><input type="checkbox" name="imgclear[<?= ea($p) ?>]" value="1"> Retirer l'image actuelle</label>
+              <?php endif; ?>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">🎯 Page d'entrée <span class="pm-hint">— au clic · vide = racine du projet</span></span>
+              <input type="text" name="target[<?= ea($p) ?>]" value="<?= ea($cur) ?>" list="<?= $dlId ?>"
+                     class="pin" autocomplete="off" spellcheck="false"
+                     placeholder="(racine) — ou chemin exact fichier/dossier">
+              <datalist id="<?= $dlId ?>">
+                <?php foreach ($cands as $o):
+                  $lbl = $o['path'] === '' ? "(racine) /$p/" : "/$p/{$o['path']}" . (empty($o['file']) ? '/' : '');
+                  if (!empty($o['hasIndex'])) $lbl .= '  ★'; ?>
+                <option value="<?= ea($o['path']) ?>"><?= ea($lbl) ?></option>
+                <?php endforeach; ?>
+              </datalist>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">📝 Description <span class="pm-hint">— texte de la fiche</span></span>
+              <textarea name="desc[<?= ea($p) ?>]" class="pm-desc" rows="3" maxlength="800"
+                        placeholder="Laisse vide pour la description par défaut"><?= ea($pfDesc[$p]) ?></textarea>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">📖 Détails — page complète <span class="pm-hint">— fonctionnement, fonctionnalités… · Markdown léger : <code>## Titre</code>, <code>- liste</code>, <code>**gras**</code></span></span>
+              <textarea name="details[<?= ea($p) ?>]" class="pm-desc" rows="7" maxlength="8000"
+                        placeholder="Explique le projet en grand détail — s'affiche sur projet.php?p=<?= ea($p) ?>"><?= ea((string)($pfMeta[$p]['details'] ?? '')) ?></textarea>
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">🚀 Lien direct de l'application <span class="pm-hint">— vide = page d'entrée du projet</span></span>
+              <input type="url" name="url_app[<?= ea($p) ?>]" value="<?= ea((string)($pfMeta[$p]['url_app'] ?? '')) ?>"
+                     class="pin" autocomplete="off" placeholder="https://…  (optionnel)">
+            </div>
+
+            <div class="pm-field">
+              <span class="pm-lab">🔗 Liens « plus d'infos » <span class="pm-hint">— libellé + URL (doc, vidéo, article…)</span></span>
+              <div class="lien-list">
+                <?php $ll = is_array($pfMeta[$p]['liens'] ?? null) ? $pfMeta[$p]['liens'] : [];
+                      $rows = array_merge($ll, [['label'=>'','url'=>''], ['label'=>'','url'=>'']]);
+                      foreach ($rows as $ln): ?>
+                <div class="lien-row" style="display:flex;gap:8px;margin-bottom:6px">
+                  <input type="text" name="lien_label[<?= ea($p) ?>][]" value="<?= ea($ln['label'] ?? '') ?>" class="pin" style="flex:1" placeholder="Libellé (ex. Documentation)">
+                  <input type="url"  name="lien_url[<?= ea($p) ?>][]"   value="<?= ea($ln['url'] ?? '') ?>"   class="pin" style="flex:1.4" placeholder="https://…">
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <button type="button" class="pm-emo" onclick="addLien(this)">＋ Ajouter un lien</button>
+            </div>
+
+            <div class="pm-field">
+              <a class="back" href="projet.php?p=<?= ea($p) ?>" target="_blank">👁 Voir la page détaillée ↗</a>
+            </div>
           </div>
-          <?php foreach ($pfProjects as $i => $p):
-            $cands = $pfCandidates[$p];
-            $cur   = (string)$pfCurrent[$p];
-            $dlId  = 'cd-' . $i;
-          ?>
-          <div class="proj-row" style="grid-template-columns:1fr 1.5fr">
-            <span class="proj-name" title="<?= ea($p) ?>"><?= ea($p) ?></span>
-            <input type="text" name="target[<?= ea($p) ?>]" value="<?= ea($cur) ?>" list="<?= $dlId ?>"
-                   class="pin" autocomplete="off" spellcheck="false"
-                   placeholder="(racine) — ou chemin exact fichier/dossier"
-                   title="Vide = racine, ou chemin exact (ex. public_html/app.php)">
-            <datalist id="<?= $dlId ?>">
-              <?php foreach ($cands as $o):
-                $lbl = $o['path'] === '' ? "(racine) /$p/" : "/$p/{$o['path']}" . (empty($o['file']) ? '/' : '');
-                if (!empty($o['hasIndex'])) $lbl .= '  ★'; ?>
-              <option value="<?= ea($o['path']) ?>"><?= ea($lbl) ?></option>
-              <?php endforeach; ?>
-            </datalist>
-          </div>
-          <?php endforeach; ?>
-        </div>
+        </details>
+        <?php endforeach; ?>
       </div>
-      <div class="actions">
-        <button class="btn" type="submit">💾 Enregistrer les points d'entrée</button>
+      <div class="pm-savebar">
+        <button class="btn" type="submit">💾 Enregistrer les projets</button>
         <a class="back" href="index.php" target="_blank">Voir la carte ↗</a>
       </div>
     </form>
+    <script>
+      /* + Ajouter un lien : clone la dernière ligne (label + url) et la vide */
+      function addLien(btn){
+        var list = btn.previousElementSibling;               // .lien-list
+        var rows = list.querySelectorAll('.lien-row');
+        var clone = rows[rows.length - 1].cloneNode(true);
+        clone.querySelectorAll('input').forEach(function(i){ i.value = ''; });
+        list.appendChild(clone);
+        clone.querySelector('input').focus();
+      }
+    </script>
   </div>
   <?php endif; ?>
 
@@ -422,6 +810,50 @@ $themes = [
   if(cbSel)cbSel.addEventListener('change',updateCartePreview);
   updateCartePreview();
 
+  /* Aperçu instantané de l'image choisie (avant envoi) */
+  document.querySelectorAll('.pm-file').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      var f=inp.files&&inp.files[0], box=document.getElementById(inp.dataset.thumb);
+      if(!f||!box)return;
+      var u=URL.createObjectURL(f);
+      box.innerHTML='<img src="'+u+'" alt="">';
+      var clr=inp.parentNode.querySelector('input[name^="imgclear"]'); if(clr)clr.checked=false;
+    });
+  });
+
+  /* Le nom saisi se reflète en direct dans le titre replié du projet */
+  document.querySelectorAll('input[data-sum]').forEach(function(inp){
+    inp.addEventListener('input',function(){
+      var t=document.getElementById(inp.dataset.sum); if(!t)return;
+      t.textContent = inp.value.trim() || inp.dataset.folder;
+    });
+  });
+
+  /* Palette d'émojis : clic → applique l'icône au champ + à la miniature */
+  function setThumbEmoji(thumbId, emo){
+    var box=document.getElementById(thumbId); if(!box)return;
+    if(box.querySelector('img')) return;          // une image est déjà choisie → on n'écrase pas
+    box.innerHTML='<span class="pm-emoji">'+(emo||'🕹️')+'</span>';
+  }
+  function markSel(input){
+    var wrap=input.closest('.pm-body'); if(!wrap)return;
+    var v=input.value.trim();
+    wrap.querySelectorAll('.pm-emo').forEach(function(b){ b.classList.toggle('sel', b.dataset.emo===v); });
+  }
+  document.querySelectorAll('.pm-emo').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var inp=document.getElementById(btn.dataset.target); if(!inp)return;
+      inp.value=btn.dataset.emo;
+      setThumbEmoji(btn.dataset.thumb, btn.dataset.emo);
+      markSel(inp);
+    });
+  });
+  /* Saisie manuelle dans le champ icône → maj miniature + surbrillance palette */
+  document.querySelectorAll('.pm-field-icon input[data-thumb]').forEach(function(inp){
+    inp.addEventListener('input',function(){ setThumbEmoji(inp.dataset.thumb, inp.value.trim()); markSel(inp); });
+    markSel(inp);   // surbrillance initiale
+  });
+
   var darkBox=document.querySelector('input[name="dark"]');
   document.querySelectorAll('.theme-card').forEach(function(el){ el.addEventListener('click',function(){
     if(aP){aP.value=el.dataset.a;} if(aT){aT.value=el.dataset.a;}
@@ -433,12 +865,14 @@ $themes = [
 </script>
 <?php if ($saved || $savedProj): ?>
 <script>
-  /* Après enregistrement : le portfolio (fenêtre parente) se recharge pour refléter
-     les changements tout de suite — pas besoin de recharger à la main. */
+  /* Après enregistrement : on GARDE la confirmation « ✔ » visible (avant on
+     rechargeait le parent aussitôt, du coup le message disparaissait et on
+     croyait que rien n'avait été sauvé). Le portfolio derrière la modale est
+     marqué « à rafraîchir » et se recharge seulement à la FERMETURE. */
   try{
-    if(window.parent && window.parent!==window && window.parent.location){
-      try{ window.parent.sessionStorage.setItem('pf_admin_reopen','1'); }catch(e){}  // rouvrir la modale après reload
-      window.parent.location.reload();
+    var msg=document.querySelector('.msg.ok'); if(msg){ msg.scrollIntoView({behavior:'smooth',block:'center'}); }
+    if(window.parent && window.parent!==window){
+      try{ window.parent.sessionStorage.setItem('pf_admin_dirty','1'); }catch(e){}
     }
   }catch(e){}
 </script>
