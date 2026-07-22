@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 6.1 — Le tir</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 6.1 — Le tir</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 6</p>
+    <p>
+      Tout se rejoint : la gravité de 3.1, la boucle de l'étape 3, et la caméra libre de
+      l'étape 6 — <b>tournez autour, c'est fait pour</b>. Une trajectoire vue de face ne dit
+      rien ; vue de profil, elle dit tout.
+    </p>
+    <p>
+      Trois billes partent <b>du même canon</b>, au <b>même angle</b>, à la <b>même
+      vitesse</b>. Seule la gravité diffère.
+    </p>
+
+    <label>angle de tir — ° <span class="deg" id="la">40</span>
+      <input type="range" id="angle" min="5" max="85" step="1" value="40"></label>
+    <label>vitesse de tir — m/s <span class="deg" id="lv">5.0</span>
+      <input type="range" id="vitesse" min="3" max="14" step="0.5" value="5"></label>
+    <label>élasticité <span class="deg" id="le">0.50</span>
+      <input type="range" id="elasticite" min="0" max="0.9" step="0.05" value="0.5"></label>
+
+    <p><button type="button" id="tirer">Feu</button>
+       <button type="button" id="vider">Effacer</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (6)</summary>
+      <ul>
+        <li>
+          <b>La portée en vol libre va en 1/g</b> — pas en 1/√g comme le temps de chute
+          (3.1). D'où l'écart énorme : à g 15× plus fort, Jupiter tire 15× moins loin.
+          C'est le rapport le plus brutal de tout ce tutoriel, et il tient sur une ligne.
+        </li>
+        <li>
+          <b>La gravité ne freine jamais vers l'avant.</b> Dans le code, <code>g</code>
+          n'apparaît que sur <code>vitesse.y</code> — jamais sur <code>x</code> ni
+          <code>z</code>. Tant qu'aucune bille n'a touché le sol, les trois ont avancé
+          <b>exactement autant</b> horizontalement. Si la bille lunaire va loin, c'est qu'elle
+          a plus de <b>temps</b>, pas plus de vitesse.
+        </li>
+        <li>
+          <b>Les rebonds allongent tout, mais ne changent pas le rapport.</b> Le compteur
+          affiche les deux : le vol libre, puis l'arrêt final. Les billes vont environ
+          <b>1,6× plus loin</b> après avoir rebondi — et ce facteur est presque le même pour
+          les trois, donc le rapport 1/g survit (6,3 au lieu de 6,1). C'est logique une fois
+          dit : chaque rebond est lui-même un petit vol balistique, qui obéit à la même loi.
+          Seule la formule scolaire, elle, ne connaît que le premier.
+        </li>
+        <li>
+          <b>Distinguer le clic du glisser.</b> Avec OrbitControls, chaque rotation de caméra
+          se termine par un relâchement de souris — et tirerait un coup non voulu. On mesure
+          donc le déplacement du pointeur entre <code>pointerdown</code> et
+          <code>pointerup</code> : au-delà de 5 px, c'était un glisser, on ne tire pas. C'est
+          le piège de toute scène à la fois navigable et cliquable.
+        </li>
+        <li>
+          <code>enableDamping</code> <b>oblige</b> à appeler <code>controls.update()</code> à
+          chaque image. Sans cet appel, l'inertie ne s'applique jamais et la caméra semble se
+          figer dès qu'on relâche.
+        </li>
+        <li>
+          <b>Les billes ne coûtent rien, les traces si.</b> Les billes partagent une seule
+          <code>SphereGeometry</code> et trois matériaux : tirez cent fois, c'est toujours un
+          seul envoi à la carte graphique (étape 1b). Chaque trace, en revanche, crée sa
+          propre géométrie — « Effacer » doit donc les <code>dispose()</code>, sinon la
+          mémoire GPU fuit.
+        </li>
+      </ul>
+    </details>
+
+    <a href="06-souris.html">← Précédent</a> ·
+    <a href="../lecons/01-scene-basique.html">Passer aux leçons →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight);
+    // De PROFIL : les billes filent le long de +X. Vue de face, les trois arcs se
+    // superposeraient en un trait vertical et l'on ne comparerait rien.
+    //
+    // Le cadrage est un compromis assumé : la portée lunaire vaut 15× celle de Jupiter,
+    // aucune vue ne peut rendre les deux confortables. On cadre donc sur le départ — le
+    // canon doit rester à droite du HUD — et la bille lunaire finit hors champ. C'est
+    // précisément ce qu'on veut faire sentir ; molette pour la suivre.
+    camera.position.set(6, 5, 22);
+    camera.lookAt(6, 1.5, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // L'étape 6 au complet : orbite, inertie, et interdiction de passer sous le sol.
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.1;
+    controls.target.set(6, 1.5, 0);
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    const grille = new THREE.GridHelper(100, 50, 0x2a313c, 0x1c222b);
+    grille.position.x = 10;   // la grille suit le champ de tir
+    scene.add(grille);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(10, 12, 8);
+    scene.add(lampe);
+
+    // --- LA SIMULATION ---
+
+    const CORPS = [
+      { nom: 'Lune',    g: 1.62,  couleur: 0x8b949e },
+      { nom: 'Terre',   g: 9.81,  couleur: 0x58a6ff },
+      { nom: 'Jupiter', g: 24.79, couleur: 0xf78166 },
+    ];
+
+    const P = { angle: 40, vitesse: 5, elasticite: 0.5 };
+    const RAYON = 0.22;
+
+    // On tire depuis la hauteur EXACTE où la bille se posera (son rayon). C'est ce qui
+    // rend la portée comparable à la formule v²·sin(2θ)/g, qui suppose un départ et une
+    // arrivée à la même hauteur. Tirer de 30 cm plus haut fausserait la comparaison de
+    // 20 % sur Jupiter, dont le vol ne dure qu'une demi-seconde.
+    const DEPART = new THREE.Vector3(0, RAYON, 0);
+
+    // Géométrie PARTAGÉE par toutes les billes de tous les tirs (étape 1b).
+    const formeBille = new THREE.SphereGeometry(RAYON, 20, 12);
+    for (const c of CORPS) {
+      c.matiere = new THREE.MeshStandardMaterial({
+        color: c.couleur, roughness: 0.4, emissive: c.couleur, emissiveIntensity: 0.3,
+      });
+    }
+
+    // Le canon : une simple boîte étirée, qu'on incline avec l'angle de tir.
+    const canon = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.16, 0.16),
+      new THREE.MeshStandardMaterial({ color: 0xe6edf3, roughness: 0.5 })
+    );
+    scene.add(canon);
+
+    function placerCanon() {
+      const a = THREE.MathUtils.degToRad(P.angle);
+      // La boîte est alignée sur +X : la tourner autour de Z l'incline vers le haut.
+      canon.rotation.z = a;
+      canon.position.copy(DEPART).addScaledVector(direction(), 0.7);
+    }
+
+    // La direction de tir, dans le plan X/Y. Un seul endroit qui la calcule :
+    // le canon et les billes doivent partir EXACTEMENT du même vecteur.
+    function direction() {
+      const a = THREE.MathUtils.degToRad(P.angle);
+      return new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+    }
+
+    const billes = [];
+    const traces = [];
+
+    function tirer() {
+      const d = direction();
+      for (const corps of CORPS) {
+        const bille = new THREE.Mesh(formeBille, corps.matiere);
+        bille.position.copy(DEPART);
+        scene.add(bille);
+
+        billes.push({
+          mesh: bille,
+          g: corps.g,
+          nom: corps.nom,
+          couleur: corps.couleur,
+          // MÊME vitesse, MÊME direction pour les trois. Seul g changera la suite.
+          vitesse: d.clone().multiplyScalar(P.vitesse),
+          points: [DEPART.clone()],
+          endormie: false,
+          contacts: 0,
+          vol: 0,       // la portée du premier vol : c'est ELLE que la formule prédit
+          portee: 0,    // et là où la bille finit par s'arrêter, rebonds compris
+        });
+      }
+    }
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      for (const b of billes) {
+        if (b.endormie) continue;
+
+        // L'intégration de 3.1, en 3 dimensions. `g` ne touche QUE y : c'est le piège n°2,
+        // et il est visible en une ligne.
+        b.vitesse.y -= b.g * dt;
+        b.mesh.position.addScaledVector(b.vitesse, dt);
+
+        // On garde un point tous les 10 cm : un par image ferait des milliers de sommets
+        // pour un trait identique.
+        const dernier = b.points[b.points.length - 1];
+        if (dernier.distanceToSquared(b.mesh.position) > 0.01) b.points.push(b.mesh.position.clone());
+
+        if (b.mesh.position.y - RAYON < 0) {
+          b.mesh.position.y = RAYON;                            // corriger AVANT
+
+          // Le premier contact clôt le vol libre : c'est CETTE distance-là que la
+          // formule balistique prédit, et la seule qu'on puisse comparer à elle.
+          if (b.contacts === 0) b.vol = b.mesh.position.x;
+          b.contacts++;
+
+          b.vitesse.y = Math.abs(b.vitesse.y) * P.elasticite;   // puis rebondir
+          b.vitesse.x *= 0.86;                                  // le sol freine aussi à plat
+          b.vitesse.z *= 0.86;
+
+          // LE SEUIL PORTE SUR LA VITESSE VERTICALE, jamais sur la vitesse totale.
+          // Avec `length() < 0.5`, une bille sans rebond (élasticité 0) garderait toute
+          // sa vitesse horizontale : elle ne s'endormirait pas, glisserait sur le sol,
+          // et prendrait un `*= 0.86` À CHAQUE IMAGE au lieu d'un par rebond — un
+          // frottement dépendant du nombre d'images par seconde. Exactement le bug que
+          // l'étape 3 apprend à ne pas commettre. Sur `vitesse.y`, le nombre de rebonds
+          // est physique, donc le frottement l'est aussi.
+          if (b.vitesse.y < 0.5) {
+            b.endormie = true;
+            b.portee = b.mesh.position.x;
+            tracer(b);
+          }
+        }
+      }
+
+      controls.update();   // OBLIGATOIRE avec enableDamping (piège n°5)
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    function tracer(b) {
+      const geometrie = new THREE.BufferGeometry().setFromPoints(b.points);
+      const ligne = new THREE.Line(geometrie, new THREE.LineBasicMaterial({ color: b.couleur }));
+      scene.add(ligne);
+      traces.push(ligne);
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      if (!billes.length) {
+        lecture.textContent = 'réglez l\'angle, puis « Feu »\ntournez autour pour voir les arcs de profil';
+        return;
+      }
+      const derniers = billes.slice(-3);
+      lecture.textContent = derniers.map((b) => {
+        if (!b.endormie) return `${b.nom.padEnd(8)} ${b.mesh.position.x.toFixed(1)} m — en vol`;
+        // La portée du vol est celle que prédit v²·sin(2θ)/g ; l'arrêt, non — les
+        // rebonds l'ont emmenée plus loin, et le frottement l'a freinée.
+        const rebonds = b.portee > b.vol + 0.05 ? ` → ${b.portee.toFixed(1)} m au repos` : '';
+        return `${b.nom.padEnd(8)} vol ${b.vol.toFixed(1)} m${rebonds}`;
+      }).join('\n');
+    }
+
+    placerCanon();
+    animer();
+    tirer();   // un premier tir d'office : la page doit montrer, pas attendre
+
+    // --- Clic contre glisser : le piège n°4 ---
+
+    let depart = null;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      depart = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!depart) return;
+      // Plus de 5 px de déplacement : l'utilisateur tournait la caméra, on ne tire pas.
+      if (Math.hypot(e.clientX - depart.x, e.clientY - depart.y) < 5) tirer();
+      depart = null;
+    });
+
+    document.getElementById('tirer').addEventListener('click', tirer);
+
+    document.getElementById('vider').addEventListener('click', () => {
+      // Les billes partagent géométrie et matériau : rien à libérer, on les retire.
+      for (const b of billes) scene.remove(b.mesh);
+      billes.length = 0;
+
+      // Les traces ont chacune SA géométrie. Celles-là doivent être libérées :
+      // JavaScript ramasse ses miettes, WebGL non.
+      for (const t of traces) {
+        scene.remove(t);
+        t.geometry.dispose();
+        t.material.dispose();
+      }
+      traces.length = 0;
+    });
+
+    const curseurs = {
+      angle: [document.getElementById('angle'), document.getElementById('la'), 0],
+      vitesse: [document.getElementById('vitesse'), document.getElementById('lv'), 1],
+      elasticite: [document.getElementById('elasticite'), document.getElementById('le'), 2],
+    };
+
+    for (const [nom, [champ, etiq, dec]] of Object.entries(curseurs)) {
+      champ.addEventListener('input', () => {
+        P[nom] = Number(champ.value);
+        etiq.textContent = P[nom].toFixed(dec);
+        placerCanon();
+      });
+    }
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

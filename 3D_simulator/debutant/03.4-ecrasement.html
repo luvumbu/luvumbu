@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.4 — L'écrasement au sol</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.4 — L'écrasement</h2>
+    <p class="famille">Simulation · s'appuie sur les étapes 2 et 3</p>
+    <p>
+      En 3.1, la bille rebondissait sans une égratignure. Dans la vraie vie, un objet qui
+      touche le sol <b>encaisse</b> — il se déforme, ou il casse.
+    </p>
+    <p>
+      Trois cubes <b>identiques</b>, lâchés <b>ensemble</b>, de la <b>même hauteur</b>.
+      Seule leur <b>matière</b> change.
+    </p>
+
+    <label>vitesse de lecture <span class="deg" id="lr">×0.25 · 4× plus lent</span>
+      <input type="range" id="vlecture" min="-3" max="0.602" step="0.002" value="-0.6"></label>
+    <label>hauteur de lâcher — m <span class="deg" id="lh">6.0</span>
+      <input type="range" id="hauteur" min="1" max="12" step="0.1" value="6"></label>
+    <label>vitesse de lancer — m/s vers le bas <span class="deg" id="lv">0.0</span>
+      <input type="range" id="lance" min="0" max="30" step="0.5" value="0"></label>
+    <label>souplesse du mou <span class="deg" id="lk">1.0</span>
+      <input type="range" id="souplesse" min="0.2" max="3" step="0.05" value="1"></label>
+    <label>fragilité du cassant <span class="deg" id="lf">1.0</span>
+      <input type="range" id="fragilite" min="0.3" max="3" step="0.05" value="1"></label>
+    <label>découpe du cassant — N×N×N <span class="deg" id="ld">5</span>
+      <input type="range" id="decoupe" min="2" max="64" step="1" value="5"></label>
+
+    <label>revenir en arrière — le temps simulé <span class="deg" id="lt">0.00 s</span>
+      <input type="range" id="temps" min="0" max="8" step="0.004" value="0"></label>
+    <p>
+      <button type="button" id="pause">⏸ Pause</button>
+      <button type="button" id="recul">◀ −0,05 s</button>
+      <button type="button" id="avance">▶ +0,05 s</button>
+      <button type="button" id="relancer">↻ Les lâcher</button>
+    </p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (16)</summary>
+      <ul>
+        <li>
+          <b>Un écrasement DOIT conserver le volume.</b> Si vous écrasez en Y sans rien faire
+          d'autre, le cube <i>rétrécit</i> — et l'œil le repère instantanément, même sans
+          savoir pourquoi. La matière ne disparaît pas : ce qu'on perd en hauteur, il faut le
+          rendre en largeur. D'où le <code>1/√s</code> sur X et Z, qui garde
+          <code>x · y · z = 1</code>.
+        </li>
+        <li>
+          <b>C'est le premier des douze principes de l'animation</b> — le <i>squash &amp;
+          stretch</i> de Disney. Un objet parfaitement rigide paraît <b>mort</b>. Même une
+          balle de golf se déforme à l'impact ; simplement trop peu et trop vite pour qu'on
+          le voie. En animation, on exagère — c'est ce qui donne le poids.
+        </li>
+        <li>
+          <b>Le sol est un ressort, et la déformation EST l'enfoncement.</b> On ne replace
+          jamais le cube de force : on le laisse s'enfoncer, et le sol le repousse d'autant
+          plus fort qu'il s'enfonce. Sa demi-hauteur vaut alors exactement sa hauteur de
+          centre, donc son bas retombe sur zéro tout seul. Aucune durée n'est codée nulle
+          part : elle sort de la physique.
+        </li>
+        <li>
+          <b>Le contact doit être testé plus souvent que l'image</b> — c'est ce qui rendait
+          cette page saccadée à ma première version. Une seule détection par frame, et à
+          10 m/s le cube s'enfonce de <b>17 cm</b> avant qu'on le remarque ; le remonter d'un
+          coup est une téléportation, et l'œil la voit. En 12 sous-pas, l'enfoncement tombe à
+          1,4 cm et le mouvement redevient continu. C'est pour ça que les moteurs physiques
+          tournent à 240 Hz pendant que l'écran est à 60.
+        </li>
+        <li>
+          <b>La vitesse de lecture ne touche à AUCUNE constante.</b> Ni la gravité, ni la
+          raideur, ni l'élasticité : elle multiplie le temps qui s'écoule entre deux images —
+          exactement le ×0,5 d'un lecteur vidéo. La physique reste la même, on la regarde
+          plus ou moins vite. Et c'est nécessaire : un impact réel dure <b>60 millisecondes</b>,
+          soit quatre images, et aucune raideur ne peut l'allonger — sa durée vaut π/(2ω) et
+          sa profondeur v/ω, les deux tiennent au même ω. C'est pour ça qu'on filme les
+          crash-tests à 10 000 images par seconde.
+        </li>
+        <li>
+          <b>Revenir en arrière n'enregistre RIEN — ça rejoue.</b> Bouger la barre de temps
+          remet tout à zéro et rappelle le pas de simulation autant de fois qu'il faut. Zéro
+          mémoire, là où enregistrer les positions de 32 768 morceaux coûterait <b>900 Ko par
+          image</b>. C'est exactement ce que fait le replay d'un jeu : on ne stocke pas les
+          images, on stocke la graine et on rejoue.
+        </li>
+        <li>
+          <b>Mais rejouer exige une simulation REPRODUCTIBLE</b>, et ça se paie sur deux
+          points. D'abord <code>Math.random()</code> est banni : on ne peut pas lui redemander
+          la même suite, donc la fracture serait différente à chaque retour en arrière. Un
+          générateur à <b>graine</b> (ici mulberry32, quatre lignes) le remplace, et on remet
+          la graine à chaque lâcher.
+        </li>
+        <li>
+          <b>Ensuite, le pas de temps doit être FIXE.</b> La simulation n'avance jamais du
+          temps écoulé depuis la dernière image — toujours de <code>1/240</code> s
+          exactement, avec un <b>accumulateur</b> qui garde le reste pour l'image suivante.
+          Avec un pas variable, les mêmes deux secondes ne tomberaient jamais pareil, et
+          l'image d'un instant donné changerait à chaque visite. C'est le prix du
+          déterminisme — et c'est aussi ce qui rend la physique identique sur un 60 Hz et un
+          144 Hz.
+        </li>
+        <li>
+          <b>Lancer et lâcher ne s'additionnent pas.</b> Le curseur de vitesse jette le cube
+          vers le bas ; il touche alors à <code>√(v₀² + 2gh)</code>, jamais à
+          <code>v₀ + √(2gh)</code>. Lancer à 10 m/s un cube qui tomberait déjà à 10 n'en fait
+          pas 20 mais <b>14,1</b> — c'est l'<b>énergie</b> qui s'ajoute, pas la vitesse, et
+          l'énergie va comme le carré. Poussez les deux curseurs et vérifiez.
+        </li>
+        <li>
+          <b>Doubler la hauteur n'écrase pas deux fois plus.</b> L'écrasement suit la
+          <b>vitesse</b> d'impact, et la vitesse va en <b>√h</b> (3.1). Passer de 3 à 6 mètres
+          ne fait que ×1,41. Il faut <b>quadrupler</b> la hauteur pour doubler le choc.
+        </li>
+        <li>
+          <b>Attention au <code>scale</code> qui tombe à zéro.</b> Une échelle nulle rend la
+          matrice de l'objet non inversible : les normales deviennent absurdes, l'objet vire
+          au noir ou disparaît. Le code plafonne donc l'écrasement à 0,15 — jamais 0.
+        </li>
+        <li>
+          <b>Les morceaux SONT le cube.</b> On le découpe en N×N×N cellules — le curseur règle N — chacune à sa
+          vraie place et à sa vraie taille : leur volume total vaut donc exactement le sien,
+          par construction. Ma première version faisait apparaître 90 petits cubes dans une
+          flaque au sol — 0,37 m³ pour un cube qui en fait 1. <b>Les deux tiers de la matière
+          s'évaporaient</b>, et ça se voyait sans savoir pourquoi.
+        </li>
+        <li>
+          <b>Un objet qui casse ne s'arrête pas de tomber.</b> Les morceaux gardent tous la
+          vitesse d'impact — rien ne les a freinés. Ce sont les cellules du <b>bas</b> qui
+          touchent le sol ; celles du haut continuent leur chute et s'écrasent sur le tas.
+          Ma première version les faisait <b>exploser vers le ciel</b> : ça n'arrive jamais.
+        </li>
+        <li>
+          <b>Ce qui projette la matière, c'est l'écrasement — pas une explosion.</b> La couche
+          du bas est comprimée et n'a nulle part où aller sauf sur les côtés, exactement comme
+          une goutte qui s'étale. D'où l'éjection radiale <b>proportionnelle à la profondeur
+          dans le tas</b> : forte en bas, nulle en haut. C'est ce qui donne la gerbe plate
+          d'un objet qui se brise, au lieu d'un feu d'artifice.
+        </li>
+        <li>
+          <b>Un éclat ne rebondit pas comme une balle</b> : il claque et il glisse. Restitution
+          0,12, et un frottement au sol exprimé <b>par seconde</b> (<code>exp(−6·dt)</code>) et
+          non par contact — un morceau qui glisse est freiné en continu, pas une fois par
+          rebond. Sinon le freinage dépendrait du nombre d'images.
+        </li>
+        <li>
+          <b>Ce qui triche encore, et il faut le dire :</b> une vraie fracture <i>consomme</i>
+          de l'énergie (créer des surfaces coûte), les morceaux ne s'entrechoquent pas ici, et
+          leur découpe est une grille — le réel donnerait des cellules de <b>Voronoï</b> de
+          tailles très inégales. Une simulation de rupture honnête est un autre métier :
+          c'est le domaine de moteurs comme Rapier, pas de quinze lignes.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03.3-ressort.html">← Précédent</a> ·
+    <a href="03.4b-deformation-maillee.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    // Décentrée : le HUD couvre le tiers gauche, viser le milieu cacherait le premier cube.
+    camera.position.set(0.2, 3.2, 13);
+    camera.lookAt(0.2, 2.4, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.GridHelper(16, 16, 0x2a313c, 0x2a313c));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(2, 7, 6);
+    scene.add(lampe);
+
+    // --- Ce qui est nouveau : TROIS MATIÈRES ---
+
+    const G = 9.81;          // on reste sur Terre : ici la variable est la MATIÈRE
+    const COTE = 1;          // le cube fait 1 m d'arête
+    const DEMI = COTE / 2;
+
+    // ─────────────────── LE HASARD REPRODUCTIBLE ───────────────────
+    //
+    // Le `Math.random()` du navigateur interdit de rembobiner : deux fois le même instant donneraient deux
+    // images différentes, parce qu'on ne peut pas lui redemander la même suite. Un
+    // générateur à GRAINE, si. C'est ce qui rend cette page rejouable — et c'est aussi
+    // ce qui rend possibles les replays de jeu, le netcode en lockstep, et les tests
+    // automatiques d'une physique.
+    //
+    // mulberry32 : quatre lignes, une qualité largement suffisante ici.
+    let graine = 12345;
+    function alea() {
+      graine |= 0;
+      graine = (graine + 0x6D2B79F5) | 0;
+      let t = Math.imul(graine ^ (graine >>> 15), 1 | graine);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+
+    const CORPS = [
+      { nom: 'Rigide',  type: 'rigide',  x: 0, couleur: 0x58a6ff, note: 'rebondit intact' },
+      { nom: 'Mou',     type: 'mou',     x: 3, couleur: 0x7ee787, note: 's’écrase et repart' },
+      { nom: 'Cassant', type: 'cassant', x: 6, couleur: 0xf78166, note: 'se fragmente' },
+    ];
+
+    const P = { hauteur: 6, lance: 0, souplesse: 1, fragilite: 1, lecture: 0.25, decoupe: 5 };
+
+    // Le temps SIMULÉ, en secondes. C'est la seule horloge qui compte : celle du
+    // navigateur ne sert qu'à savoir de combien l'avancer.
+    let temps = 0;
+
+    const formeCube = new THREE.BoxGeometry(COTE, COTE, COTE);
+
+    // LES MORCEAUX SONT LE CUBE. On le découpe en N×N×N cellules, et chaque cellule est
+    // un morceau — à sa vraie place, à sa vraie taille. Leur volume total vaut donc
+    // N³ · (COTE/N)³ = COTE³ : exactement celui du cube, par construction.
+    //
+    // Ma première version faisait apparaître 90 petits cubes de 16 cm dans une flaque au
+    // sol : 0,37 m³ pour un cube qui en fait 1. Les deux tiers de la matière
+    // s'évaporaient à l'impact, et ça se voyait.
+    // N est réglable : le curseur « découpe » le pilote. Tout en dépend — le nombre de
+    // morceaux, leur taille, et donc le volume total (qui reste 1, par construction).
+    let N = 5;
+    let DEBRIS = 125;
+    let TAILLE = COTE / 5;
+    let CELLULES = [];
+
+    // Un cube UNITAIRE : chaque instance sera mise à l'échelle TAILLE par sa matrice.
+    const formeDebris = new THREE.BoxGeometry(1, 1, 1);
+
+    // La taille des morceaux, réutilisée à chaque image plutôt que recréée.
+    const _tailleDebris = new THREE.Vector3();
+
+    // Recalcule la découpe, et refabrique l'InstancedMesh : son nombre d'instances est
+    // FIGÉ à la création, on ne peut pas l'agrandir après coup.
+    function decouper(c) {
+      N = Math.round(P.decoupe);
+      DEBRIS = N * N * N;
+      TAILLE = COTE / N;
+      _tailleDebris.set(TAILLE, TAILLE, TAILLE);
+
+      CELLULES = [];
+      for (let ix = 0; ix < N; ix++) {
+        for (let iy = 0; iy < N; iy++) {
+          for (let iz = 0; iz < N; iz++) {
+            CELLULES.push(new THREE.Vector3(
+              ((ix + 0.5) / N - 0.5) * COTE,
+              ((iy + 0.5) / N - 0.5) * COTE,
+              ((iz + 0.5) / N - 0.5) * COTE,
+            ));
+          }
+        }
+      }
+
+      if (c.debris) { scene.remove(c.debris); c.debris.dispose(); }
+      c.debris = new THREE.InstancedMesh(formeDebris, c.cube.material, DEBRIS);
+      c.debris.visible = false;
+      scene.add(c.debris);
+
+      c.morceaux = CELLULES.map(() => ({
+        pos: new THREE.Vector3(), vit: new THREE.Vector3(),
+        rot: new THREE.Euler(), spin: new THREE.Vector3(),
+      }));
+    }
+
+    function etiquette(nom, note, couleur) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#' + couleur.toString(16).padStart(6, '0');
+      ctx.font = '600 44px system-ui, sans-serif';
+      ctx.fillText(nom, 256, 48);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '28px Consolas, monospace';
+      ctx.fillText(note, 256, 96);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t }));
+      s.scale.set(2.7, 0.68, 1);
+      return s;
+    }
+
+    const _mat = new THREE.Matrix4();
+    const _q = new THREE.Quaternion();
+    const _e = new THREE.Euler();
+    const _p = new THREE.Vector3();
+    const _s = new THREE.Vector3(1, 1, 1);
+
+    for (const c of CORPS) {
+      const matiere = new THREE.MeshStandardMaterial({
+        color: c.couleur, roughness: 0.45, emissive: c.couleur, emissiveIntensity: 0.2,
+      });
+      c.cube = new THREE.Mesh(formeCube, matiere);
+      scene.add(c.cube);
+
+      scene.add(etiquette(c.nom, c.note, c.couleur).translateX(c.x).translateY(-0.7));
+    }
+
+    function lancer() {
+      // LA GRAINE, remise à sa valeur de départ. C'est ce qui garantit que rejouer
+      // depuis zéro redonne EXACTEMENT la même fracture, au morceau près.
+      graine = 12345;
+      temps = 0;
+      for (const c of CORPS) {
+        c.cube.position.set(c.x, P.hauteur, 0);
+        c.cube.scale.set(1, 1, 1);
+        c.cube.visible = true;
+        // Vers le BAS : le curseur donne une vitesse de lancer, qui s'ajoute à la chute.
+        c.vitesse = -P.lance;
+        c.ecrase = 1;       // l'échelle en Y : 1 = intact
+        c.creux = 1;        // le plus écrasé qu'il ait été
+        c.casse = false;
+        c.impact = 0;       // la vitesse au moment du choc, pour l'affichage
+        c.endormi = false;
+        // Les morceaux en UN SEUL InstancedMesh (5.3) : à 512, un Mesh chacun ferait
+        // 512 appels de dessin pour des cubes de 13 cm.
+        if (c.type === 'cassant') decouper(c);
+      }
+    }
+    lancer();
+
+    const _radial = new THREE.Vector3();
+
+    function briser(c, vitesseImpact) {
+      c.casse = true;
+      c.cube.visible = false;
+      c.debris.visible = true;
+
+      const v = Math.abs(vitesseImpact);
+
+      CELLULES.forEach((local, i) => {
+        const m = c.morceaux[i];
+
+        // 1) CHAQUE MORCEAU EST LÀ OÙ IL ÉTAIT. Il ne « naît » pas : il était déjà dans
+        //    le cube, à cette place exacte. Rien n'apparaît, rien ne disparaît.
+        m.pos.set(c.x + local.x, c.cube.position.y + local.y, local.z);
+
+        // 2) ILS GARDENT TOUS LA VITESSE D'IMPACT. C'est le point que ma première version
+        //    ratait complètement : un cube qui tombe à 10 m/s ne s'arrête pas parce qu'il
+        //    casse. Rien ne les a freinés — ils continuent vers le BAS. Ce sont les cellules
+        //    du bas qui vont toucher le sol, pas les autres.
+        m.vit.set(0, -v, 0);
+
+        // 3) LA MATIÈRE DU BAS EST CHASSÉE SUR LES CÔTÉS. C'est ça, un écrasement : la
+        //    couche écrasée n'a nulle part où aller sauf vers l'extérieur — exactement
+        //    comme une goutte qui s'étale. Plus un morceau est bas, plus il est éjecté ;
+        //    ceux du haut ne font que tomber sur le tas.
+        const depuisLeBas = (local.y + DEMI) / COTE;         // 0 en bas, 1 en haut
+        const ejection = v * 0.5 * P.fragilite * (1 - depuisLeBas) ** 1.5;
+
+        _radial.set(local.x, 0, local.z);
+        // Les cellules pile sur l'axe n'ont aucune direction : on leur en tire une.
+        if (_radial.lengthSq() < 1e-6) _radial.set(alea() - 0.5, 0, alea() - 0.5);
+        _radial.normalize();
+        m.vit.addScaledVector(_radial, ejection * (0.7 + alea() * 0.6));
+
+        // Un peu de projection vers le haut, et un peu de hasard : une fracture réelle
+        // part dans tous les sens à petite échelle. Mais ça reste MINEUR devant la chute
+        // et l'éjection latérale — une explosion vers le ciel, ça n'existe pas.
+        m.vit.y += v * 0.1 * alea() * (1 - depuisLeBas);
+
+        m.rot.set(0, 0, 0);
+        m.dort = false;
+        // Le tournoiement suit la vitesse : un morceau qui part vite tourne vite.
+        const vitesseM = m.vit.length();
+        m.spin.set(
+          (alea() - 0.5) * vitesseM * 2,
+          (alea() - 0.5) * vitesseM * 2,
+          (alea() - 0.5) * vitesseM * 2,
+        );
+      });
+    }
+
+    const horloge = new THREE.Clock();
+
+    // ─────────────────── LE PAS FIXE ───────────────────
+    //
+    // La simulation n'avance JAMAIS du temps écoulé depuis la dernière image : elle
+    // avance toujours de PAS, exactement. C'est ce qui la rend reproductible — donc
+    // rembobinable. Avec un pas variable, rejouer les mêmes 2 secondes donnerait un
+    // résultat différent à chaque fois, puisque les images ne tombent jamais pareil.
+    //
+    // C'est aussi la seule façon d'avoir une physique identique sur un 60 Hz et un
+    // 144 Hz. Le prix : il faut un accumulateur, et gérer le reste.
+    const PAS = 1 / 240;     // la simulation tourne à 240 Hz, l'écran à 60
+    const DUREE = 8;         // la longueur de la « bande » qu'on peut parcourir
+    let accumulateur = 0;
+    let enPause = false;
+
+    const champTemps = document.getElementById('temps');
+
+    // Un pas de simulation, et rien d'autre : pas de rendu, pas de lecture d'horloge.
+    // C'est cette séparation qui permet de le rappeler 500 fois d'affilée pour rembobiner.
+    function avancer(dt) {
+      temps += dt;
+
+      // LE SOUS-PAS, toujours nécessaire. Le contact n'est testé qu'une fois par pas :
+      // à 10 m/s et 1/240 s, le cube s'enfonce déjà de 4 cm avant qu'on s'en aperçoive.
+      // Le remonter d'un coup, c'est une téléportation — et ça se VOIT.
+      const SOUS_PAS = 3;
+      const h = dt / SOUS_PAS;
+
+      for (const c of CORPS) {
+        if (c.casse) { majDebris(c, dt); continue; }
+        if (c.endormi && c.ecrase > 0.999) continue;
+
+        for (let i = 0; i < SOUS_PAS; i++) {
+          // 1) LES FORCES. La gravité, toujours ; et le sol, seulement au contact.
+          let acc = -G;
+
+          if (c.type === 'mou' && c.cube.position.y < DEMI) {
+            // LE SOL EST UN RESSORT — et c'est tout le changement. Au lieu de replacer
+            // le cube de force, on le laisse s'enfoncer et le sol le repousse d'autant
+            // plus fort qu'il s'enfonce. Rien ne saute, rien ne se téléporte : la
+            // déformation EST l'enfoncement, image après image.
+            //
+            // La raideur décide de DEUX choses à la fois, et on ne peut pas les régler
+            // séparément : la profondeur de l'écrasement (v/ω) et sa DURÉE (π/ω), avec
+            // ω = √k. Un ressort raide s'écrase peu et vite — à 1500, le contact durait
+            // 81 ms, soit 5 images : trop bref pour qu'on voie quoi que ce soit.
+            // À 700, il dure 119 ms et creuse vraiment. C'est un compromis, pas un réglage.
+            const raideur = 700 / P.souplesse;
+            const enfoncement = DEMI - c.cube.position.y;
+            // ζ ≈ 0.35 : un rebond mou. À ζ = 1 il se poserait sans jamais repartir.
+            acc += raideur * enfoncement - 2 * Math.sqrt(raideur) * 0.35 * c.vitesse;
+
+            // Le choc se relève ICI, au premier contact — et pas après la boucle de
+            // sous-pas, où le sol l'aurait déjà freiné. Mon premier essai affichait
+            // 6 m/s au lieu de 10,4 : je mesurais la vitesse APRÈS le freinage.
+            if (!c.impact) c.impact = Math.abs(c.vitesse);
+          }
+
+          c.vitesse += acc * h;
+          c.cube.position.y += c.vitesse * h;
+
+          // Un garde-fou : si le ressort est trop mou pour la vitesse, le cube passerait
+          // au travers du sol. On l'arrête net à son écrasement maximal.
+          if (c.type === 'mou' && c.cube.position.y < DEMI * 0.15) {
+            c.cube.position.y = DEMI * 0.15;
+            c.vitesse = Math.abs(c.vitesse) * 0.3;
+          }
+
+          // 2) LE SOL DUR — pour le rigide et le cassant, qui ne se déforment pas.
+          if (c.type !== 'mou' && c.cube.position.y - DEMI < 0) {
+            c.cube.position.y = DEMI;
+            if (!c.impact) c.impact = Math.abs(c.vitesse);
+            if (c.type === 'cassant') { briser(c, c.vitesse); break; }
+            c.vitesse = Math.abs(c.vitesse) * 0.45;   // le rigide rebondit, point.
+            if (Math.abs(c.vitesse) < 0.5) { c.vitesse = 0; c.endormi = true; break; }
+          }
+        }
+
+        if (c.casse) continue;
+
+        // 3) LA DÉFORMATION DU MOU. Elle ne se calcule pas : elle se LIT. Le cube est
+        //    enfoncé de (DEMI − y), donc sa demi-hauteur vaut y — donc son échelle
+        //    vaut y/DEMI. Et son bas retombe exactement sur zéro, tout seul.
+        if (c.type === 'mou') {
+          // JAMAIS zéro : une échelle nulle rend la matrice non inversible.
+          c.ecrase = THREE.MathUtils.clamp(c.cube.position.y / DEMI, 0.15, 1);
+          c.creux = Math.min(c.creux, c.ecrase);
+
+          // LA CONSERVATION DU VOLUME : ce qu'on perd en hauteur, on le rend en largeur.
+          // x · y · z = (1/√s) · s · (1/√s) = 1. Sans ça, le cube maigrit à vue d'œil.
+          const large = 1 / Math.sqrt(c.ecrase);
+          c.cube.scale.set(large, c.ecrase, large);
+
+          // Le repos exige TROIS conditions, et j'en avais oublié une : il faut qu'il ait
+          // déjà touché. Sans `c.impact`, la première image le déclarait au repos — il
+          // venait d'être lâché, sa vitesse valait encore 0,16 — et il se téléportait au
+          // sol avant même de tomber. Un objet lent n'est pas un objet posé.
+          if (c.impact && Math.abs(c.cube.position.y - DEMI) < 0.01 && Math.abs(c.vitesse) < 0.4) {
+            c.vitesse = 0;
+            c.cube.position.y = DEMI;
+            c.endormi = true;
+          }
+        }
+      }
+    }
+
+    // ─────────────────── LE REMBOBINAGE ───────────────────
+    //
+    // Aucun enregistrement : on REJOUE. Remettre tout à zéro, puis rappeler avancer()
+    // autant de fois qu'il faut. C'est possible uniquement parce que la simulation est
+    // déterministe — pas fixe + hasard à graine. Le coût mémoire est NUL, là où
+    // enregistrer 32 768 morceaux coûterait 900 Ko par image.
+    //
+    // C'est exactement ce que font les replays de jeu : on ne stocke pas les images, on
+    // stocke la graine et les commandes, et on rejoue.
+    function allerA(cible) {
+      lancer();
+      const max = Math.ceil(cible / PAS);
+      for (let i = 0; i < max; i++) avancer(PAS);
+      accumulateur = 0;
+    }
+
+    function animer() {
+      requestAnimationFrame(animer);
+
+      if (!enPause) {
+        // LA VITESSE DE LECTURE — le ×0.5 d'un lecteur vidéo. Elle ne touche à AUCUNE
+        // constante : elle décide seulement de combien de temps SIMULÉ on avance par
+        // image. La physique, elle, tourne toujours à 240 Hz.
+        const reel = Math.min(horloge.getDelta(), 1 / 30) * P.lecture;
+
+        // L'ACCUMULATEUR. On avance par pas ENTIERS de PAS, et on garde le reste pour
+        // l'image suivante. Sans lui, on serait obligé d'avancer d'un dt variable — et
+        // la simulation ne serait plus reproductible.
+        accumulateur += reel;
+
+        // Le plafond : au retour d'un onglet, l'accumulateur pourrait valoir 30 s, soit
+        // 7200 pas d'un coup — la page se figerait pour rattraper. On abandonne le
+        // surplus : mieux vaut sauter du temps que geler.
+        if (accumulateur > 0.25) accumulateur = 0.25;
+
+        while (accumulateur >= PAS) {
+          avancer(PAS);
+          accumulateur -= PAS;
+        }
+        if (temps > DUREE) temps = DUREE;
+        champTemps.value = Math.min(temps, DUREE);
+      }
+
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    function majDebris(c, dt) {
+      // Mêmes sous-pas que le reste : sans eux, un morceau à 10 m/s s'enfoncerait de
+      // 17 cm avant qu'on le voie, puis serait remonté d'un coup. C'est ce qui donnait
+      // ce grouillement de « micro-bug » à l'impact.
+      const SOUS = Math.ceil(6 * Math.max(1, P.lecture));   // idem : `h` reste constant
+      const h = dt / SOUS;
+      const RAYON = TAILLE / 2;
+
+      // LE SOMMEIL, et c'est lui qui permet les 30 000 morceaux. Sans ça, on refait la
+      // physique de morceaux immobiles depuis dix secondes, et on réenvoie leurs 30 000
+      // matrices à la carte graphique à chaque image — pour rien.
+      let bouge = false;
+
+      for (let i = 0; i < DEBRIS; i++) {
+        const m = c.morceaux[i];
+        if (m.dort) continue;   // posé : sa matrice est déjà écrite, on n'y touche plus
+        bouge = true;
+
+        for (let s = 0; s < SOUS; s++) {
+          m.vit.y -= G * h;
+          m.pos.addScaledVector(m.vit, h);
+
+          if (m.pos.y < RAYON) {
+            m.pos.y = RAYON;
+            // Un éclat ne rebondit PAS comme une balle : il claque et glisse. 0.12,
+            // pas 0.3 — j'avais mis une valeur de caoutchouc sur du verre.
+            m.vit.y = Math.abs(m.vit.y) * 0.12;
+            // Le frottement au sol, par SECONDE et non par contact : un morceau qui
+            // glisse est freiné en continu, pas une fois par rebond.
+            const frein = Math.exp(-6 * h);
+            m.vit.x *= frein;
+            m.vit.z *= frein;
+            if (m.vit.lengthSq() < 0.04) { m.vit.set(0, 0, 0); m.dort = true; }
+          }
+        }
+
+        // Le tournoiement s'arrête avec le mouvement : un morceau posé ne tourne plus.
+        if (!m.dort) {
+          m.rot.x += m.spin.x * dt;
+          m.rot.y += m.spin.y * dt;
+          m.rot.z += m.spin.z * dt;
+        }
+
+        _p.copy(m.pos);
+        _q.setFromEuler(m.rot);
+        _mat.compose(_p, _q, _tailleDebris);   // la cellule, à sa vraie taille
+        c.debris.setMatrixAt(i, _mat);
+      }
+
+      // Le téléversement coûte : 30 000 matrices, c'est 2 Mo par image. Quand plus rien
+      // ne bouge, on ne renvoie rien. Sans cette ligne, un tas immobile coûterait autant
+      // qu'une explosion en cours.
+      if (bouge) c.debris.instanceMatrix.needsUpdate = true;
+      c.tousPoses = !bouge;
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      // La vitesse d'impact. Lancée ou lâchée, c'est ELLE qui décide de tout — et les deux
+      // ne s'ADDITIONNENT pas : elles se combinent en quadrature. Lancer à 10 m/s un cube
+      // qui tomberait déjà à 10 n'en fait pas 20, mais √(10² + 10²) = 14,1. C'est
+      // l'ÉNERGIE qui s'ajoute, pas la vitesse — et l'énergie va comme le carré.
+      const vTheorie = Math.sqrt(P.lance ** 2 + 2 * G * (P.hauteur - DEMI));
+      document.getElementById('lt').textContent =
+        temps.toFixed(2) + ' s' + (enPause ? ' · en pause' : '');
+
+      lecture.textContent =
+        `impact théorique √(v₀² + 2gh) = ${vTheorie.toFixed(2)} m/s` +
+        (P.lance ? ` · lancé à ${P.lance.toFixed(1)}` : ' · lâché sans vitesse') + `\n` +
+        CORPS.map((c) => {
+          if (c.casse) {
+            // Le volume des morceaux : N³ cellules de (COTE/N)³. Par construction, il
+            // vaut exactement celui du cube — les morceaux SONT le cube.
+            const vol = DEBRIS * TAILLE ** 3;
+            return `${c.nom.padEnd(8)} ${N}×${N}×${N} = ${DEBRIS.toLocaleString('fr')} morceaux de ${(TAILLE * 100).toFixed(1)} cm · ` +
+                   `volume ${vol.toFixed(3)} m³${c.tousPoses ? ' · tous posés' : ''}`;
+          }
+          const etat = c.type === 'mou'
+            ? `écrasé à ${(c.ecrase * 100).toFixed(0)} % · creux ${(c.creux * 100).toFixed(0)} %`
+            : `${c.cube.position.y.toFixed(2)} m`;
+          return `${c.nom.padEnd(8)} ${c.impact ? `choc ${c.impact.toFixed(1)} m/s · ` : ''}${etat}`;
+        }).join('\n');
+    }
+    animer();
+
+    // Ces curseurs-là changent le MONDE : on relâche les trois cubes après chacun,
+    // sinon on comparerait un cube lâché de 6 m avec un autre lâché de 3.
+    const curseurs = {
+      hauteur: ['lh', 1],
+      lance: ['lv', 1],
+      souplesse: ['lk', 1],
+      fragilite: ['lf', 1],
+      decoupe: ['ld', 0],
+    };
+
+    for (const [nom, [etiq, dec]] of Object.entries(curseurs)) {
+      const champ = document.getElementById(nom);
+      champ.addEventListener('input', () => {
+        P[nom] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[nom].toFixed(dec);
+        lancer();
+        champTemps.value = 0;   // le monde a changé : la bande repart de zéro
+      });
+    }
+
+    // Celui-ci ne change PAS le monde, seulement la façon de le regarder : il ne relance
+    // rien, on doit pouvoir le bouger en plein vol — comme la vitesse d'une vidéo.
+    //
+    // Il travaille en PUISSANCES DE 10, et ce n'est pas un caprice : la plage utile va de
+    // ×0.001 à ×4, soit un facteur 4000. Un curseur linéaire passerait 99,9 % de sa course
+    // au-dessus de ×0.1 — tout le ralenti tiendrait dans le dernier millimètre. En
+    // logarithmique, chaque millimètre vaut le même RAPPORT. Même raison qu'aux curseurs
+    // near / far de l'étape 2b.
+    const champVitesse = document.getElementById('vlecture');
+
+    // À ×0.001, l'impact de 60 ms s'étale sur une minute. « ×0.004 » ne parle à personne ;
+    // « 250× plus lent », si.
+    const etiquetteVitesse = (v) => (v >= 1
+      ? '×' + v.toFixed(2)
+      : '×' + Number(v.toPrecision(2)) + ' · ' + Math.round(1 / v) + '× plus lent');
+
+    champVitesse.addEventListener('input', () => {
+      P.lecture = Math.pow(10, Number(champVitesse.value));
+      document.getElementById('lr').textContent = etiquetteVitesse(P.lecture);
+    });
+
+    // ─────────────────── LA BARRE DE TEMPS ───────────────────
+
+    const boutonPause = document.getElementById('pause');
+
+    function basculerPause(etat) {
+      enPause = etat;
+      boutonPause.textContent = enPause ? '▶ Reprendre' : '⏸ Pause';
+      boutonPause.classList.toggle('actif', enPause);
+      // getDelta() cumule pendant la pause : sans cette purge, reprendre ferait un bond.
+      horloge.getDelta();
+    }
+
+    boutonPause.addEventListener('click', () => basculerPause(!enPause));
+
+    // Toucher la barre met en pause : on veut REGARDER un instant, pas le survoler.
+    champTemps.addEventListener('input', () => {
+      basculerPause(true);
+      allerA(Number(champTemps.value));
+    });
+
+    // Image par image. 0,05 s de temps simulé = 12 pas de physique.
+    for (const [id, pas] of [['recul', -0.05], ['avance', 0.05]]) {
+      document.getElementById(id).addEventListener('click', () => {
+        basculerPause(true);
+        const cible = THREE.MathUtils.clamp(temps + pas, 0, DUREE);
+        champTemps.value = cible;
+        allerA(cible);
+      });
+    }
+
+    document.getElementById('relancer').addEventListener('click', () => {
+      lancer();
+      champTemps.value = 0;
+      basculerPause(false);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

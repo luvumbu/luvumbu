@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>10 — Se déplacer au clavier</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>10 — Se déplacer au clavier</h2>
+    <p>
+      <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou les <kbd>flèches</kbd> pour avancer,
+      reculer et se décaler.<br>
+      <kbd>Espace</kbd> monter · <kbd>C</kbd> descendre · <kbd>Maj</kbd> courir.<br>
+      La souris oriente toujours le regard.
+    </p>
+    <label><input type="checkbox" id="voler"> Vol libre (avancer suit le regard)</label>
+    <label>Vitesse <input type="range" id="vitesse" min="1" max="20" step="0.5" value="6"></label>
+    <p id="position"></p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+    scene.fog = new THREE.Fog(0x0e1116, 25, 70);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+    camera.position.set(0, 2, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 2, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(10, 20, 10);
+    soleil.castShadow = true;
+    soleil.shadow.camera.top = soleil.shadow.camera.right = 30;
+    soleil.shadow.camera.bottom = soleil.shadow.camera.left = -30;
+    scene.add(soleil);
+
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(120, 120),
+      new THREE.MeshStandardMaterial({ color: 0x1c2229, roughness: 0.95 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.receiveShadow = true;
+    scene.add(sol);
+    scene.add(new THREE.GridHelper(120, 60, 0x3d444d, 0x232a33));
+
+    // Des repères : sans eux, impossible de sentir qu'on se déplace.
+    const forme = new THREE.BoxGeometry(1, 1, 1);
+    for (let i = 0; i < 60; i++) {
+      const h = 1 + (i % 5) * 1.4;
+      const colonne = new THREE.Mesh(forme, new THREE.MeshStandardMaterial({
+        color: new THREE.Color().setHSL((i % 12) / 12, 0.45, 0.55),
+        roughness: 0.6,
+      }));
+      const angle = i * 0.7;
+      const rayon = 6 + (i % 7) * 3.5;
+      colonne.position.set(Math.cos(angle) * rayon, h / 2, Math.sin(angle) * rayon);
+      colonne.scale.set(1, h, 1);
+      colonne.castShadow = true;
+      colonne.receiveShadow = true;
+      scene.add(colonne);
+    }
+
+    // ================== LE DÉPLACEMENT AU CLAVIER ==================
+    //
+    // OrbitControls fait tourner la caméra AUTOUR d'un point : `controls.target`.
+    // Déplacer la caméra sans déplacer ce point ferait dériver l'orientation.
+    // On translate donc les DEUX du même vecteur : la vue glisse, le regard reste.
+
+    // `event.code` désigne la TOUCHE PHYSIQUE, pas le caractère imprimé dessus.
+    // « KeyW » est donc le Z d'un clavier AZERTY : ZQSD et WASD marchent sans rien coder.
+    const TOUCHES = {
+      avant:     ['KeyW', 'ArrowUp'],
+      arriere:   ['KeyS', 'ArrowDown'],
+      gauche:    ['KeyA', 'ArrowLeft'],
+      droite:    ['KeyD', 'ArrowRight'],
+      monter:    ['Space'],
+      descendre: ['KeyC', 'ControlLeft'],
+      vite:      ['ShiftLeft', 'ShiftRight'],
+    };
+
+    // Ces touches feraient défiler la page si on les laissait passer.
+    const A_BLOQUER = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
+    const enfoncees = new Set();
+    const actif = (nom) => TOUCHES[nom].some((code) => enfoncees.has(code));
+
+    addEventListener('keydown', (e) => {
+      // Sans ce garde-fou, taper « d » dans l'éditeur de code déplacerait la caméra.
+      const cible = e.target;
+      if (cible.tagName === 'TEXTAREA' || cible.tagName === 'INPUT' || cible.isContentEditable) return;
+
+      if (A_BLOQUER.has(e.code)) e.preventDefault();
+      enfoncees.add(e.code);
+    });
+    addEventListener('keyup', (e) => enfoncees.delete(e.code));
+
+    // Changer d'onglet en maintenant une touche la laisserait « collée » enfoncée.
+    addEventListener('blur', () => enfoncees.clear());
+
+    // Vecteurs réutilisés : en allouer à chaque image ferait travailler le ramasse-miettes.
+    const _avant = new THREE.Vector3();
+    const _droite = new THREE.Vector3();
+    const _pas = new THREE.Vector3();
+    const HAUT = new THREE.Vector3(0, 1, 0);
+
+    let vitesse = 6;      // unités par seconde
+    let volerLibre = false;
+
+    function deplacer(dt) {
+      // « avant » = de la caméra vers sa cible.
+      _avant.subVectors(controls.target, camera.position);
+      if (!volerLibre) _avant.y = 0;   // on avance à plat, comme en marchant
+      _avant.normalize();
+
+      // « droite » est perpendiculaire à « avant » et à la verticale.
+      _droite.crossVectors(_avant, HAUT).normalize();
+
+      _pas.set(0, 0, 0);
+      if (actif('avant')) _pas.add(_avant);
+      if (actif('arriere')) _pas.sub(_avant);
+      if (actif('droite')) _pas.add(_droite);
+      if (actif('gauche')) _pas.sub(_droite);
+      if (actif('monter')) _pas.add(HAUT);
+      if (actif('descendre')) _pas.sub(HAUT);
+
+      if (_pas.lengthSq() === 0) return;
+
+      // Normaliser : sinon la diagonale serait 1,41 fois plus rapide qu'une ligne droite.
+      _pas.normalize().multiplyScalar(vitesse * (actif('vite') ? 3 : 1) * dt);
+
+      camera.position.add(_pas);
+      controls.target.add(_pas);   // la cible suit : l'orientation du regard est préservée
+    }
+    // ===============================================================
+
+    document.getElementById('voler').addEventListener('change', (e) => (volerLibre = e.target.checked));
+    document.getElementById('vitesse').addEventListener('input', (e) => (vitesse = +e.target.value));
+
+    const infoPos = document.getElementById('position');
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      deplacer(dt);        // avant controls.update(), qui applique l'inertie
+      controls.update();
+      renderer.render(scene, camera);
+
+      const p = camera.position;
+      infoPos.textContent = `x ${p.x.toFixed(1)} · y ${p.y.toFixed(1)} · z ${p.z.toFixed(1)}`;
+    }
+    animer();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

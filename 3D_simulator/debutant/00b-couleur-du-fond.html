@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 0b — La couleur du fond</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 0b — La couleur du fond</h2>
+    <p>
+      Il n'y a toujours <b>aucun objet</b>. Tout ce que vous voyez, c'est le fond —
+      et il y a déjà beaucoup à en dire : l'hexadécimal, <code>THREE.Color</code>,
+      la transparence, et pourquoi la couleur affichée est exactement celle demandée.
+    </p>
+    <label>Couleur du fond <input type="color" id="couleur" value="#1c3a5e"></label>
+    <label>
+      <input type="checkbox" id="transparent">
+      Fond transparent (on voit la page derrière)
+    </label>
+    <label>
+      <input type="checkbox" id="linear">
+      Sortie en linéaire — réglage <b>faux</b>, pour voir la différence
+    </label>
+    <p><code id="lecture"></code></p>
+    <p><b>Nouveau ici :</b> <code>scene.background</code>, l'hexadécimal,
+      <code>alpha</code>, <code>outputColorSpace</code>.</p>
+    <a href="00-canvas-vide.html">← Précédent</a> ·
+    <a href="01-premier-cube.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle de l'étape 0 ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+
+    // --- Ce qui est nouveau ---
+
+    // 1) L'HEXADÉCIMAL, une fois pour toutes
+    //
+    // 0x1c3a5e se lit par PAIRES :  1c = rouge,  3a = vert,  5e = bleu.
+    // Chaque paire va de 00 (rien du tout) à ff (255, le maximum). Donc :
+    //
+    //    0xff0000 = rouge pur        0x000000 = noir
+    //    0x00ff00 = vert pur         0xffffff = blanc
+    //    0x0000ff = bleu pur         0x808080 = gris moyen
+    //
+    // Le préfixe 0x dit à JavaScript « ce nombre est écrit en base 16 ». Ce n'est PAS
+    // une chaîne de caractères : 0x1c3a5e est le nombre 1849950, et c'est ce que
+    // console.log affichera. C'est la même notation que le #1c3a5e du CSS, sans le #.
+
+    scene.background = new THREE.Color(0x1c3a5e);
+
+    // Ces cinq écritures donnent EXACTEMENT la même couleur — prenez celle qui vous parle :
+    //    new THREE.Color(0x1c3a5e)
+    //    new THREE.Color('#1c3a5e')
+    //    new THREE.Color('rgb(28, 58, 94)')
+    //    new THREE.Color(28 / 255, 58 / 255, 94 / 255)   // trois flottants de 0 à 1
+    //    new THREE.Color('skyblue')                      // les 147 noms CSS fonctionnent
+
+    // scene.background accepte aussi autre chose qu'une couleur :
+    //    - une Texture      → une image plate en fond (voir étape 5 du README) ;
+    //    - une CubeTexture  → un vrai ciel qui tourne avec la caméra (skybox) ;
+    //    - null (le défaut) → rien n'est peint. Voir le point 3 ci-dessous.
+
+    // 2) LE PIÈGE : .set() et non =
+    //
+    // scene.background est un OBJET THREE.Color, pas un nombre. Pour le changer :
+    //    scene.background.set(0xff0000);   // ✔ on modifie l'objet existant
+    //    scene.background = 0xff0000;      // ✘ on écrase l'objet par un nombre → plantage
+    // La même règle vaudra pour material.color à l'étape 1b. Retenez-la maintenant.
+
+    const renderer = new THREE.WebGLRenderer({
+      // alpha: true rend le canvas TRANSPARENT là où rien n'est peint.
+      // À poser à la création : ce réglage ne se change plus après coup.
+      alpha: true,
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 3) LA TRANSPARENCE
+    //
+    // Avec alpha: true ET scene.background = null, le canvas laisse voir la page HTML
+    // derrière lui. C'est ainsi qu'on incruste de la 3D dans un vrai site.
+    // On peint donc un dégradé sur le <body> : cochez la case pour le découvrir.
+    document.body.style.background =
+      'linear-gradient(160deg, #7ee787, #58a6ff 55%, #f78166)';
+
+    // Une variante existe côté renderer, et sème la confusion :
+    //    renderer.setClearColor(0x1c3a5e, 1);   // (couleur, opacité)
+    // C'est la couleur d'effacement du canvas. Différence : scene.background appartient
+    // à la SCÈNE, setClearColor au RENDERER. Si les deux sont définis, background gagne.
+    // Avec plusieurs scènes, chacune a son fond — d'où la préférence pour background.
+
+    // 4) POURQUOI LA COULEUR EST JUSTE
+    //
+    // Depuis la version 152, Three.js gère la couleur correctement sans qu'on demande rien :
+    //    - new THREE.Color(0x1c3a5e) considère 0x1c3a5e comme du sRGB (l'espace de votre
+    //      écran et de vos outils de dessin) et le convertit en interne dans un espace
+    //      LINÉAIRE, le seul où additionner des lumières donne un résultat physiquement juste ;
+    //    - renderer.outputColorSpace vaut THREE.SRGBColorSpace et refait la conversion
+    //      inverse au moment d'écrire les pixels.
+    // Résultat : la pipette de votre navigateur retrouve #1c3a5e. Ne touchez à rien.
+    //
+    // La case « sortie en linéaire » supprime la conversion finale : les valeurs linéaires
+    // sont écrites telles quelles, l'écran les interprète comme du sRGB, et tout paraît
+    // plus sombre. C'est l'aspect qu'avaient tous les projets Three.js d'avant 2023.
+
+    const champ = document.getElementById('couleur');
+    const lecture = document.getElementById('lecture');
+
+    function dessiner() {
+      renderer.render(scene, camera);
+
+      // getHexString() rend la couleur en sRGB, telle qu'affichée — d'où l'aller-retour exact.
+      lecture.textContent = scene.background
+        ? `scene.background = 0x${scene.background.getHexString()}`
+        : 'scene.background = null → canvas transparent';
+    }
+    dessiner();
+
+    champ.addEventListener('input', (e) => {
+      // Le <input type="color"> renvoie une chaîne '#rrggbb' : THREE.Color la comprend.
+      scene.background?.set(e.target.value);
+      dessiner();
+    });
+
+    document.getElementById('transparent').addEventListener('change', (e) => {
+      scene.background = e.target.checked ? null : new THREE.Color(champ.value);
+      dessiner();
+    });
+
+    document.getElementById('linear').addEventListener('change', (e) => {
+      renderer.outputColorSpace = e.target.checked
+        ? THREE.LinearSRGBColorSpace   // le réglage FAUX, ici pour la démonstration
+        : THREE.SRGBColorSpace;        // le défaut, et le bon
+      dessiner();
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

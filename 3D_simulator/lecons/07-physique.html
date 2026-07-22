@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>07 — Animation &amp; physique</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>07 — Animation &amp; physique</h2>
+    <p>
+      Physique maison, sans moteur externe : gravité, rebond, collisions sphère/sphère.
+      Suffisant pour un simulateur simple ; au-delà, utilisez Rapier ou Cannon-es.
+    </p>
+    <label>Gravité <input type="range" id="g" min="0" max="30" step="0.5" value="12"></label>
+    <label>Élasticité <input type="range" id="e" min="0.1" max="1" step="0.01" value="0.75"></label>
+    <p><button id="reset">Relancer les billes</button></p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 8, 14);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const dir = new THREE.DirectionalLight(0xffffff, 2.5);
+    dir.position.set(6, 12, 6);
+    dir.castShadow = true;
+    dir.shadow.camera.top = dir.shadow.camera.right = 12;
+    dir.shadow.camera.bottom = dir.shadow.camera.left = -12;
+    scene.add(dir);
+
+    // Le "monde" : un sol et 4 murs invisibles.
+    const LIMITE = 6;   // demi-largeur de l'enceinte
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(LIMITE * 2, LIMITE * 2),
+      new THREE.MeshStandardMaterial({ color: 0x161b22 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.receiveShadow = true;
+    scene.add(sol);
+    scene.add(new THREE.GridHelper(LIMITE * 2, 12, 0x2a313c, 0x2a313c));
+
+    let gravite = 12;
+    let elasticite = 0.75; // 1 = rebond parfait, 0 = la bille colle au sol
+
+    // Chaque bille : un Mesh + une vitesse (Vector3) + un rayon + une masse.
+    const billes = [];
+    const geo = new THREE.SphereGeometry(1, 24, 16); // rayon 1, mis à l'échelle par bille
+
+    function creerBilles(n = 12) {
+      for (const b of billes) scene.remove(b.mesh);
+      billes.length = 0;
+
+      for (let i = 0; i < n; i++) {
+        const rayon = 0.35 + (i % 4) * 0.15;
+        const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+          color: new THREE.Color().setHSL(i / n, 0.6, 0.6),
+          roughness: 0.35, metalness: 0.2,
+        }));
+        mesh.scale.setScalar(rayon);
+        mesh.castShadow = true;
+        mesh.position.set(
+          (Math.random() - 0.5) * LIMITE,
+          3 + Math.random() * 5,
+          (Math.random() - 0.5) * LIMITE
+        );
+        scene.add(mesh);
+
+        billes.push({
+          mesh,
+          rayon,
+          masse: rayon ** 3, // la masse suit le volume
+          vitesse: new THREE.Vector3((Math.random() - 0.5) * 4, 0, (Math.random() - 0.5) * 4),
+        });
+      }
+    }
+    creerBilles();
+
+    // Vecteurs réutilisés dans la boucle : allouer dans une boucle 60 fps fait travailler le GC.
+    const _delta = new THREE.Vector3();
+    const _normale = new THREE.Vector3();
+    const _impulsion = new THREE.Vector3();
+
+    function pasDePhysique(dt) {
+      // 1. Intégration : la vitesse modifie la position, la gravité modifie la vitesse.
+      for (const b of billes) {
+        b.vitesse.y -= gravite * dt;
+        b.mesh.position.addScaledVector(b.vitesse, dt);
+      }
+
+      // 2. Collisions avec les parois de l'enceinte.
+      for (const b of billes) {
+        const p = b.mesh.position;
+
+        if (p.y - b.rayon < 0) {
+          p.y = b.rayon;
+          b.vitesse.y = Math.abs(b.vitesse.y) * elasticite;
+          b.vitesse.x *= 0.99; // frottement au sol
+          b.vitesse.z *= 0.99;
+        }
+        for (const axe of ['x', 'z']) {
+          if (p[axe] + b.rayon > LIMITE) {
+            p[axe] = LIMITE - b.rayon;
+            b.vitesse[axe] = -Math.abs(b.vitesse[axe]) * elasticite;
+          } else if (p[axe] - b.rayon < -LIMITE) {
+            p[axe] = -LIMITE + b.rayon;
+            b.vitesse[axe] = Math.abs(b.vitesse[axe]) * elasticite;
+          }
+        }
+      }
+
+      // 3. Collisions bille/bille : O(n²), acceptable pour quelques dizaines d'objets.
+      for (let i = 0; i < billes.length; i++) {
+        for (let j = i + 1; j < billes.length; j++) {
+          const a = billes[i], b = billes[j];
+
+          _delta.subVectors(b.mesh.position, a.mesh.position);
+          const distance = _delta.length();
+          const chevauchement = a.rayon + b.rayon - distance;
+          if (chevauchement <= 0 || distance === 0) continue;
+
+          _normale.copy(_delta).divideScalar(distance);
+
+          // Séparer les deux sphères proportionnellement à l'inverse de leur masse.
+          const total = a.masse + b.masse;
+          a.mesh.position.addScaledVector(_normale, -chevauchement * (b.masse / total));
+          b.mesh.position.addScaledVector(_normale, chevauchement * (a.masse / total));
+
+          // Choc élastique 1D le long de la normale (conservation de la quantité de mouvement).
+          const vitesseRelative = _normale.dot(_impulsion.subVectors(b.vitesse, a.vitesse));
+          if (vitesseRelative > 0) continue; // elles s'éloignent déjà
+
+          const j_ = (-(1 + elasticite) * vitesseRelative) / (1 / a.masse + 1 / b.masse);
+          a.vitesse.addScaledVector(_normale, -j_ / a.masse);
+          b.vitesse.addScaledVector(_normale, j_ / b.masse);
+        }
+      }
+    }
+
+    document.getElementById('g').addEventListener('input', (e) => (gravite = +e.target.value));
+    document.getElementById('e').addEventListener('input', (e) => (elasticite = +e.target.value));
+    document.getElementById('reset').addEventListener('click', () => creerBilles());
+
+    // DELTA TIME : sans lui, la simulation va deux fois plus vite sur un écran 120 Hz.
+    // On plafonne dt car un onglet en arrière-plan peut renvoyer un delta énorme,
+    // qui téléporterait les billes à travers le sol.
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      pasDePhysique(Math.min(clock.getDelta(), 1 / 30));
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

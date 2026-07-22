@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 1b — La couleur du cube</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 1b — La couleur du cube</h2>
+    <p>
+      À l'étape 1, le cube était arc-en-ciel et vous n'aviez rien demandé. Ce n'était pas
+      « la couleur par défaut » : c'est que <code>MeshNormalMaterial</code> n'a
+      <b>aucune couleur à régler</b>. Voici le premier matériau qui en a une.
+    </p>
+    <label>Matériau
+      <select id="type">
+        <option value="basic">MeshBasicMaterial — a une couleur, ignore la lumière</option>
+        <option value="normal">MeshNormalMaterial — celui de l'étape 1</option>
+      </select>
+    </label>
+    <label>Couleur <input type="color" id="couleur" value="#58a6ff"></label>
+    <label>Opacité <input type="range" id="opacite" min="0.1" max="1" step="0.05" value="1"></label>
+    <label>Faces dessinées (<code>side</code>)
+      <select id="side">
+        <option value="front">FrontSide — l'extérieur (défaut)</option>
+        <option value="back">BackSide — l'intérieur</option>
+        <option value="double">DoubleSide — les deux</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="fil"> wireframe (voir les triangles)</label>
+    <p><code id="lecture"></code></p>
+    <p><b>Nouveau ici :</b> <code>material.color</code>, <code>wireframe</code>,
+      <code>transparent</code>/<code>opacity</code>, <code>side</code>.</p>
+    <a href="01-premier-cube.html">← Précédent</a> ·
+    <a href="01c-repere-3d.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle des étapes 0 et 1, inchangé ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+    camera.position.z = 3;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const forme = new THREE.BoxGeometry(1, 1, 1);
+
+    // --- Ce qui est nouveau ---
+
+    // 1) POURQUOI LE CUBE DE L'ÉTAPE 1 ÉTAIT ARC-EN-CIEL
+    //
+    // MeshNormalMaterial colore chaque face selon la direction dans laquelle elle
+    // regarde — sa « normale », la flèche perpendiculaire à la surface :
+    //    une face qui regarde vers +X → rouge,  vers +Y → vert,  vers +Z → bleu.
+    // C'est un matériau de DEBUG : il sert à vérifier l'orientation des faces d'un
+    // modèle. Il n'a pas de propriété .color, et lui en inventer une ne fait rien.
+
+    // 2) LE MATÉRIAU LE PLUS SIMPLE QUI AIT VRAIMENT UNE COULEUR
+    //
+    // « Basic » veut dire : cette couleur, telle quelle, sans aucun calcul d'éclairage.
+    // Le cube va donc paraître PLAT — un hexagone bleu uni. C'est normal et c'est
+    // instructif : sans lumière, il n'y a pas de relief, seulement une silhouette.
+    // Le relief viendra à l'étape 4, avec MeshStandardMaterial et une lumière.
+    const apparence = new THREE.MeshBasicMaterial({ color: 0x58a6ff });
+
+    const cube = new THREE.Mesh(forme, apparence);
+    scene.add(cube);
+
+    // 3) LE PIÈGE, LE MÊME QU'À L'ÉTAPE 0b
+    //
+    // material.color est un OBJET THREE.Color, pas un nombre :
+    //    apparence.color.set(0xff0000);   // ✔ on modifie l'objet
+    //    apparence.color = 0xff0000;      // ✘ on l'écrase → plantage au rendu
+    // Et .set() avale tous les formats : 0xff0000, '#ff0000', 'tomato', 'rgb(255,0,0)'.
+
+    // 4) LE MATÉRIAU EST PARTAGÉ
+    //
+    // Créez 500 cubes avec `apparence` : c'est un seul envoi à la carte graphique,
+    // et c'est ce qu'il faut faire. Mais alors `apparence.color.set(...)` les recolore
+    // TOUS les 500. Pour n'en changer qu'un — au clic, par exemple (leçon 05) :
+    //    cube.material = apparence.clone();
+    // Même logique pour la géométrie : `forme` est réutilisable à volonté.
+
+    // 5) TROIS RÉGLAGES QUE TOUS LES MATÉRIAUX PARTAGENT
+    //
+    // wireframe : ne dessine que les arêtes. Vous verrez que chaque face carrée est
+    //   faite de DEUX triangles. La carte graphique ne sait dessiner que des triangles ;
+    //   tout, absolument tout en 3D temps réel, en est fait.
+    //
+    // transparent + opacity : les DEUX sont nécessaires. opacity: 0.5 seul ne fait
+    //   rien du tout tant que transparent n'est pas à true — c'est l'oubli classique.
+    //   La transparence a un coût : ces objets sont dessinés après les autres, triés
+    //   par distance, et le tri se trompe parfois sur des surfaces qui s'entrecroisent.
+    //
+    // side : quelles faces sont dessinées.
+    //   FrontSide (défaut) → seul l'extérieur. C'EST LA RAISON de l'écran noir décrit
+    //     à l'étape 1 : caméra dans le cube, on regarde l'intérieur des faces, qui
+    //     n'est pas dessiné. Ce n'est pas un bug, c'est une optimisation — la moitié
+    //     des triangles d'un objet fermé est invisible, autant ne pas les traiter.
+    //   BackSide → seul l'intérieur. Utile pour une pièce vue de dedans.
+    //   DoubleSide → les deux. Deux fois plus de travail, et cela perturbe le tri de
+    //     transparence. À réserver aux surfaces OUVERTES : un plan, une feuille, un drapeau.
+
+    const SIDES = {
+      front: THREE.FrontSide,
+      back: THREE.BackSide,
+      double: THREE.DoubleSide,
+    };
+
+    const lecture = document.getElementById('lecture');
+
+    function dessiner() {
+      renderer.render(scene, camera);
+
+      const m = cube.material;
+      lecture.textContent = m.color
+        ? `color = 0x${m.color.getHexString()} · opacity = ${m.opacity.toFixed(2)}`
+        : 'MeshNormalMaterial : aucune couleur à régler';
+    }
+
+    function animer() {
+      requestAnimationFrame(animer);
+      cube.rotation.x += 0.004;
+      cube.rotation.y += 0.008;   // en tournant, on voit les faces arrière apparaître
+      dessiner();
+    }
+    animer();
+
+    document.getElementById('type').addEventListener('change', (e) => {
+      const commun = {
+        wireframe: cube.material.wireframe,
+        transparent: cube.material.transparent,
+        opacity: cube.material.opacity,
+        side: cube.material.side,
+      };
+
+      // Remplacer un matériau ne libère pas l'ancien : WebGL ne ramasse pas ses miettes.
+      // Sur une page qui en change souvent, on le rend explicitement (voir README).
+      cube.material.dispose();
+
+      cube.material = e.target.value === 'normal'
+        ? new THREE.MeshNormalMaterial(commun)
+        : new THREE.MeshBasicMaterial({ ...commun, color: document.getElementById('couleur').value });
+    });
+
+    document.getElementById('couleur').addEventListener('input', (e) => {
+      cube.material.color?.set(e.target.value);   // ?. : MeshNormalMaterial n'a pas de .color
+    });
+
+    document.getElementById('opacite').addEventListener('input', (e) => {
+      const v = Number(e.target.value);
+      cube.material.opacity = v;
+      cube.material.transparent = v < 1;   // sans cette ligne, opacity ne fait rien
+    });
+
+    document.getElementById('side').addEventListener('change', (e) => {
+      cube.material.side = SIDES[e.target.value];
+    });
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      cube.material.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>TorusGeometry — Le tore</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>TorusGeometry</h2>
+    <p class="famille">Tores et surfaces plates · Le tore</p>
+    <p>Le beignet. Deux rayons à ne pas confondre, et deux comptes de segments qui ne
+            font pas du tout la même chose.</p>
+
+      <label>radius — rayon du trou au tube
+        <input type="range" data-p="radius" min="0.1" max="1.2" step="0.05" value="0.7"></label>
+      <label>tube — épaisseur du boudin
+        <input type="range" data-p="tube" min="0.02" max="0.6" step="0.02" value="0.28"></label>
+      <label>radialSegments — autour du tube
+        <input type="range" data-p="radialSegments" min="3" max="32" step="1" value="12"></label>
+      <label>tubularSegments — le long
+        <input type="range" data-p="tubularSegments" min="3" max="128" step="1" value="48"></label>
+      <label>arc — portion dessinée <span class="deg" data-deg="arc">360°</span>
+        <input type="range" data-p="arc" data-angle min="0" max="360" step="1" value="360"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (3)</summary>
+      <ul>
+        <li><code>radius</code> va du centre au <b>milieu du tube</b>, pas au bord extérieur. Le rayon extérieur vaut <code>radius + tube</code>, et le trou se ferme quand <code>tube ≥ radius</code> — poussez le curseur, le beignet devient une boule ridée.</li>
+        <li>Les deux segments sont souvent inversés par erreur : <code>radialSegments</code> fait le tour du <b>boudin</b> (la coupe), <code>tubularSegments</code> suit le <b>cercle</b>. Le second doit être bien plus grand — d'où les valeurs par défaut 12 et 48.</li>
+        <li><code>arc</code> ouvre le tore comme un tuyau coudé. Les deux bouts restent béants : <code>DoubleSide</code> obligatoire.</li>
+      </ul>
+    </details>
+
+    <a href="05-capsule.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="07-torusknot.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de TorusGeometry, dans l'ordre de sa signature.
+    const P = {
+      radius: 0.7,
+      tube: 0.28,
+      radialSegments: 12,
+      tubularSegments: 48,
+      arc: THREE.MathUtils.degToRad(360),   // 360° en radians
+    };
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.TorusGeometry(P.radius, P.tube, P.radialSegments, P.tubularSegments, P.arc);
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.TorusGeometry(${fmt(P.radius)}, ${fmt(P.tube)}, ${fmt(P.radialSegments)}, ${fmt(P.tubularSegments)}, ${fmt(P.arc)})`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

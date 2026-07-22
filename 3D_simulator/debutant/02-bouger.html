@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 2 — Déplacer, tourner, agrandir</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 2 — Placer un objet</h2>
+    <p>
+      Tout objet 3D possède les trois mêmes propriétés :
+      <code>position</code>, <code>rotation</code>, <code>scale</code>.
+      Chacune a un <code>.x</code>, un <code>.y</code> et un <code>.z</code>.
+    </p>
+    <p>Bougez les curseurs : le cube réagit, et le code affiché change avec lui.</p>
+    <label>position.x <input type="range" id="px" min="-3" max="3" step="0.1" value="0"></label>
+    <label>rotation.y <input type="range" id="ry" min="-3.14" max="3.14" step="0.01" value="0"></label>
+    <label>scale (taille) <input type="range" id="sc" min="0.2" max="2" step="0.05" value="1"></label>
+    <p><code id="lecture"></code></p>
+    <p><b>Nouveau ici :</b> les 3 propriétés de transformation, et redessiner après un changement.</p>
+    <a href="01c-repere-3d.html">← Précédent</a> ·
+    <a href="02b-la-camera.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+    camera.position.z = 4;
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial());
+    scene.add(cube);
+
+    // --- Ce qui est nouveau ---
+
+    // POSITION : où l'objet se trouve, en "unités". Une unité = ce que vous voulez (1 m, 1 cm…).
+    cube.position.x = 0;   //  droite (+) / gauche (−)
+    cube.position.y = 0;   //  haut (+) / bas (−)
+    cube.position.z = 0;   //  vers vous (+) / vers le fond (−)
+
+    // ROTATION : en RADIANS, pas en degrés. Un demi-tour = Math.PI.
+    cube.rotation.y = 0;
+    // Pour raisonner en degrés : cube.rotation.y = THREE.MathUtils.degToRad(45);
+
+    // SCALE : un multiplicateur. 1 = taille normale, 2 = deux fois plus gros.
+    cube.scale.set(1, 1, 1);   // set(x, y, z) est un raccourci pour les trois d'un coup
+
+    // Le renderer ne redessine QUE quand on le lui demande.
+    // Si on change le cube sans rappeler render(), l'écran ne bouge pas.
+    function dessiner() {
+      renderer.render(scene, camera);
+
+      document.getElementById('lecture').textContent =
+        `position.x = ${cube.position.x.toFixed(1)} · ` +
+        `rotation.y = ${cube.rotation.y.toFixed(2)} · ` +
+        `scale = ${cube.scale.x.toFixed(2)}`;
+    }
+    dessiner();
+
+    document.getElementById('px').addEventListener('input', (e) => {
+      cube.position.x = Number(e.target.value);
+      dessiner();
+    });
+
+    document.getElementById('ry').addEventListener('input', (e) => {
+      cube.rotation.y = Number(e.target.value);
+      dessiner();
+    });
+
+    document.getElementById('sc').addEventListener('input', (e) => {
+      cube.scale.setScalar(Number(e.target.value)); // setScalar = la même valeur sur x, y et z
+      dessiner();
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

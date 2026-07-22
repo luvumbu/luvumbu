@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 4.1 — Le cycle jour / nuit</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 4.1 — Jour / nuit</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 4</p>
+    <p>
+      L'étape 4 vous faisait cocher une case pour allumer la lumière. Ici le soleil
+      <b>tourne</b>, et les trois volets montrent <b>au même instant</b> ce que chaque
+      lumière fait — et ce qu'elle ne fait pas.
+    </p>
+    <p>
+      Même objet, même soleil, même heure. Seul l'éclairage change.
+    </p>
+
+    <label>heure <span class="deg" id="lh">10 h 00</span>
+      <input type="range" id="heure" min="0" max="24" step="0.02" value="10"></label>
+    <label><input type="checkbox" id="auto" checked> le temps passe</label>
+    <label>vitesse — heures / seconde <span class="deg" id="lv">1.5</span>
+      <input type="range" id="vitesse" min="0.2" max="6" step="0.1" value="1.5"></label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (6)</summary>
+      <ul>
+        <li>
+          <b>Une lumière éclaire TOUTE la scène.</b> On ne peut pas dire « cette lampe pour
+          cet objet-là » : il n'existe aucun réglage pour ça. Alors comment trois éclairages
+          à l'écran ? En dessinant la scène <b>trois fois</b>, chaque fois dans un morceau du
+          canvas (<code>setViewport</code> + <code>setScissor</code>), en allumant et
+          éteignant les lumières entre chaque passe. Trois rendus, une seule scène.
+        </li>
+        <li>
+          <b>Le piège où je suis tombé en écrivant cette page :</b> les lumières ont bien un
+          <code>.layers</code>, et on croit tenir la solution. Mais le source de Three.js dit
+          <code>object.layers.test(camera.layers)</code> — les couches d'une lumière sont
+          testées contre <b>la caméra</b>, jamais contre les objets. Elles servent à éteindre
+          une lampe pour une caméra entière, pas à choisir qui elle éclaire.
+        </li>
+        <li>
+          <b>L'ambiante seule ne fait aucun relief</b> — volet de gauche : une silhouette
+          plate, identique à midi et à l'aube. Elle éclaire chaque face pareil, quelle que
+          soit son orientation. Seule, elle ne sert à rien.
+        </li>
+        <li>
+          <b>La directionnelle seule fait des noirs absolus</b> — volet du centre : une face
+          qui ne voit pas le soleil ne reçoit <b>rien</b>. Dans la vraie vie, le ciel et le sol
+          renvoient de la lumière partout ; l'ambiante est le mensonge bon marché qui imite ça.
+          C'est pourquoi on met toujours les deux — volet de droite.
+        </li>
+        <li>
+          <b>Seule la DIRECTION de la directionnelle compte, jamais sa distance.</b> Le soleil
+          est ici à 12 unités ; à 12 000, l'image serait identique au pixel près. Ses rayons
+          sont parallèles — c'est la définition même.
+        </li>
+        <li>
+          <b>Le fond doit suivre la lumière</b>, et le soleil sous l'horizon doit être
+          <b>éteint</b> (<code>intensity = 0</code>), sinon il éclaire par en dessous en pleine
+          nuit. Mais l'ambiante, elle, ne tombe <b>jamais</b> à zéro : sinon la nuit est un
+          écran noir absolu et le lecteur croit la page cassée.
+        </li>
+      </ul>
+    </details>
+
+    <a href="04-lumiere.html">← Précédent</a> ·
+    <a href="04b-autour-du-cube.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(45, 1);   // l'aspect sera réglé par volet
+    camera.position.set(3.4, 2.2, 5);
+    camera.lookAt(0, 0.7, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Le GridHelper est en LineBasicMaterial : il IGNORE la lumière. Il sera donc
+    // rigoureusement identique dans les trois volets — c'est normal, et c'est un bon
+    // rappel de l'étape 1b : « Basic » veut dire « aucun calcul d'éclairage ».
+    scene.add(new THREE.GridHelper(14, 14, 0x2a313c, 0x2a313c));
+
+    const matiere = new THREE.MeshStandardMaterial({ color: 0xd7dde5, roughness: 0.6 });
+
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), matiere);
+    cube.position.y = 0.65;
+    const boule = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), matiere);
+    boule.position.set(0, 1.9, 0);
+    scene.add(cube, boule);
+
+    const ambiante = new THREE.AmbientLight(0xffffff, 0.4);
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    scene.add(ambiante, soleil);
+
+    // --- Ce qui est nouveau : TROIS RENDUS DANS UN SEUL CANVAS ---
+    //
+    // Impossible de donner un éclairage différent à trois objets d'une même scène :
+    // une lumière éclaire tout. On dessine donc la même scène trois fois, chaque fois
+    // dans un tiers du canvas, en changeant les lumières entre les passes.
+    //
+    //   setViewport : où dessiner        setScissor : où le nettoyage a le droit d'effacer
+    //
+    // Sans setScissor, chaque rendu effacerait TOUT le canvas et il ne resterait que
+    // le dernier volet.
+    const VOLETS = [
+      { nom: 'Ambiante seule',       ambiante: true,  soleil: false },
+      { nom: 'Directionnelle seule', ambiante: false, soleil: true },
+      { nom: 'Les deux',             ambiante: true,  soleil: true },
+    ];
+
+    // Les volets occupent les 70 % de droite : le HUD couvre le reste.
+    const MARGE = 0.3;
+
+    // Les titres sont du HTML posé par-dessus le canvas, et non des Sprites 3D :
+    // les trois volets montrent la MÊME scène, donc un sprite y apparaîtrait trois fois.
+    const bandeau = document.createElement('div');
+    bandeau.className = 'volets';
+    for (const v of VOLETS) {
+      const titre = document.createElement('div');
+      titre.textContent = v.nom;
+      bandeau.append(titre);
+    }
+    document.body.append(bandeau);
+
+    // --- LE CYCLE ---
+
+    const P = { heure: 10, auto: true, vitesse: 1.5 };
+
+    // Trois couleurs de ciel, entre lesquelles on interpole selon la hauteur du soleil.
+    const NUIT = new THREE.Color(0x070a10);
+    const AUBE = new THREE.Color(0xc9622f);
+    const JOUR = new THREE.Color(0x4a86c8);
+
+    // Rasant, le soleil est rouge : sa lumière traverse plus d'atmosphère. Haut, il est blanc.
+    const SOLEIL_BAS = new THREE.Color(0xff7a3d);
+    const SOLEIL_HAUT = new THREE.Color(0xfff4e6);
+
+    const ciel = new THREE.Color();
+    scene.background = ciel;
+
+    function majCiel() {
+      // 6 h → lever à l'est · 12 h → zénith · 18 h → coucher · 0 h → sous nos pieds.
+      const angle = ((P.heure - 6) / 24) * Math.PI * 2;
+      const hauteur = Math.sin(angle);   // −1 (minuit) → +1 (midi)
+
+      // La distance n'a AUCUN effet (piège n°5) : 12 est arbitraire, seul l'angle compte.
+      soleil.position.set(Math.cos(angle) * 12, hauteur * 12, 3);
+
+      // Soleil sous l'horizon = soleil ÉTEINT. Pas « faible » : éteint.
+      soleil.intensity = Math.max(0, hauteur) * 3.2;
+      soleil.color.copy(SOLEIL_BAS).lerp(SOLEIL_HAUT, THREE.MathUtils.clamp(hauteur * 4, 0, 1));
+
+      // L'ambiante ne descend jamais à zéro : sinon la nuit est un écran noir absolu.
+      ambiante.intensity = 0.06 + Math.max(0, hauteur) * 0.5;
+
+      // Le fond suit la lumière (piège n°6).
+      if (hauteur <= 0) ciel.copy(NUIT).lerp(AUBE, THREE.MathUtils.clamp(1 + hauteur * 8, 0, 1));
+      else ciel.copy(AUBE).lerp(JOUR, THREE.MathUtils.clamp(hauteur * 3, 0, 1));
+
+      afficher(hauteur);
+    }
+
+    const lecture = document.getElementById('lecture');
+    const champHeure = document.getElementById('heure');
+    const etiqHeure = document.getElementById('lh');
+
+    function afficher(hauteur) {
+      const m = Math.floor((P.heure % 1) * 60);
+      etiqHeure.textContent =
+        `${String(Math.floor(P.heure) % 24).padStart(2, '0')} h ${String(m).padStart(2, '0')}`;
+      lecture.textContent =
+        `soleil ${THREE.MathUtils.radToDeg(Math.asin(hauteur)).toFixed(0)}° au-dessus de l'horizon\n` +
+        `directionnelle ${soleil.intensity.toFixed(2)} · ambiante ${ambiante.intensity.toFixed(2)}\n` +
+        `ciel #${ciel.getHexString()}${hauteur <= 0 ? ' · nuit' : ''}`;
+    }
+    majCiel();
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      if (P.auto) {
+        // En heures par SECONDE : le cycle est le même sur tous les écrans (étape 3).
+        P.heure = (P.heure + P.vitesse * dt) % 24;
+        champHeure.value = P.heure;
+        majCiel();
+      }
+
+      const H = window.innerHeight;
+      const largeur = (window.innerWidth * (1 - MARGE)) / VOLETS.length;
+      const depart = window.innerWidth * MARGE;
+
+      // La caméra doit prendre l'aspect d'UN volet, pas celui du canvas entier —
+      // sinon l'image est étirée dans chaque tiers.
+      camera.aspect = largeur / H;
+      camera.updateProjectionMatrix();
+
+      renderer.setScissorTest(true);   // sans lui, chaque passe efface tout le canvas
+
+      VOLETS.forEach((volet, i) => {
+        const x = depart + i * largeur;
+        renderer.setViewport(x, 0, largeur, H);
+        renderer.setScissor(x, 0, largeur, H);
+
+        // LE cœur de la page : on allume et on éteint entre les rendus. Une lumière
+        // invisible n'est pas envoyée au shader — c'est exactement comme si elle
+        // n'existait pas.
+        ambiante.visible = volet.ambiante;
+        soleil.visible = volet.soleil;
+
+        renderer.render(scene, camera);
+      });
+
+      renderer.setScissorTest(false);
+    }
+    animer();
+
+    addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      // Pas de camera.aspect ici : il est recalculé à chaque image, par volet.
+    });
+
+    champHeure.addEventListener('input', () => {
+      P.heure = Number(champHeure.value);
+      P.auto = false;
+      document.getElementById('auto').checked = false;
+      majCiel();
+    });
+
+    document.getElementById('auto').addEventListener('change', (e) => (P.auto = e.target.checked));
+
+    document.getElementById('vitesse').addEventListener('input', (e) => {
+      P.vitesse = Number(e.target.value);
+      document.getElementById('lv').textContent = P.vitesse.toFixed(1);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

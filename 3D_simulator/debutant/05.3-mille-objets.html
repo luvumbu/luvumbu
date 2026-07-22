@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 5.3 — Mille objets</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 5.3 — Mille objets</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 5</p>
+    <p>
+      L'étape 5 en posait trois. Et mille ? La question paraît bête — elle contient
+      <b>toute la performance en 3D</b>.
+    </p>
+    <p>
+      Les deux volets affichent <b>exactement les mêmes cubes</b>, aux mêmes endroits, avec
+      le même mouvement. À gauche un <code>Mesh</code> par cube, à droite un seul
+      <code>InstancedMesh</code>. Comparez les compteurs, pas les images : elles sont
+      identiques.
+    </p>
+
+    <label>nombre de cubes <span class="deg" id="ln">2 000</span>
+      <input type="range" id="nombre" min="100" max="20000" step="100" value="2000"></label>
+    <label><input type="checkbox" id="tourner" checked> les faire tourner</label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu&#39;il faut savoir (6)</summary>
+      <ul>
+        <li>
+          <b>Ce qui coûte, ce n'est pas le nombre de triangles — c'est le nombre d'ordres.</b>
+          Chaque <code>Mesh</code> déclenche un <b>appel de dessin</b> : le processeur doit
+          parler à la carte graphique, lui donner une matrice, un matériau, un état. Mille
+          cubes = mille conversations. C'est le processeur qui étouffe, pas la carte
+          graphique — qui, elle, s'ennuie.
+        </li>
+        <li>
+          <b>Un <code>InstancedMesh</code>, c'est un seul ordre pour tout le lot.</b> On
+          envoie la géométrie une fois, plus un tableau de matrices, et la carte graphique
+          dessine les mille copies toute seule. Le compteur passe de mille à <b>un</b>.
+          Regardez-le.
+        </li>
+        <li>
+          <b>La contrepartie : les instances partagent tout.</b> Même géométrie, même
+          matériau. On peut leur donner une position, une rotation, une échelle
+          (<code>setMatrixAt</code>) et une couleur (<code>setColorAt</code>) — rien d'autre.
+          Une instance n'est pas un objet : elle n'a ni <code>position</code>, ni enfant, et
+          on ne peut pas la cliquer sans travail supplémentaire.
+        </li>
+        <li>
+          <b>Le piège qui annule tout :</b> après un <code>setMatrixAt</code>, il faut
+          <code>instanceMatrix.needsUpdate = true</code>. Sans ça, rien ne bouge et l'on
+          cherche pendant une heure. C'est le prix de la performance : Three.js n'a aucun
+          moyen de savoir que vous avez touché le tableau.
+        </li>
+        <li>
+          <b>Le compte d'appels est parfois inférieur au nombre de cubes</b> — 7 958 pour
+          8 000, par exemple. Ce n'est pas un bug : Three.js écarte tout seul les objets
+          hors du champ de la caméra (le <i>frustum culling</i>). Tournez le curseur et
+          regardez : le chiffre de gauche suit le nombre de cubes <b>visibles</b>, pas le
+          nombre de cubes. L'InstancedMesh, lui, reste à 1 — mais il est testé <b>en bloc</b> :
+          si une seule instance est visible, tout le lot est dessiné.
+        </li>
+        <li>
+          <b>Ne commencez pas par là.</b> À trois cubes, l'instanciation ne sert à rien et
+          complique le code. Elle devient indispensable vers quelques centaines d'objets
+          identiques — une forêt, une foule, des astéroïdes, des particules. Le curseur vous
+          montre où bascule la vôtre.
+        </li>
+      </ul>
+    </details>
+
+    <a href="05.1b-systeme-solaire-libre.html">← Précédent</a> ·
+    <a href="05.3b-mille-objets-libre.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // DEUX scènes, pour que chaque volet ne contienne que sa version. Une seule scène
+    // rendue deux fois compterait les deux à chaque passe, et le compteur ne voudrait
+    // plus rien dire.
+    const sceneA = new THREE.Scene();   // un Mesh par cube
+    const sceneB = new THREE.Scene();   // un seul InstancedMesh
+    for (const s of [sceneA, sceneB]) {
+      s.background = new THREE.Color(0x0e1116);
+      s.add(new THREE.AmbientLight(0xffffff, 0.55));
+      const l = new THREE.DirectionalLight(0xffffff, 2.2);
+      l.position.set(4, 8, 6);
+      s.add(l);
+    }
+
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 200);
+    camera.position.set(0, 8, 26);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // --- Ce qui est nouveau : LES DEUX FAÇONS ---
+
+    const P = { nombre: 2000, tourner: true };
+
+    // Géométrie et matériau PARTAGÉS par les deux versions : c'est indispensable pour que
+    // la comparaison soit honnête. La seule différence doit être la façon de DESSINER.
+    const forme = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+    const matiere = new THREE.MeshStandardMaterial({ roughness: 0.5, vertexColors: false });
+
+    // Les positions, calculées UNE fois : les deux volets doivent montrer exactement
+    // la même chose, sinon on ne compare plus rien.
+    const MAX = 20000;
+    const places = [];
+    for (let i = 0; i < MAX; i++) {
+      // Une spirale, pour que le tas reste lisible même à 20 000.
+      const t = i / MAX;
+      const rayon = 2 + t * 14;
+      const angle = i * 0.5;
+      places.push({
+        x: Math.cos(angle) * rayon,
+        y: (t - 0.5) * 10,
+        z: Math.sin(angle) * rayon,
+        phase: i * 0.37,
+      });
+    }
+
+    let meshes = [];          // version A
+    let instances = null;     // version B
+
+    // Réutilisés à chaque image : en créer un par cube et par frame ferait travailler le
+    // ramasse-miettes 60 000 fois par seconde.
+    const _matrice = new THREE.Matrix4();
+    const _quat = new THREE.Quaternion();
+    const _euler = new THREE.Euler();
+    const _pos = new THREE.Vector3();
+    const _echelle = new THREE.Vector3(1, 1, 1);
+
+    function construire(n) {
+      // --- A : un Mesh par cube ---
+      for (const m of meshes) sceneA.remove(m);
+      meshes = [];
+      for (let i = 0; i < n; i++) {
+        const m = new THREE.Mesh(forme, matiere);
+        m.position.set(places[i].x, places[i].y, places[i].z);
+        sceneA.add(m);
+        meshes.push(m);
+      }
+
+      // --- B : UN InstancedMesh pour tout le lot ---
+      if (instances) {
+        sceneB.remove(instances);
+        instances.dispose();   // l'InstancedMesh a ses propres tampons à libérer
+      }
+      // (géométrie, matériau, NOMBRE D'INSTANCES) — le compte est figé à la création :
+      // pour en changer, il faut en refabriquer un.
+      instances = new THREE.InstancedMesh(forme, matiere, n);
+      sceneB.add(instances);
+      majInstances(0);
+    }
+
+    function majInstances(t) {
+      for (let i = 0; i < P.nombre; i++) {
+        const p = places[i];
+        _pos.set(p.x, p.y, p.z);
+        _euler.set(0, P.tourner ? t + p.phase : 0, 0);
+        _quat.setFromEuler(_euler);
+        _matrice.compose(_pos, _quat, _echelle);
+
+        // Une instance n'a pas de .position : on lui écrit sa MATRICE, directement.
+        instances.setMatrixAt(i, _matrice);
+      }
+      // LE PIÈGE. Sans cette ligne, le tableau est à jour côté JavaScript et la carte
+      // graphique n'en sait rien : rien ne bouge à l'écran.
+      instances.instanceMatrix.needsUpdate = true;
+    }
+    construire(P.nombre);
+
+    // --- Les deux volets ---
+
+    const VOLETS = [
+      { nom: 'Un Mesh par cube', scene: sceneA },
+      { nom: 'Un seul InstancedMesh', scene: sceneB },
+    ];
+    const MARGE = 0.3;
+
+    const bandeau = document.createElement('div');
+    bandeau.className = 'volets';
+    for (const v of VOLETS) {
+      v.titre = document.createElement('div');
+      bandeau.append(v.titre);
+    }
+    document.body.append(bandeau);
+
+    const lecture = document.getElementById('lecture');
+    const horloge = new THREE.Clock();
+    let temps = 0, images = 0, fps = 0, chrono = 0;
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      temps += dt;
+
+      // Le compteur d'images, mesuré sur une seconde glissante.
+      images++;
+      chrono += dt;
+      if (chrono >= 0.5) { fps = images / chrono; images = 0; chrono = 0; }
+
+      if (P.tourner) {
+        for (let i = 0; i < meshes.length; i++) meshes[i].rotation.y = temps + places[i].phase;
+        majInstances(temps);
+      }
+
+      const H = window.innerHeight;
+      const largeur = (window.innerWidth * (1 - MARGE)) / VOLETS.length;
+      const depart = window.innerWidth * MARGE;
+
+      camera.aspect = largeur / H;
+      camera.updateProjectionMatrix();
+
+      renderer.setScissorTest(true);
+
+      VOLETS.forEach((v, i) => {
+        const x = depart + i * largeur;
+        renderer.setViewport(x, 0, largeur, H);
+        renderer.setScissor(x, 0, largeur, H);
+
+        // renderer.info.render.calls compte les appels de dessin de la DERNIÈRE image.
+        // On le remet à zéro avant chaque volet pour n'attribuer à chacun que les siens.
+        renderer.info.reset();
+
+        // On chronomètre le temps que le PROCESSEUR passe à donner les ordres. C'est
+        // précisément ce que coûte un appel de dessin — la carte graphique, elle,
+        // travaille de son côté et n'est pas mesurée ici.
+        const t0 = performance.now();
+        renderer.render(v.scene, camera);
+        const cout = performance.now() - t0;
+
+        // Lissé : une mesure brute saute trop pour être lisible (c'est un ressort, 3.3).
+        v.ms = v.ms === undefined ? cout : v.ms + (cout - v.ms) * 0.05;
+        v.appels = renderer.info.render.calls;
+        v.triangles = renderer.info.render.triangles;
+      });
+
+      renderer.setScissorTest(false);
+      afficher();
+    }
+
+    function afficher() {
+      const [a, b] = VOLETS;
+      for (const v of VOLETS) {
+        v.titre.innerHTML = `${v.nom}<br><span style="font-weight:400;color:#8b949e">` +
+                            `${(v.appels ?? 0).toLocaleString('fr')} appel${v.appels > 1 ? 's' : ''} de dessin</span>`;
+      }
+      const rapport = b.ms > 0.01 ? (a.ms / b.ms).toFixed(1) : '—';
+      lecture.textContent =
+        `${P.nombre.toLocaleString('fr')} cubes · ${(a.triangles ?? 0).toLocaleString('fr')} triangles de chaque côté\n` +
+        `appels de dessin : ${(a.appels ?? 0).toLocaleString('fr')} contre ${(b.appels ?? 0).toLocaleString('fr')}\n` +
+        `temps processeur : ${(a.ms ?? 0).toFixed(2)} ms contre ${(b.ms ?? 0).toFixed(2)} ms — ×${rapport}\n` +
+        `${fps.toFixed(0)} images/s (les DEUX volets à la fois)`;
+    }
+    animer();
+
+    document.getElementById('nombre').addEventListener('input', (e) => {
+      P.nombre = Number(e.target.value);
+      document.getElementById('ln').textContent = P.nombre.toLocaleString('fr');
+      construire(P.nombre);
+    });
+
+    document.getElementById('tourner').addEventListener('change', (e) => {
+      P.tourner = e.target.checked;
+      majInstances(temps);
+    });
+
+    // POUR ALLER PLUS LOIN : au-delà de l'instanciation, il y a le BatchedMesh (des
+    // géométries DIFFÉRENTES en un seul appel, depuis r160) et les systèmes de particules.
+    // Mais la règle ne change jamais : comptez vos appels de dessin avant d'optimiser
+    // quoi que ce soit d'autre. renderer.info les donne gratuitement.
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

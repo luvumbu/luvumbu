@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.3 — Le ressort et l'amortissement</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.3 — Le ressort</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 3</p>
+    <p>
+      La simulation la plus utile de tout ce tutoriel, et la moins spectaculaire. Un ressort
+      qui ramène un objet vers une cible, c'est <b>tout mouvement lissé</b> : une caméra qui
+      suit un personnage, un panneau qui glisse, l'inertie d'<code>OrbitControls</code>.
+    </p>
+    <p>
+      Trois ressorts, <b>même raideur</b>, lâchés ensemble. Seul l'<b>amortissement</b>
+      change — et les trois comportements portent des noms.
+    </p>
+
+    <label>raideur — k <span class="deg" id="lk">30</span>
+      <input type="range" id="raideur" min="2" max="120" step="1" value="30"></label>
+    <label>écart de départ — m <span class="deg" id="ld">2.0</span>
+      <input type="range" id="depart" min="0.3" max="3" step="0.1" value="2"></label>
+
+    <p><button type="button" id="relancer">↻ Relâcher</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (5)</summary>
+      <ul>
+        <li>
+          <b>L'amortissement critique est le réglage que vous cherchez presque toujours.</b>
+          C'est le plus rapide qui n'<b>overshoote jamais</b> : la caméra rattrape le
+          personnage sans le dépasser, le panneau se cale sans rebondir. Moins, ça oscille ;
+          plus, ça traîne. Il n'y a pas à tâtonner, il se calcule :
+          <code>c = 2·√(k·m)</code>.
+        </li>
+        <li>
+          Le rapport <b>ζ = c / (2√(k·m))</b> résume tout : <b>ζ &lt; 1</b> oscille,
+          <b>ζ = 1</b> est critique, <b>ζ &gt; 1</b> traîne. Les trois couloirs sont à
+          ζ = 0.15, 1 et 3. C'est le même ζ que dans les CSS <code>spring()</code> et dans
+          tous les moteurs de jeu.
+        </li>
+        <li>
+          <b>Le piège le plus répandu de toute la 3D web :</b>
+          <code>x += (cible − x) * 0.1</code>. Ça marche, c'est partout, et c'est
+          <b>faux</b> : le lissage dépend du nombre d'images par seconde. Sur un écran
+          144 Hz, l'objet arrive plus de deux fois plus vite que sur un 60 Hz. La correction
+          tient en une ligne :
+          <code>x += (cible − x) * (1 − Math.pow(0.001, dt))</code>.
+        </li>
+        <li>
+          <b>La masse ne change pas la forme du mouvement</b>, seulement sa vitesse — et
+          seulement si vous ne recalculez pas <code>c</code>. Doublez m à ζ constant : la
+          courbe est identique, juste plus lente. C'est pour ça qu'on raisonne en ζ et pas
+          en newtons.
+        </li>
+        <li>
+          Un ressort n'a <b>pas de durée</b> : il approche sa cible sans jamais l'atteindre
+          exactement. À la différence d'une animation de 0.3 s, il est donc
+          <b>interruptible</b> — changez la cible en plein vol, le mouvement reste continu.
+          C'est précisément pourquoi les interfaces modernes l'ont adopté.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03.2-pendule.html">← Précédent</a> ·
+    <a href="03.4-ecrasement.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(0.2, 0, 12);   // décentrée : le HUD couvre le tiers gauche
+    camera.lookAt(0.2, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2);
+    lampe.position.set(2, 5, 6);
+    scene.add(lampe);
+
+    // --- Ce qui est nouveau : LA SIMULATION ---
+
+    const MASSE = 1;
+
+    // ζ (dzêta) : le rapport d'amortissement. Il n'y a que trois régimes au monde,
+    // et les voici tous les trois.
+    const COULOIRS = [
+      { nom: 'Sous-amorti', zeta: 0.15, x: 0, couleur: 0xf78166, note: 'ζ < 1 · oscille' },
+      { nom: 'Critique',    zeta: 1,    x: 3, couleur: 0x7ee787, note: 'ζ = 1 · le bon' },
+      { nom: 'Sur-amorti',  zeta: 3,    x: 6, couleur: 0x58a6ff, note: 'ζ > 1 · traîne' },
+    ];
+
+    const P = { raideur: 30, depart: 2 };
+
+    const formeBille = new THREE.SphereGeometry(0.3, 32, 16);
+    const formeCible = new THREE.BoxGeometry(1.6, 0.03, 0.03);
+
+    function etiquette(nom, note, couleur) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#' + couleur.toString(16).padStart(6, '0');
+      ctx.font = '600 40px system-ui, sans-serif';
+      ctx.fillText(nom, 256, 46);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '28px Consolas, monospace';
+      ctx.fillText(note, 256, 94);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t }));
+      s.scale.set(2.6, 0.65, 1);
+      return s;
+    }
+
+    for (const c of COULOIRS) {
+      c.bille = new THREE.Mesh(formeBille, new THREE.MeshStandardMaterial({
+        color: c.couleur, roughness: 0.4, emissive: c.couleur, emissiveIntensity: 0.3,
+      }));
+      scene.add(c.bille);
+
+      // Le trait de la cible : y = 0, là où le ressort veut ramener la bille.
+      const cible = new THREE.Mesh(formeCible, new THREE.MeshBasicMaterial({ color: 0x2a313c }));
+      cible.position.set(c.x, 0, 0);
+      scene.add(cible);
+
+      scene.add(etiquette(c.nom, c.note, c.couleur).translateX(c.x).translateY(-4));
+    }
+
+    function lancer() {
+      for (const c of COULOIRS) {
+        c.y = P.depart;   // écart à la cible, en mètres
+        c.v = 0;          // vitesse, en m/s
+        c.stable = null;  // le temps mis pour se poser à moins de 1 cm
+      }
+      temps = 0;
+    }
+    let temps = 0;
+    lancer();
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      temps += dt;
+
+      // Un ressort raide oscille vite : à 1/60 s le pas est trop grossier et l'énergie
+      // dérive — la bille finirait par osciller plus fort qu'au départ. Même parade
+      // qu'au pendule (3.2) : on découpe la frame.
+      const SOUS_PAS = 8;
+      const h = dt / SOUS_PAS;
+
+      for (let i = 0; i < SOUS_PAS; i++) {
+        for (const c of COULOIRS) {
+          // c = 2·ζ·√(k·m) — l'amortissement se DÉDUIT de ζ, on ne le tâtonne pas.
+          const amortissement = 2 * c.zeta * Math.sqrt(P.raideur * MASSE);
+
+          // La loi de Hooke, plus un frein proportionnel à la vitesse.
+          // Deux termes, et tout le mouvement lissé du monde est là-dedans.
+          const force = -P.raideur * c.y - amortissement * c.v;
+
+          c.v += (force / MASSE) * h;
+          c.y += c.v * h;
+        }
+      }
+
+      for (const c of COULOIRS) {
+        c.bille.position.set(c.x, c.y, 0);
+        // « Posée » = à moins d'1 cm de la cible et quasi immobile.
+        if (c.stable === null && Math.abs(c.y) < 0.01 && Math.abs(c.v) < 0.05) c.stable = temps;
+      }
+
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // zone morte temporelle, et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      lecture.textContent = COULOIRS.map((c) => {
+        const etat = c.stable !== null
+          ? `posé en ${c.stable.toFixed(2)} s`
+          : `écart ${Math.abs(c.y).toFixed(2)} m`;
+        return `${c.nom.padEnd(12)} ζ=${String(c.zeta).padEnd(4)} ${etat}`;
+      }).join('\n');
+    }
+    animer();
+
+    const curseurs = {
+      raideur: [document.getElementById('raideur'), document.getElementById('lk'), 0],
+      depart: [document.getElementById('depart'), document.getElementById('ld'), 1],
+    };
+
+    for (const [nom, [champ, etiq, dec]] of Object.entries(curseurs)) {
+      champ.addEventListener('input', () => {
+        P[nom] = Number(champ.value);
+        etiq.textContent = P[nom].toFixed(dec);
+        lancer();   // on relâche les trois ensemble : sinon la comparaison n'a plus de sens
+      });
+    }
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

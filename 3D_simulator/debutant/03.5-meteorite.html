@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.5 — La météorite</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.5 — La météorite</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 3</p>
+    <p>
+      Une météorite ne « tombe » pas. Elle arrive à <b>20 km/s</b> — cinquante fois la
+      vitesse d'une balle de fusil — et la gravité n'y est presque pour rien. Ce qui décide
+      de tout, c'est l'<b>air</b>.
+    </p>
+    <p>
+      Trois cailloux <b>identiques</b> sauf leur taille, entrant <b>ensemble</b> à la même
+      vitesse. Regardez lequel touche le sol.
+    </p>
+
+    <label>vitesse de lecture <span class="deg" id="lr">×0.10 · 10× plus lent</span>
+      <input type="range" id="vlecture" min="-3" max="0.602" step="0.002" value="-1"></label>
+    <label>vitesse d'entrée — km/s <span class="deg" id="lvi">19.0</span>
+      <input type="range" id="ventree" min="11" max="72" step="0.5" value="19"></label>
+    <label>angle d'entrée — ° sur l'horizontale <span class="deg" id="la">18</span>
+      <input type="range" id="angle" min="5" max="90" step="1" value="18"></label>
+    <label>matière
+      <select id="matiere">
+        <option value="glace">Glace — comète · 900 kg/m³ · fragile</option>
+        <option value="pierre" selected>Pierre — chondrite · 3300 kg/m³</option>
+        <option value="fer">Fer — sidérite · 7800 kg/m³ · solide</option>
+      </select>
+    </label>
+
+    <p>
+      <button type="button" id="pause">⏸ Pause</button>
+      <button type="button" id="relancer">↻ Relancer</button>
+    </p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (7)</summary>
+      <ul>
+        <li>
+          <b>L'atmosphère est un bouclier, et c'est LA leçon.</b> Le caillou d'un mètre ne
+          touchera jamais le sol : il se volatilise vers 40 km d'altitude. Il en tombe des
+          <b>centaines par jour</b> sur Terre, et on ne voit que leur trace — ce sont les
+          étoiles filantes. Il faut passer les <b>25 mètres</b> pour espérer atteindre le sol
+          en un morceau.
+        </li>
+        <li>
+          <b>La traînée va comme v², et l'air comme e^(−h/8500).</b> Voilà les deux formules
+          qui décident de tout. À 100 km, l'air est un million de fois plus rare qu'au sol :
+          la météorite ne sent rien. Puis la densité <b>double tous les 6 km</b> de descente —
+          et comme la traînée va au carré de la vitesse, le freinage passe de rien à
+          tout en quelques secondes.
+        </li>
+        <li>
+          <b>Ce n'est pas le frottement qui la chauffe.</b> Le mythe est tenace. À 20 km/s,
+          l'air n'a pas le temps de s'écarter : il est <b>comprimé</b> devant la roche, et un
+          gaz comprimé brutalement chauffe. La météorite est cuite par un coussin d'air à
+          plusieurs milliers de degrés, pas par un raclement.
+        </li>
+        <li>
+          <b>L'explosion en vol n'est pas une bombe : c'est un aplatissement.</b> Quand la
+          pression dynamique ρv² dépasse la résistance de la roche, elle se fissure, s'étale
+          en galette, sa surface explose — donc sa traînée aussi — et elle dépose toute son
+          énergie en une fraction de seconde. C'est le <i>pancake model</i>, et c'est
+          exactement ce que fait le code ici.
+        </li>
+        <li>
+          <b>La roche est étonnamment fragile.</b> Une chondrite casse vers <b>1 à 10 MPa</b> —
+          moins qu'un bon béton. Un bloc de fer tient cent fois mieux : c'est pour ça que la
+          plupart des météorites qu'on ramasse dans les musées sont ferreuses, alors que le
+          fer est rare dans le ciel. Le tri se fait dans l'atmosphère, pas dans l'espace.
+        </li>
+        <li>
+          <b>Les chiffres sortent du modèle, pas d'une table.</b> Réglez 19 km/s, 18°, pierre :
+          les 20 mètres explosent vers 30 km avec quelques centaines de kilotonnes. C'est
+          <b>Tcheliabinsk, 15 février 2013</b> — 500 kt à 30 km, 1 500 blessés par les vitres
+          brisées, aucun cratère. Le code ne connaît pas Tcheliabinsk ; il ne connaît que ρv²
+          et l'ablation.
+        </li>
+        <li>
+          <b>Ce que cette page ne fait pas.</b> Pas de cratère (c'est un autre métier :
+          l'énergie part dans la roche, pas dans l'air), pas de fragments qui se séparent
+          vraiment, pas de courbure de la Terre, et une atmosphère parfaitement isotherme —
+          la vraie a des couches. L'échelle visuelle ment aussi : à 100 km de haut, une
+          météorite de 20 m serait <b>invisible</b>.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03.4b-deformation-maillee.html">← Précédent</a> ·
+    <a href="04-lumiere.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070c);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    // Décalée à droite (le HUD prend le tiers gauche) et reculée pour cadrer les 100 km
+    // ET les étiquettes posées au-dessus du point d'entrée.
+    camera.position.set(5.2, 9.5, 29);
+    camera.lookAt(5.2, 9, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+
+    // ─────────────────── LES CONSTANTES, TOUTES RÉELLES ───────────────────
+
+    const G = 9.81;              // m/s²
+    const RHO0 = 1.225;          // kg/m³ — la densité de l'air au niveau de la mer
+    const ECHELLE_H = 8500;      // m — l'atmosphère perd un facteur e tous les 8,5 km
+    const CD = 1.0;              // coefficient de traînée d'une sphère en hypersonique
+    // Le coefficient d'ablation ne se choisit pas au doigt mouillé : il se MESURE sur les
+    // vraies météorites, sous la forme σ = CH/(2Q), et vaut 0,014 à 0,042 s²/km² pour la
+    // pierre. Mon premier essai à CH = 0,1 donnait σ = 0,006 — trois fois trop faible, et
+    // un caillou d'un mètre gardait la moitié de sa masse au lieu de disparaître.
+    const CH = 0.32;             // → σ = 0,020 s²/km², dans la plage mesurée
+    const Q_ABLATION = 8e6;      // J/kg — la chaleur qu'il faut pour vaporiser la roche
+    const KILOTONNE = 4.184e12;  // J
+
+    const MATIERES = {
+      glace:  { densite: 900,  resistance: 1e5,  nom: 'glace' },
+      pierre: { densite: 3300, resistance: 4e6,  nom: 'pierre' },
+      fer:    { densite: 7800, resistance: 4e8,  nom: 'fer' },
+    };
+
+    // L'altitude de départ, et l'échelle de la scène. 100 km → 18 unités.
+    const ALT_MAX = 100000;      // m
+    const HAUT = 18;
+    const enUnites = (metres) => (metres / ALT_MAX) * HAUT;
+
+    const CAILLOUX = [
+      { nom: '1 m',  diametre: 1,    x: 0,   couleur: 0x8b949e, note: 'une étoile filante' },
+      { nom: '20 m', diametre: 20,   x: 3.6, couleur: 0x58a6ff, note: 'Tcheliabinsk, 2013' },
+      { nom: '1 km', diametre: 1000, x: 7.2, couleur: 0xf78166, note: 'l’atmosphère ne peut rien' },
+    ];
+
+    const P = { ventree: 19, angle: 18, matiere: 'pierre', lecture: 0.1 };
+    let temps = 0;
+    let enPause = false;
+
+    // ─────────────────── LE DÉCOR ───────────────────
+
+    // Le sol, et les repères d'altitude. Sans eux, on ne sait pas où l'on est.
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(24, 8),
+      new THREE.MeshBasicMaterial({ color: 0x1c2a3a, side: THREE.DoubleSide })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.position.set(3.6, 0, 0);
+    scene.add(sol);
+
+    function texte(txt, taille, couleur, sousTitre) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = sousTitre ? 128 : 64;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = couleur;
+      ctx.font = `600 ${sousTitre ? 42 : 30}px system-ui, sans-serif`;
+      ctx.fillText(txt, 256, sousTitre ? 46 : 42);
+      if (sousTitre) {
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '26px system-ui, sans-serif';
+        ctx.fillText(sousTitre, 256, 94);
+      }
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t }));
+      s.scale.set(taille, (taille * c.height) / 512, 1);
+      return s;
+    }
+
+    // Les graduations d'altitude — et la couche d'air, dont l'épaisseur DIT la densité.
+    for (const km of [0, 20, 40, 60, 80, 100]) {
+      const y = enUnites(km * 1000);
+      const trait = new THREE.Mesh(
+        new THREE.BoxGeometry(22, 0.015, 0.015),
+        new THREE.MeshBasicMaterial({ color: 0x2a313c })
+      );
+      trait.position.set(3.6, y, 0);
+      scene.add(trait);
+      scene.add(texte(km + ' km', 3.4, '#8b949e').translateX(-3.4).translateY(y + 0.35));
+    }
+
+    // L'atmosphère, dessinée avec sa VRAIE loi : opacité ∝ exp(−h/8500). C'est là qu'on
+    // voit que tout se joue dans les 30 derniers kilomètres.
+    for (let i = 0; i < 30; i++) {
+      const h = (i / 30) * 60000;
+      const densite = Math.exp(-h / ECHELLE_H);
+      const couche = new THREE.Mesh(
+        new THREE.PlaneGeometry(22, enUnites(2000)),
+        new THREE.MeshBasicMaterial({
+          color: 0x58a6ff, transparent: true, opacity: densite * 0.16, depthWrite: false,
+        })
+      );
+      couche.position.set(3.6, enUnites(h + 1000), -1.5);
+      scene.add(couche);
+    }
+
+    // ─────────────────── LES CAILLOUX ───────────────────
+
+    const formeCaillou = new THREE.SphereGeometry(1, 20, 12);
+
+    for (const c of CAILLOUX) {
+      c.matiere = new THREE.MeshBasicMaterial({ color: c.couleur });
+      c.mesh = new THREE.Mesh(formeCaillou, c.matiere);
+      // La taille à l'écran est ARBITRAIRE : à cette échelle, 20 m serait invisible.
+      // On la fait varier un peu pour distinguer les trois, sans prétendre à l'exactitude.
+      c.taille = 0.11 + Math.log10(c.diametre) * 0.07;
+      c.mesh.scale.setScalar(c.taille);
+      scene.add(c.mesh);
+      // L'étiquette va EN HAUT, au point d'entrée. Sous le sol, elle était cachée par lui —
+      // le plan du sol est opaque et passe devant.
+      scene.add(texte(c.nom, 3, '#' + c.couleur.toString(16).padStart(6, '0'), c.note)
+        .translateX(c.x).translateY(HAUT + 0.9));
+      c.points = [];
+      c.trace = null;
+    }
+
+    function lancer() {
+      temps = 0;
+      const M = MATIERES[P.matiere];
+      const angle = THREE.MathUtils.degToRad(P.angle);
+
+      for (const c of CAILLOUX) {
+        const rayon = c.diametre / 2;
+        c.rayon = rayon;
+        c.masse0 = M.densite * (4 / 3) * Math.PI * rayon ** 3;
+        c.masse = c.masse0;
+        c.etalement = 0;              // le « pancake » : de combien elle s'est aplatie
+        c.fragmente = false;
+        c.altitude = ALT_MAX;
+        c.vitesse = P.ventree * 1000; // m/s
+        c.energie0 = 0.5 * c.masse0 * c.vitesse ** 2;
+        c.fini = null;                // 'volatilisée' | 'explosion' | 'impact'
+        c.altFin = 0;
+        c.altPic = 0;                 // là où elle dépose le plus d'énergie
+        c.picParKm = 0;
+        c.brillance = 0;
+
+        c.mesh.visible = true;
+        c.mesh.position.set(c.x, HAUT, 0);
+        c.points = [];
+        if (c.trace) { scene.remove(c.trace); c.trace.geometry.dispose(); c.trace.material.dispose(); c.trace = null; }
+      }
+    }
+    lancer();
+
+    // Un pas de simulation. Tout est en unités SI : mètres, kilos, secondes.
+    function avancer(dt) {
+      temps += dt;
+      const M = MATIERES[P.matiere];
+      const angle = THREE.MathUtils.degToRad(P.angle);
+      const sinA = Math.sin(angle);
+
+      for (const c of CAILLOUX) {
+        if (c.fini) continue;
+
+        // 1) L'AIR. Une atmosphère isotherme : la densité perd un facteur e tous les
+        //    8,5 km. À 100 km elle vaut 1/100 000 de celle du sol — d'où l'entrée
+        //    silencieuse, puis le mur.
+        const rho = RHO0 * Math.exp(-c.altitude / ECHELLE_H);
+
+        // 2) DEUX SURFACES, ET C'EST TOUT LE PIÈGE. Elles ne sont PAS la même :
+        //
+        //    - celle qui FREINE grandit quand la roche s'aplatit en galette : plus de
+        //      prise à l'air, donc plus de traînée ;
+        //    - celle qui S'USE reste la section d'origine : l'ablation ronge la face
+        //      avant, pas le nuage.
+        //
+        //    Les confondre — ce que j'avais fait — vaporisait un astéroïde d'un kilomètre
+        //    à 97 %. En vrai, il en perd dix.
+        const aTraînee = Math.PI * (c.rayon + c.etalement) ** 2;
+        const aAblation = Math.PI * c.rayon ** 2;
+
+        // 3) LA TRAÎNÉE, en v². C'est elle qui commande tout — la gravité est une
+        //    broutille à côté : à 20 km/s dans l'air dense, la décélération dépasse
+        //    mille fois g.
+        const traînee = (0.5 * CD * rho * c.vitesse ** 2 * aTraînee) / c.masse;
+        const acc = G * sinA - traînee;
+        c.vitesse = Math.max(c.vitesse + acc * dt, 0);
+        c.altitude -= c.vitesse * sinA * dt;
+
+        // 4) L'ABLATION. La roche ne « fond » pas : elle est vaporisée par l'air comprimé
+        //    devant elle. Le flux d'énergie va en v³ — c'est pour ça qu'un petit caillou
+        //    rapide disparaît entièrement, alors qu'un gros n'y perd que sa peau.
+        const dm = ((CH * 0.5 * rho * c.vitesse ** 3 * aAblation) / Q_ABLATION) * dt;
+        const masseAvant = c.masse;
+        // JAMAIS zéro : la traînée divise par la masse. Sans ce plancher, une roche
+        // entièrement vaporisée donne une division par zéro, puis des NaN partout.
+        c.masse = Math.max(c.masse - dm, c.masse0 * 1e-6);
+
+        // 5) LA FRAGMENTATION. Quand la pression dynamique dépasse la résistance de la
+        //    roche, elle se fissure et s'étale en galette. Sa surface enfle, donc sa
+        //    traînée aussi, donc elle freine plus, donc elle s'étale plus : l'emballement.
+        //    C'est ça, une « explosion » de météore — pas une bombe, un aplatissement.
+        const pDynamique = rho * c.vitesse ** 2;
+        if (!c.fragmente && pDynamique > M.resistance) {
+          c.fragmente = true;
+          c.altFrag = c.altitude;
+        }
+        if (c.fragmente) {
+          // Le taux d'étalement du « pancake model ».
+          c.etalement += c.vitesse * Math.sqrt((3.5 * rho) / M.densite) * dt;
+        }
+
+        // 6) L'ÉNERGIE DÉPOSÉE, par kilomètre. Son pic, c'est l'altitude de l'explosion —
+        //    on ne la décrète pas, on la mesure.
+        const eAvant = 0.5 * masseAvant * (c.vitesse - acc * dt) ** 2;
+        const eApres = 0.5 * c.masse * c.vitesse ** 2;
+        const dh = Math.max(c.vitesse * sinA * dt, 1e-9);
+        const parKm = ((eAvant - eApres) / dh) * 1000;
+        if (parKm > c.picParKm) { c.picParKm = parKm; c.altPic = c.altitude; }
+        c.brillance = Math.min(parKm / (c.energie0 / 20 + 1), 1);
+
+        // 7) LA FIN.
+        if (c.masse <= c.masse0 * 0.03) {
+          c.fini = 'volatilisée';
+          c.altFin = c.altitude;
+        } else if (c.altitude <= 0) {
+          c.altitude = 0;
+          c.fini = c.vitesse > 1000 ? 'impact' : 'chute morte';
+          c.altFin = 0;
+        } else if (c.fragmente && c.etalement > c.rayon * 6) {
+          // L'ÉCLATEMENT arrête la course : la galette se disperse en nuage. Continuer
+          // à la simuler comme un solide la ferait PLANER à 28 km — j'ai essayé.
+          c.fini = 'explosion';
+          c.altFin = c.altitude;
+        }
+      }
+    }
+
+    function dessiner() {
+      for (const c of CAILLOUX) {
+        const y = Math.max(enUnites(c.altitude), 0);
+        c.mesh.position.set(c.x, y, 0);
+
+        // La couleur dit l'ablation : blanc incandescent quand elle dépose son énergie.
+        c.matiere.color.setHex(c.couleur).lerp(new THREE.Color(0xffffff), c.brillance);
+        const gonfle = 1 + c.brillance * 1.6 + Math.min(c.etalement / Math.max(c.rayon, 0.1), 3) * 0.25;
+        c.mesh.scale.setScalar(c.taille * gonfle);
+
+        if (c.fini && c.fini !== 'impact') c.mesh.visible = false;
+
+        // La trace : un point tous les 200 m d'altitude, pas à chaque image.
+        const dernier = c.points[c.points.length - 1];
+        if (!c.fini && (!dernier || dernier.y - y > enUnites(200))) {
+          c.points.push(new THREE.Vector3(c.x, y, 0));
+          if (c.points.length > 1) {
+            if (c.trace) { scene.remove(c.trace); c.trace.geometry.dispose(); }
+            c.trace = new THREE.Line(
+              new THREE.BufferGeometry().setFromPoints(c.points),
+              c.trace ? c.trace.material : new THREE.LineBasicMaterial({ color: c.couleur })
+            );
+            scene.add(c.trace);
+          }
+        }
+      }
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const enEnergie = (j) => {
+      const kt = j / KILOTONNE;
+      if (kt < 0.001) return (j / 4.184e9).toFixed(1) + ' t de TNT';
+      if (kt < 1000) return kt.toFixed(1) + ' kt';
+      return (kt / 1000).toFixed(1) + ' Mt';
+    };
+
+    function afficher() {
+      lecture.textContent = CAILLOUX.map((c) => {
+        const restant = ((c.masse / c.masse0) * 100).toFixed(0);
+        const etat = c.fini
+          ? {
+              'volatilisée': `volatilisée à ${(c.altFin / 1000).toFixed(1)} km`,
+              'explosion': `EXPLOSION à ${(c.altFin / 1000).toFixed(1)} km`,
+              'impact': `IMPACT au sol à ${(c.vitesse / 1000).toFixed(1)} km/s`,
+              'chute morte': 'tombée au sol, éteinte',
+            }[c.fini]
+          : `${(c.altitude / 1000).toFixed(1)} km · ${(c.vitesse / 1000).toFixed(1)} km/s · reste ${restant} %`;
+        return `${c.nom.padEnd(6)} ${etat}`;
+      }).join('\n') +
+        `\n\nénergie d'entrée : ` +
+        CAILLOUX.map((c) => `${c.nom} = ${enEnergie(c.energie0)}`).join(' · ') +
+        `\nt = ${temps.toFixed(2)} s`;
+    }
+
+    // ─────────────────── LA BOUCLE ───────────────────
+
+    const horloge = new THREE.Clock();
+    const PAS = 1 / 400;      // 400 Hz : à 20 km/s, une milliseconde vaut 20 mètres
+    let accumulateur = 0;
+
+    function animer() {
+      requestAnimationFrame(animer);
+
+      if (!enPause) {
+        accumulateur += Math.min(horloge.getDelta(), 1 / 30) * P.lecture;
+        if (accumulateur > 0.25) accumulateur = 0.25;
+        while (accumulateur >= PAS) { avancer(PAS); accumulateur -= PAS; }
+      }
+
+      dessiner();
+      afficher();
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // ─────────────────── LES RÉGLAGES ───────────────────
+
+    const etiquetteVitesse = (v) => (v >= 1
+      ? '×' + v.toFixed(2)
+      : '×' + Number(v.toPrecision(2)) + ' · ' + Math.round(1 / v) + '× plus lent');
+
+    document.getElementById('vlecture').addEventListener('input', (e) => {
+      P.lecture = Math.pow(10, Number(e.target.value));
+      document.getElementById('lr').textContent = etiquetteVitesse(P.lecture);
+    });
+
+    for (const [id, etiq, dec] of [['ventree', 'lvi', 1], ['angle', 'la', 0]]) {
+      document.getElementById(id).addEventListener('input', (e) => {
+        P[id] = Number(e.target.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(dec);
+        lancer();
+      });
+    }
+
+    document.getElementById('matiere').addEventListener('change', (e) => {
+      P.matiere = e.target.value;
+      lancer();
+    });
+
+    const boutonPause = document.getElementById('pause');
+    boutonPause.addEventListener('click', () => {
+      enPause = !enPause;
+      boutonPause.textContent = enPause ? '▶ Reprendre' : '⏸ Pause';
+      boutonPause.classList.toggle('actif', enPause);
+      horloge.getDelta();   // sinon reprendre ferait un bond
+    });
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

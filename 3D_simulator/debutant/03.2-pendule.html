@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.2 — Le pendule</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.2 — Le pendule</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 3</p>
+    <p>
+      Même boucle, même gravité qu'en 3.1 — mais la bille est <b>retenue par une tige</b>.
+      Au lieu de tomber, elle oscille.
+    </p>
+    <p>
+      Trois pendules <b>identiques</b>, lâchés <b>ensemble</b>, même longueur, même angle.
+      Seule la gravité change. Et cette page démonte au passage la formule que tout le monde
+      récite au lycée.
+    </p>
+
+    <label>longueur — m <span class="deg" id="ll">2.0</span>
+      <input type="range" id="longueur" min="0.5" max="3.5" step="0.05" value="2"></label>
+    <label>angle de lâcher — ° <span class="deg" id="la">20</span>
+      <input type="range" id="angle" min="1" max="170" step="1" value="20"></label>
+    <label>frottement <span class="deg" id="lf">0.00</span>
+      <input type="range" id="frottement" min="0" max="1" step="0.01" value="0"></label>
+
+    <p><button type="button" id="relancer">↻ Relancer</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (5)</summary>
+      <ul>
+        <li>
+          <b>T = 2π√(L/g) est une approximation</b>, et la page vous le prouve. Elle n'est
+          vraie que pour les <b>petits angles</b>, là où <code>sin θ ≈ θ</code>. Poussez le
+          curseur d'angle et lisez l'écart :
+          <br>10° → 0 % · 20° → 1 % · 45° → 4 % · 90° → <b>18 %</b> · 140° → <b>59 %</b> ·
+          170° → <b>144 %</b>.
+          <br>À 170°, le pendule met <b>deux fois et demie</b> le temps annoncé. Aucun manuel
+          ne le dit.
+        </li>
+        <li>
+          <b>L'erreur de la formule est la même sur les trois</b>, quelle que soit la gravité.
+          C'est l'<b>angle</b> qui la crée, pas <code>g</code>. Poussez le curseur d'angle :
+          les trois écarts montent ensemble. Voilà pourquoi on les regarde côte à côte —
+          seul, un pendule ne pourrait jamais vous le dire.
+        </li>
+        <li>
+          La vraie équation est <code>θ'' = −(g/L)·sin θ</code>. On ne sait pas la résoudre
+          avec des fonctions simples. Mais on n'en a pas besoin : la boucle de rendu
+          l'<b>intègre</b> pas à pas, exactement comme la chute de 3.1. C'est tout l'intérêt
+          d'une simulation — elle se moque de savoir si une formule existe.
+        </li>
+        <li>
+          <b>La masse de la bille n'apparaît nulle part</b>, et ce n'est pas un oubli : elle
+          se simplifie dans l'équation. Un pendule de plomb et un pendule de liège de même
+          longueur battent exactement à la même cadence.
+        </li>
+        <li>
+          La longueur, elle, compte — mais en <b>racine carrée</b>. Pour battre deux fois plus
+          lentement, il faut une tige <b>quatre</b> fois plus longue. Poussez le curseur de
+          0.5 à 2 (×4) : la période double.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03.1-chute-et-rebond.html">← Précédent</a> ·
+    <a href="03.3-ressort.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle des étapes 0 à 3 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    // Décentrée exprès : le HUD occupe le tiers gauche, viser le milieu cacherait la Lune.
+    camera.position.set(0.2, 2.6, 12);
+    camera.lookAt(0.2, 2.4, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.GridHelper(14, 14, 0x2a313c, 0x2a313c));
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2);
+    soleil.position.set(2, 6, 6);
+    scene.add(soleil);
+
+    // --- Ce qui est nouveau : LA SIMULATION ---
+
+    const PIVOT = 4.2;   // hauteur du point d'accroche, en mètres
+
+    // Les trois mêmes astres qu'en 3.1, et les vraies gravités.
+    const CORPS = [
+      { nom: 'Lune',    g: 1.62,  x: 0, couleur: 0x8b949e },
+      { nom: 'Terre',   g: 9.81,  x: 3, couleur: 0x58a6ff },
+      { nom: 'Jupiter', g: 24.79, x: 6, couleur: 0xf78166 },
+    ];
+
+    const P = { longueur: 2, angle: 20, frottement: 0 };
+
+    // Géométries PARTAGÉES par les trois pendules (étape 1b).
+    const formeBille = new THREE.SphereGeometry(0.22, 32, 16);
+    // La tige mesure 1 de haut à la construction : on l'étire avec scale.y (étape 2),
+    // ce qui évite de reconstruire une géométrie à chaque mouvement de curseur.
+    const formeTige = new THREE.BoxGeometry(0.04, 1, 0.04);
+
+    function etiquette(texte, sousTitre, couleur) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#' + couleur.toString(16).padStart(6, '0');
+      ctx.font = '600 44px system-ui, sans-serif';
+      ctx.fillText(texte, 256, 48);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '30px Consolas, monospace';
+      ctx.fillText(sousTitre, 256, 96);
+
+      const texture = new THREE.CanvasTexture(c);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+      sprite.scale.set(2.6, 0.65, 1);
+      return sprite;
+    }
+
+    for (const corps of CORPS) {
+      const matiere = new THREE.MeshStandardMaterial({
+        color: corps.couleur, roughness: 0.4, emissive: corps.couleur, emissiveIntensity: 0.25,
+      });
+      corps.bille = new THREE.Mesh(formeBille, matiere);
+      corps.tige = new THREE.Mesh(formeTige, matiere);
+      scene.add(corps.bille, corps.tige);
+
+      const label = etiquette(corps.nom, `g = ${corps.g} m/s²`, corps.couleur);
+      label.position.set(corps.x, -0.6, 0);
+      scene.add(label);
+    }
+
+    let temps = 0;
+
+    function lancer() {
+      temps = 0;
+      for (const corps of CORPS) {
+        corps.theta = THREE.MathUtils.degToRad(P.angle);   // angle à la verticale, en RADIANS
+        corps.omega = 0;                                   // vitesse angulaire, en rad/s
+        corps.dernierPassage = null;
+        corps.periode = 0;
+      }
+      placer();
+    }
+
+    function placer() {
+      for (const corps of CORPS) {
+        // La direction de la tige depuis le pivot : θ = 0 pointe vers le bas.
+        const dx = Math.sin(corps.theta);
+        const dy = -Math.cos(corps.theta);
+
+        corps.bille.position.set(corps.x + dx * P.longueur, PIVOT + dy * P.longueur, 0);
+
+        // La tige va du pivot à la bille : son centre est à mi-chemin.
+        corps.tige.position.set(corps.x + dx * P.longueur / 2, PIVOT + dy * P.longueur / 2, 0);
+        corps.tige.scale.y = P.longueur;
+
+        // Une Box est alignée sur +Y. Pour la coucher le long de la tige, il faut la
+        // tourner de θ + π : le +π retourne le « vers le haut » en « vers le bas ».
+        corps.tige.rotation.z = corps.theta + Math.PI;
+      }
+    }
+    lancer();
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);   // toujours plafonné (voir 3.1)
+      temps += dt;
+
+      // LE SOUS-PAS. Un pas de 1/60 s suffit largement pour une chute (3.1), mais pas
+      // pour un pendule lâché à grand angle : il file trop vite au point bas, et Euler
+      // « coupe le virage » à chaque pas. Sans cette boucle, la période mesurée à 170°
+      // sortait à 3.71 s au lieu de 4.35 s — 15 % de trop peu, et la page aurait enseigné
+      // un chiffre faux.
+      //
+      // La parade : découper chaque frame en pas plus petits. Le rendu reste à 60 images/s,
+      // la physique tourne à 480 Hz. C'est ce que font tous les moteurs, et c'est pour ça
+      // qu'ils parlent de « fixed timestep ». Avec 8 sous-pas, l'erreur tombe à 0,1 %.
+      const SOUS_PAS = 8;
+      const h = dt / SOUS_PAS;
+
+      for (let i = 0; i < SOUS_PAS; i++) {
+        // La MÊME boucle pour les trois. Rien ne les distingue que leur `g`.
+        for (const corps of CORPS) {
+          const avant = corps.theta;
+
+          // 1) INTÉGRER — l'équation EXACTE du pendule, sans aucune approximation.
+          //    C'est le sin(θ) qui fait toute la différence avec la formule du lycée :
+          //    aux grands angles, sin θ est nettement plus petit que θ, donc la force de
+          //    rappel est plus faible, donc le pendule met plus longtemps. D'où l'écart.
+          const acceleration = -(corps.g / P.longueur) * Math.sin(corps.theta)
+                               - P.frottement * corps.omega;   // le frottement freine
+          corps.omega += acceleration * h;
+          corps.theta += corps.omega * h;
+
+          // 2) MESURER — chaque passage par la verticale, dans un sens ou dans l'autre.
+          //    Deux passages consécutifs = une DEMI-période, qu'on double. Mesurer la
+          //    période entière obligerait à attendre deux fois plus longtemps pour rien :
+          //    l'oscillation est symétrique.
+          if (Math.sign(avant) !== Math.sign(corps.theta) && avant !== 0) {
+            const t = temps - (SOUS_PAS - 1 - i) * h;
+            if (corps.dernierPassage !== null) corps.periode = 2 * (t - corps.dernierPassage);
+            corps.dernierPassage = t;
+          }
+        }
+      }
+
+      placer();
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    // Déclaré AVANT animer() : sinon la première frame lirait une const encore
+    // dans sa « zone morte temporelle », et la boucle planterait à chaque image.
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      const lignes = CORPS.map((c) => {
+        // La formule du lycée — valable seulement si l'angle est petit.
+        const theorie = 2 * Math.PI * Math.sqrt(P.longueur / c.g);
+        if (!c.periode) return `${c.nom.padEnd(8)} T théorique ${theorie.toFixed(2)} s · mesure en cours…`;
+        const ecart = ((c.periode - theorie) / theorie) * 100;
+        return `${c.nom.padEnd(8)} T ${c.periode.toFixed(2)} s ` +
+               `(théorie ${theorie.toFixed(2)}) · écart ${ecart >= 0 ? '+' : ''}${ecart.toFixed(1)} %`;
+      });
+      lecture.textContent = lignes.join('\n');
+    }
+    animer();
+
+    // --- Les réglages ---
+
+    const curseurs = {
+      longueur: [document.getElementById('longueur'), document.getElementById('ll'), 1],
+      angle: [document.getElementById('angle'), document.getElementById('la'), 0],
+      frottement: [document.getElementById('frottement'), document.getElementById('lf'), 2],
+    };
+
+    for (const [nom, [champ, etiquette, decimales]] of Object.entries(curseurs)) {
+      champ.addEventListener('input', () => {
+        P[nom] = Number(champ.value);
+        etiquette.textContent = P[nom].toFixed(decimales);
+        lancer();   // changer un paramètre relance : sinon la période mesurée serait un mélange
+      });
+    }
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

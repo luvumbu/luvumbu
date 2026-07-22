@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 2b — La caméra</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Étape 2b — La caméra</h2>
+    <p class="famille">Détour · le trou du fil principal</p>
+    <p>
+      <code>new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)</code> est là depuis
+      l'étape 0, et vous avez recopié ses <b>quatre arguments</b> sans qu'on vous en dise un
+      mot. Les voici.
+    </p>
+    <p>
+      Trois focales, <b>même scène</b>, et surtout : la boule fait la <b>même taille</b> dans
+      les trois. Le FOV n'est donc pas un zoom — regardez ce qui arrive au <b>fond</b>.
+    </p>
+
+    <label>near — rien de plus proche n'est dessiné <span class="deg" id="ln">0.10</span>
+      <input type="range" id="near" min="-3" max="0" step="0.05" value="-1"></label>
+    <label>far — rien de plus lointain n'est dessiné <span class="deg" id="lf">1000</span>
+      <input type="range" id="far" min="1.7" max="5" step="0.05" value="3"></label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (5)</summary>
+      <ul>
+        <li>
+          <b>Le FOV n'est pas un zoom, c'est un objectif.</b> Les trois volets cadrent la
+          boule à l'identique — j'ai reculé la caméra à mesure que le FOV se ferme. Et
+          pourtant les images n'ont rien à voir : à 20° les piliers du fond s'écrasent contre
+          la boule, à 100° ils fuient au loin. Le FOV décide du <b>rapport entre le proche et
+          le lointain</b>, pas de la taille du sujet. C'est le « dolly zoom » d'Hitchcock, et
+          c'est pourquoi un portrait se photographie au téléobjectif : à 100°, le nez d'un
+          visage doublerait.
+        </li>
+        <li>
+          <b>Le FOV de Three.js est VERTICAL</b>, en degrés. C'est <code>aspect</code> qui en
+          déduit l'horizontal. Une fenêtre plus large ne rapproche donc rien : elle montre
+          davantage sur les côtés.
+        </li>
+        <li>
+          <b>near et far ne sont pas des réglages de visibilité</b> — c'est là qu'est le
+          piège. Ils déterminent la <b>précision</b> du tampon de profondeur, et cette
+          précision dépend de leur <b>rapport</b>. Poussez les curseurs vers un rapport
+          énorme : les deux plaques du fond se mettent à clignoter. C'est le <b>z-fighting</b> :
+          la carte graphique ne sait plus laquelle est devant.
+        </li>
+        <li>
+          <b>Gardez <code>near</code> aussi GRAND que possible.</b> C'est lui qui compte, bien
+          plus que <code>far</code> : la précision s'effondre près de la caméra. Passer near de
+          0,001 à 0,1 vous rend cent fois plus de précision ; multiplier far par dix ne vous en
+          coûte presque rien. Le réflexe « near = 0.001 pour ne rien rater » est exactement le
+          contraire de ce qu'il faut faire.
+        </li>
+        <li>
+          <b>Toucher un paramètre ne suffit pas.</b> La caméra travaille avec une matrice de
+          projection calculée une fois ; changer <code>fov</code>, <code>aspect</code>,
+          <code>near</code> ou <code>far</code> ne fait <b>rien</b> tant qu'on n'appelle pas
+          <code>camera.updateProjectionMatrix()</code>. C'est l'oubli classique du
+          redimensionnement (étape 6).
+        </li>
+      </ul>
+    </details>
+
+    <a href="02-bouger.html">← Précédent</a> ·
+    <a href="03-animation.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(3, 6, 8);
+    scene.add(lampe);
+
+    // --- La scène : un sujet, et de quoi juger la profondeur ---
+
+    // La boule : c'est ELLE qu'on cadre à l'identique dans les trois volets.
+    const RAYON = 1;
+    const boule = new THREE.Mesh(
+      new THREE.SphereGeometry(RAYON, 48, 24),
+      new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.4 })
+    );
+    scene.add(boule);
+
+    // Des piliers qui s'enfoncent : sans repère de profondeur, on ne verrait rien
+    // de ce que le FOV fait vraiment.
+    const formePilier = new THREE.BoxGeometry(0.5, 3, 0.5);
+    const matPilier = new THREE.MeshStandardMaterial({ color: 0xd7dde5, roughness: 0.7 });
+    for (let i = 1; i <= 5; i++) {
+      for (const cote of [-1.9, 1.9]) {
+        const p = new THREE.Mesh(formePilier, matPilier);
+        p.position.set(cote, 0, -i * 3.5);
+        scene.add(p);
+      }
+    }
+
+    scene.add(new THREE.GridHelper(60, 30, 0x2a313c, 0x1c222b).translateY(-1.5));
+
+    // Deux plaques RIGOUREUSEMENT à la même hauteur, au fond. Elles ne servent qu'à une
+    // chose : se battre pour savoir laquelle est devant, dès que near/far y invitent.
+    for (const [couleur, y] of [[0xf78166, 0], [0x7ee787, 0]]) {
+      const plaque = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 2.4),
+        new THREE.MeshBasicMaterial({ color: couleur, side: THREE.DoubleSide })
+      );
+      plaque.position.set(0, y, -17.5);   // MÊME z : le z-fighting est ici volontaire
+      scene.add(plaque);
+    }
+
+    // --- Ce qui est nouveau : LES TROIS FOCALES ---
+
+    // La largeur qu'on veut cadrer, identique dans les trois volets.
+    const CADRE = 3.2;
+
+    const VOLETS = [
+      { fov: 20,  nom: 'FOV 20°',  note: 'téléobjectif — écrase' },
+      { fov: 50,  nom: 'FOV 50°',  note: 'l’œil — naturel' },
+      { fov: 100, nom: 'FOV 100°', note: 'grand-angle — creuse' },
+    ];
+
+    const P = { near: 0.1, far: 1000 };
+
+    for (const v of VOLETS) {
+      v.camera = new THREE.PerspectiveCamera(v.fov, 1, P.near, P.far);
+    }
+
+    // LA CLÉ DE LA PAGE : reculer chaque caméra juste ce qu'il faut pour que la boule
+    // fasse la MÊME taille partout. Sans ça, on comparerait des tailles au lieu de
+    // comparer des objectifs, et la page ne dirait rien.
+    //
+    // Attention au piège : le FOV de Three.js est VERTICAL, mais ces volets sont plus
+    // hauts que larges — c'est donc la LARGEUR qui contraint, et elle vaut
+    // hauteur × aspect. Cadrer sur la hauteur laissait la boule déborder des trois côtés.
+    // Et comme l'aspect dépend de la fenêtre, la distance se recalcule à chaque image.
+    function reculer(v, aspect) {
+      const demiAngle = THREE.MathUtils.degToRad(v.fov) / 2;
+      v.distance = CADRE / 2 / (Math.tan(demiAngle) * aspect);
+      v.camera.position.set(0, 0.4, v.distance);
+      v.camera.lookAt(0, 0, 0);
+    }
+
+    // Les 70 % de droite : le HUD occupe le reste.
+    const MARGE = 0.3;
+
+    // Les titres sont du HTML par-dessus le canvas : les trois volets montrent la MÊME
+    // scène, donc un Sprite 3D y apparaîtrait trois fois.
+    const bandeau = document.createElement('div');
+    bandeau.className = 'volets';
+    for (const v of VOLETS) {
+      v.titre = document.createElement('div');
+      bandeau.append(v.titre);
+    }
+    document.body.append(bandeau);
+
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      const rapport = P.far / P.near;
+      // Le z-buffer a 24 bits, mais sa précision n'est pas répartie également : elle
+      // s'effondre avec le rapport far/near. Au-delà de ~10⁵, le fond se met à clignoter.
+      const verdict = rapport > 1e5
+        ? '⚠ z-fighting — les deux plaques du fond clignotent'
+        : rapport > 1e4
+          ? 'précision limite'
+          : 'précision confortable';
+      lecture.textContent =
+        `near = ${P.near < 0.01 ? P.near.toExponential(1) : P.near.toFixed(3)} · ` +
+        `far = ${P.far.toFixed(0)}\n` +
+        `rapport far/near = ${rapport.toExponential(1)}\n${verdict}`;
+    }
+    afficher();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      boule.rotation.y += 0.004;
+
+      const H = window.innerHeight;
+      const largeur = (window.innerWidth * (1 - MARGE)) / VOLETS.length;
+      const depart = window.innerWidth * MARGE;
+
+      renderer.setScissorTest(true);   // sans lui, chaque passe efface tout le canvas
+
+      VOLETS.forEach((v, i) => {
+        const x = depart + i * largeur;
+        renderer.setViewport(x, 0, largeur, H);
+        renderer.setScissor(x, 0, largeur, H);
+
+        // L'aspect est celui d'UN volet, pas du canvas entier — sinon l'image est étirée.
+        v.camera.aspect = largeur / H;
+        v.camera.near = P.near;
+        v.camera.far = P.far;
+
+        // SANS CETTE LIGNE, rien de ce qu'on vient d'écrire n'a le moindre effet.
+        // La matrice de projection est calculée une fois et gardée.
+        v.camera.updateProjectionMatrix();
+
+        reculer(v, v.camera.aspect);
+        v.titre.innerHTML = `${v.nom}<br><span style="font-weight:400;color:#8b949e">` +
+                            `${v.note} · caméra à ${v.distance.toFixed(1)} m</span>`;
+
+        renderer.render(scene, v.camera);
+      });
+
+      renderer.setScissorTest(false);
+    }
+    animer();
+
+    addEventListener('resize', () => renderer.setSize(window.innerWidth, window.innerHeight));
+
+    // Les deux curseurs travaillent en PUISSANCES DE 10 : near utile va de 0.001 à 1,
+    // far de 50 à 100 000. Un curseur linéaire passerait tout son temps dans les grands
+    // nombres et ne montrerait jamais le piège.
+    document.getElementById('near').addEventListener('input', (e) => {
+      P.near = Math.pow(10, Number(e.target.value));
+      document.getElementById('ln').textContent =
+        P.near < 0.01 ? P.near.toExponential(1) : P.near.toFixed(3);
+      afficher();
+    });
+
+    document.getElementById('far').addEventListener('input', (e) => {
+      P.far = Math.pow(10, Number(e.target.value));
+      document.getElementById('lf').textContent = P.far.toFixed(0);
+      afficher();
+    });
+
+    // POUR ALLER PLUS LOIN : il existe une autre caméra, l'OrthographicCamera. Elle ne
+    // rétrécit PAS les objets lointains — deux cubes de même taille s'y dessinent
+    // identiques, quelle que soit leur distance. C'est la caméra des plans d'architecte,
+    // des jeux isométriques et des vues de dessus. Elle n'a pas de FOV, mais un volume :
+    //    new THREE.OrthographicCamera(gauche, droite, haut, bas, near, far)
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

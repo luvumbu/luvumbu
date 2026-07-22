@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>08 — Mini-simulateur</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>08 — Mini-simulateur</h2>
+    <p>Cliquez le sol pour poser une caisse. Cliquez une caisse pour la supprimer.</p>
+    <label>Heure du jour <input type="range" id="heure" min="0" max="24" step="0.1" value="10"></label>
+    <label>Qualité des ombres
+      <select id="qualite">
+        <option value="512">Basse</option>
+        <option value="1024" selected>Moyenne</option>
+        <option value="2048">Haute</option>
+      </select>
+    </label>
+    <p id="stats">0 caisse · — fps</p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Ce fichier réunit les 7 leçons précédentes dans une structure proche
+    // de ce qu'on écrirait pour un vrai projet : init → état → événements → boucle.
+
+    // ---------------------------------------------------------------- SCÈNE
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0e1116, 20, 60); // atténue les objets lointains
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 200);
+    camera.position.set(12, 10, 14);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.1;
+    controls.target.set(0, 1, 0);
+
+    // ------------------------------------------------------------- LUMIÈRES
+    const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    soleil.castShadow = true;
+    soleil.shadow.camera.top = soleil.shadow.camera.right = 15;
+    soleil.shadow.camera.bottom = soleil.shadow.camera.left = -15;
+    soleil.shadow.mapSize.set(1024, 1024);
+    scene.add(ambient, soleil);
+
+    // Le soleil décrit un arc dans le ciel. La couleur du fond suit sa hauteur.
+    const couleurJour = new THREE.Color(0x1c3a5e);
+    const couleurNuit = new THREE.Color(0x05070a);
+    const couleurCouchant = new THREE.Color(0x6e3b1f);
+
+    function majSoleil(heure) {
+      const angle = ((heure - 6) / 12) * Math.PI; // 6h = lever (0), 18h = coucher (π)
+      soleil.position.set(Math.cos(angle) * 20, Math.sin(angle) * 20, 8);
+
+      const hauteur = Math.max(0, Math.sin(angle)); // 0 la nuit, 1 à midi
+      soleil.intensity = hauteur * 3;
+      ambient.intensity = 0.08 + hauteur * 0.35;
+
+      // Bleu à midi → orange à l'horizon → noir la nuit.
+      const ciel = hauteur > 0.25
+        ? couleurCouchant.clone().lerp(couleurJour, (hauteur - 0.25) / 0.75)
+        : couleurNuit.clone().lerp(couleurCouchant, hauteur / 0.25);
+      scene.background = ciel;
+      scene.fog.color = ciel;
+      soleil.color.setHSL(0.09, 0.5, 0.5 + hauteur * 0.5);
+    }
+
+    // ------------------------------------------------------------------ SOL
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.MeshStandardMaterial({ color: 0x2a313c, roughness: 0.9 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.receiveShadow = true;
+    sol.name = 'sol';
+    scene.add(sol);
+    scene.add(new THREE.GridHelper(40, 40, 0x3d444d, 0x232a33));
+
+    // ------------------------------------------------------------- CAISSES
+    // Géométrie et matériau partagés : n caisses = 1 seul upload GPU.
+    const geoCaisse = new THREE.BoxGeometry(1, 1, 1);
+    const matCaisse = new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.5, metalness: 0.1 });
+    const matSurvol = new THREE.MeshStandardMaterial({ color: 0xf78166, roughness: 0.5, metalness: 0.1 });
+    const caisses = [];
+
+    function poserCaisse(point) {
+      const caisse = new THREE.Mesh(geoCaisse, matCaisse);
+      // On aligne sur la grille pour un rendu propre.
+      caisse.position.set(Math.round(point.x), 0.5, Math.round(point.z));
+      caisse.castShadow = true;
+      caisse.receiveShadow = true;
+      caisse.userData.vitesseY = 0;
+      caisse.position.y = 6; // elle tombe depuis le ciel (physique de la leçon 07)
+      scene.add(caisse);
+      caisses.push(caisse);
+    }
+
+    function retirerCaisse(caisse) {
+      scene.remove(caisse);
+      caisses.splice(caisses.indexOf(caisse), 1);
+      // Pas de dispose() ici : geoCaisse et matCaisse sont partagés et restent utilisés.
+    }
+
+    // -------------------------------------------------------- INTERACTION
+    const raycaster = new THREE.Raycaster();
+    const pointeur = new THREE.Vector2();
+    let survolee = null;
+    let deplacementSouris = 0;
+
+    function viser(e) {
+      pointeur.x = (e.clientX / innerWidth) * 2 - 1;
+      pointeur.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointeur, camera);
+    }
+
+    addEventListener('pointermove', (e) => {
+      deplacementSouris += Math.abs(e.movementX) + Math.abs(e.movementY);
+      viser(e);
+      const touche = raycaster.intersectObjects(caisses)[0];
+      const cible = touche ? touche.object : null;
+
+      if (cible !== survolee) {
+        if (survolee) survolee.material = matCaisse;
+        survolee = cible;
+        if (survolee) survolee.material = matSurvol;
+        document.body.style.cursor = survolee ? 'pointer' : 'default';
+      }
+    });
+
+    // On distingue un clic d'un glisser-déposer de caméra, sinon tourner la vue
+    // poserait une caisse au relâchement.
+    addEventListener('pointerdown', () => (deplacementSouris = 0));
+    addEventListener('pointerup', (e) => {
+      if (e.button !== 0 || deplacementSouris > 6) return;
+      viser(e);
+
+      const surCaisse = raycaster.intersectObjects(caisses)[0];
+      if (surCaisse) {
+        if (surCaisse.object === survolee) survolee = null;
+        retirerCaisse(surCaisse.object);
+        return;
+      }
+
+      const surSol = raycaster.intersectObject(sol)[0];
+      if (surSol) poserCaisse(surSol.point);
+    });
+
+    // ----------------------------------------------------------- RÉGLAGES
+    document.getElementById('heure').addEventListener('input', (e) => majSoleil(+e.target.value));
+    document.getElementById('qualite').addEventListener('change', (e) => {
+      soleil.shadow.mapSize.setScalar(+e.target.value);
+      soleil.shadow.map?.dispose();  // force la recréation de la shadow map à la bonne taille
+      soleil.shadow.map = null;
+    });
+    majSoleil(10);
+
+    // Quelques caisses au démarrage pour que la scène ne soit pas vide.
+    for (const [x, z] of [[-2, -1], [-1, -1], [0, -1], [-2, 0], [-1, 0], [3, 2]]) {
+      poserCaisse(new THREE.Vector3(x, 0, z));
+    }
+
+    // -------------------------------------------------------------- BOUCLE
+    const stats = document.getElementById('stats');
+    const clock = new THREE.Clock();
+    let fpsAccu = 0, fpsCount = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 1 / 30);
+
+      // Chute des caisses fraîchement posées.
+      for (const c of caisses) {
+        if (c.position.y > 0.5 || c.userData.vitesseY !== 0) {
+          c.userData.vitesseY -= 25 * dt;
+          c.position.y += c.userData.vitesseY * dt;
+          if (c.position.y <= 0.5) {
+            c.position.y = 0.5;
+            c.userData.vitesseY = 0;
+          }
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+
+      // Compteur de FPS moyenné, mis à jour ~2 fois par seconde.
+      fpsAccu += dt; fpsCount++;
+      if (fpsAccu > 0.5) {
+        stats.textContent = `${caisses.length} caisse(s) · ${Math.round(fpsCount / fpsAccu)} fps`;
+        fpsAccu = 0; fpsCount = 0;
+      }
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Écrasement — Rigide</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Écrasement — Rigide</h2>
+    <p class="famille">une matière, seule · h′ = e²·h</p>
+    <p>Il encaisse et repart, sans une égratignure. C'est le cube de 3.1 — et c'est une <b>idéalisation</b> qui n'existe nulle part.</p>
+    <label>vitesse de lecture <span class="deg" id="lr">×0.25 · 4× plus lent</span>
+      <input type="range" id="vlecture" min="-3" max="0.602" step="0.002" value="-0.6"></label>
+
+    <label>hauteur de lâcher — m <span class="deg" id="lh">6.0</span>
+      <input type="range" id="hauteur" min="1" max="12" step="0.1" value="6"></label>
+    <label>élasticité — le coefficient de restitution <span class="deg" id="le">0.60</span>
+      <input type="range" id="elasticite" min="0" max="0.98" step="0.01" value="0.6"></label>
+    <p>
+      <button type="button" data-e="0.05">Plasticine</button>
+      <button type="button" data-e="0.5">Bois</button>
+      <button type="button" data-e="0.6" class="actif">Acier</button>
+      <button type="button" data-e="0.75">Tennis</button>
+      <button type="button" data-e="0.9">Verre</button>
+    </p>
+    <label>vitesse de lancer — m/s vers le bas <span class="deg" id="lv">0.0</span>
+      <input type="range" id="lance" min="0" max="30" step="0.5" value="0"></label>
+    <p><button type="button" id="relancer">↻ Le lâcher</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Rigide — ce qu'il faut savoir (5)</summary>
+      <ul>
+        <li><b>Le rebond suit une loi exacte : h′ = e²·h.</b> Le <b>carré</b>, pas e. Une balle à e = 0,6 lâchée de 6 m ne remonte pas à 3,6 m mais à <b>2 m</b>. Le compteur le vérifie sous vos yeux — c'est la seule chose à retenir de cette page.</li>
+        <li><b>Les valeurs des boutons sont réelles.</b> Le coefficient de restitution se mesure en laboratoire, exactement comme ici : on lâche, on mesure le rebond, on prend <code>√(h′/h)</code>. Plasticine ≈ 0,05 · bois ≈ 0,5 · acier sur acier ≈ 0,6 · balle de tennis ≈ 0,75 · verre ≈ 0,9.</li>
+        <li><b>e = 1 est interdit par la thermodynamique.</b> Un rebond parfait rendrait toute l'énergie ; or il en part toujours en <b>son</b> et en <b>chaleur</b>. Le bruit que fait une balle qui tombe, c'est littéralement l'énergie qui vous échappe. Poussez le curseur à 0,98 : la balle rebondit presque éternellement — et c'est de la science-fiction.</li>
+        <li><b>Aucun solide n'est rigide.</b> Un diamant se déforme aussi, de l'ordre du millionième. « Rigide » veut seulement dire : la déformation est trop petite et trop brève pour compter. C'est une approximation de calcul, pas une matière.</li>
+        <li><b>e ne dépend pas que de l'objet, mais du COUPLE.</b> Une bille d'acier sur du marbre rebondit ; la même sur du sable, non. Parler de « l'élasticité d'une balle » est un raccourci — le sol en fait toujours la moitié.</li>
+      </ul>
+    </details>
+
+    <p class="famille">Les trois matières ensemble :
+      <a href="../debutant/03.4-ecrasement.html">la page comparée →</a></p>
+    <a href="../debutant/03.4-ecrasement.html">← Précédent</a> ·
+    <a href="mou.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // La SEULE chose qui distingue cette page de ses deux sœurs : la matière.
+    const COULEUR = 0x58a6ff;
+    const G = 9.81;      // on reste sur Terre : ici la variable est la MATIÈRE
+    const COTE = 1;
+    const DEMI = COTE / 2;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(2.6, 3.4, 11);
+    camera.lookAt(2.6, 2.6, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    scene.add(new THREE.GridHelper(16, 16, 0x2a313c, 0x2a313c));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(2, 7, 6);
+    scene.add(lampe);
+
+    const matiere = new THREE.MeshStandardMaterial({
+      color: COULEUR, roughness: 0.45, emissive: COULEUR, emissiveIntensity: 0.2,
+    });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(COTE, COTE, COTE), matiere);
+    scene.add(cube);
+
+    // La vitesse de lecture vit à part : elle ne doit RIEN relancer, on doit pouvoir la bouger en
+    // plein vol — comme le ×0.5 d'une vidéo. D'où l'objet plutôt qu'une variable, pour
+    // que la boucle lise toujours la valeur courante.
+    // Le curseur travaille en PUISSANCES DE 10 : la plage utile va de ×0.001 à ×4, soit
+    // un facteur 4000. Un curseur linéaire mettrait 99,9 % de sa course au-dessus de
+    // ×0.1 — il aurait fallu choisir entre le très lent et le rapide. En logarithmique,
+    // chaque millimètre vaut le même RAPPORT, et on garde les deux bouts.
+    const LECTURE = { valeur: 0.25 };
+
+    // À ×0.001, l'impact de 60 ms s'étale sur une minute. « ×0.004 » ne parle à
+    // personne ; « 250× plus lent », si.
+    const etiquetteVitesse = (v) => (v >= 1
+      ? '×' + v.toFixed(2)
+      : '×' + Number(v.toPrecision(2)) + ' · ' + Math.round(1 / v) + '× plus lent');
+
+    document.getElementById('vlecture').addEventListener('input', (e) => {
+      LECTURE.valeur = Math.pow(10, Number(e.target.value));
+      document.getElementById('lr').textContent = etiquetteVitesse(LECTURE.valeur);
+    });
+
+    // --- LA SIMULATION ---
+
+    const P = { hauteur: 6, lance: 0, elasticite: 0.6 };
+    let vitesse = 0, rebonds = 0, sommet = 0, endormi = false;
+
+    function lancer() {
+      cube.position.set(0, P.hauteur, 0);
+      vitesse = -P.lance;   // vers le BAS : le curseur ajoute une vitesse à la chute
+      rebonds = 0; sommet = 0; endormi = false;
+    }
+    lancer();
+
+    function pas(dt) {
+      if (endormi) return;
+      vitesse -= G * dt;
+      cube.position.y += vitesse * dt;
+
+      if (cube.position.y - DEMI < 0) {
+        cube.position.y = DEMI;                        // corriger AVANT
+        vitesse = Math.abs(vitesse) * P.elasticite;    // Math.abs, jamais -vitesse
+        rebonds++;
+        if (vitesse < 0.4) { vitesse = 0; endormi = true; }
+      }
+      // On ne suit QUE le premier rebond : c'est lui que la loi h′ = e²·h prédit.
+      if (rebonds === 1) sommet = Math.max(sommet, cube.position.y - DEMI);
+    }
+
+    function etat() {
+      const h = P.hauteur - DEMI;
+      // Lancé ou lâché, seule la VITESSE d'impact compte : v = √(v₀² + 2gh). Les deux ne
+      // s'additionnent pas — c'est l'énergie qui s'ajoute, et elle va comme le carré.
+      const v = Math.sqrt(P.lance ** 2 + 2 * G * h);
+      // D'où la généralisation de h′ = e²·h : la hauteur ÉQUIVALENTE d'un lancer à v, c'est
+      // celle d'une chute libre qui donnerait la même vitesse — v²/(2g). Sans elle, la loi
+      // ne tiendrait plus dès qu'on touche au curseur de vitesse.
+      const hEq = (v * v) / (2 * G);
+      const theorie = P.elasticite * P.elasticite * hEq;
+      const ecart = sommet > 0.02 ? ((sommet - theorie) / theorie) * 100 : null;
+      return `chute de ${h.toFixed(2)} m${P.lance ? ` · lancé à ${P.lance.toFixed(1)} m/s` : ''}\n` +
+             `impact √(v₀²+2gh) = ${v.toFixed(2)} m/s · hauteur équivalente ${hEq.toFixed(2)} m\n` +
+             (rebonds === 0
+               ? 'en chute…'
+               : `1er rebond : ${sommet.toFixed(2)} m · théorie e²·h_éq = ${theorie.toFixed(2)} m` +
+                 (ecart !== null ? ` · écart ${ecart >= 0 ? '+' : ''}${ecart.toFixed(1)} %` : '')) +
+             `\n${rebonds} rebond${rebonds > 1 ? 's' : ''}${endormi ? ' · au repos' : ''}`;
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Plafonné : au retour d'un onglet, getDelta() peut valoir 30 s et le cube
+      // traverserait le sol en un seul pas.
+      //
+      // Puis RALENTI. Un impact réel dure 60 ms — quatre images : l'œil n'y voit qu'un
+      // clac. Ralentir le temps ne triche pas sur la physique, chaque pas reste juste.
+      // C'est exactement pour ça qu'on filme les crash-tests à 10 000 images/s.
+      const dt = Math.min(horloge.getDelta(), 1 / 30) * LECTURE.valeur;
+      pas(dt);
+      renderer.render(scene, camera);
+      lecture.textContent = etat();   // APRÈS le rendu : renderer.info n'est à jour qu'ensuite
+    }
+    animer();
+
+    // Un brancheur unique : le curseur écrit dans P, met son étiquette à jour, et relance.
+    function brancher(id, etiq, decimales, apres) {
+      const champ = document.getElementById(id);
+      champ.addEventListener('input', () => {
+        P[id] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(decimales);
+        apres();
+      });
+    }
+
+    brancher('hauteur', 'lh', 1, lancer);
+    brancher('elasticite', 'le', 2, lancer);
+    brancher('lance', 'lv', 1, lancer);
+
+    // Les matières réelles, avec leurs vrais coefficients.
+    for (const b of document.querySelectorAll('[data-e]')) {
+      b.addEventListener('click', () => {
+        P.elasticite = Number(b.dataset.e);
+        const champ = document.getElementById('elasticite');
+        champ.value = P.elasticite;
+        document.getElementById('le').textContent = P.elasticite.toFixed(2);
+        document.querySelectorAll('[data-e]').forEach((x) => x.classList.toggle('actif', x === b));
+        lancer();
+      });
+    }
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Bac à sable — éditer le code en direct</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-editeur">
+
+  <header class="barre">
+    <a class="retour" href="index.html">←</a>
+    <strong id="titre">Bac à sable</strong>
+
+    <select id="exemples" title="Charger un exemple"></select>
+
+    <label class="auto"><input type="checkbox" id="auto" checked> Exécution auto</label>
+    <button id="lancer" type="button">Exécuter <kbd>Ctrl</kbd>+<kbd>↵</kbd></button>
+    <button id="copier" type="button" class="secondaire"
+            title="Copie une page HTML complète, prête à coller dans un fichier">Copier</button>
+    <button id="telecharger" type="button" class="secondaire" title="Enregistrer en .html">↓</button>
+    <button id="reinit" type="button" class="secondaire">Réinitialiser</button>
+  </header>
+
+  <main class="atelier">
+    <!-- L'éditeur est injecté ici par js/editeur-widget.js, le même que celui des leçons. -->
+    <section id="zone-edition"></section>
+
+    <section class="rendu">
+      <div id="apercu"></div>
+      <div class="console">
+        <header>
+          Console
+          <button id="vider" type="button" class="secondaire">Vider</button>
+        </header>
+        <ul id="journal"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { executer, ecouterMessages } from './js/bac-a-sable.js';
+    import { creerEditeur } from './js/editeur-widget.js';
+    import { genererPage, nomDeFichier, telecharger } from './js/page-autonome.js';
+    import { EXEMPLES } from './js/exemples.js';
+
+    const journalEl = document.getElementById('journal');
+    const autoEl = document.getElementById('auto');
+    const selectEl = document.getElementById('exemples');
+    const apercu = document.getElementById('apercu');
+
+    // --- Le code de départ vient soit d'une leçon (bouton « Bac à sable »), soit d'un exemple ---
+    const codeImporte = sessionStorage.getItem('editeur:code');
+    const brouillon = sessionStorage.getItem('editeur:brouillon');
+    let codeInitial = codeImporte || EXEMPLES[0].code;
+
+    if (codeImporte) {
+      document.getElementById('titre').textContent =
+        sessionStorage.getItem('editeur:titre') || 'Code importé';
+      selectEl.append(new Option('— code importé —', 'importe', true, true));
+    }
+    for (const ex of EXEMPLES) selectEl.append(new Option(ex.titre, ex.id));
+
+    let minuteur;
+
+    const editeur = creerEditeur(document.getElementById('zone-edition'), {
+      code: codeImporte || brouillon || codeInitial,
+      onExecuter: lancer,
+      onSaisie: () => {
+        if (!autoEl.checked) return;
+        // Sans ce délai, chaque frappe recréerait l'iframe : illisible et coûteux.
+        clearTimeout(minuteur);
+        minuteur = setTimeout(lancer, 800);
+      },
+    });
+
+    function lancer() {
+      journalEl.replaceChildren();
+      executer(apercu, editeur.valeur());
+      // Le code est conservé : un rechargement de page ne perd pas votre travail.
+      sessionStorage.setItem('editeur:brouillon', editeur.valeur());
+    }
+
+    function chargerCode(code) {
+      editeur.definir(code);
+      lancer();
+    }
+
+    ecouterMessages((type, texte) => {
+      const li = document.createElement('li');
+      li.className = type;
+      li.textContent = texte;
+      journalEl.append(li);
+      journalEl.scrollTop = journalEl.scrollHeight;
+    });
+
+    document.getElementById('lancer').addEventListener('click', lancer);
+    document.getElementById('vider').addEventListener('click', () => journalEl.replaceChildren());
+
+    // Copier ou télécharger produit une PAGE COMPLÈTE : sans l'import map qui l'accompagne,
+    // `import ... from 'three'` échouerait partout ailleurs.
+    const titreCourant = () => document.getElementById('titre').textContent;
+    const pageAutonome = () => genererPage(editeur.valeur(), { titre: titreCourant() });
+
+    const copier = document.getElementById('copier');
+    copier.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(pageAutonome());
+      copier.textContent = 'Page HTML copiée !';
+      setTimeout(() => (copier.textContent = 'Copier'), 1600);
+    });
+
+    document.getElementById('telecharger').addEventListener('click', () => {
+      telecharger(nomDeFichier(titreCourant()), pageAutonome());
+    });
+
+    document.getElementById('reinit').addEventListener('click', () => {
+      if (confirm('Revenir au code de départ ? Vos modifications seront perdues.')) {
+        chargerCode(codeInitial);
+      }
+    });
+
+    selectEl.addEventListener('change', (e) => {
+      const ex = EXEMPLES.find((x) => x.id === e.target.value);
+      const code = ex ? ex.code : codeImporte;
+      if (!code) return;
+
+      if (editeur.valeur().trim() !== codeInitial.trim() &&
+          !confirm('Charger un autre exemple ? Vos modifications seront perdues.')) {
+        return;
+      }
+      codeInitial = code;
+      if (ex) document.getElementById('titre').textContent = ex.titre; // sert au nom du fichier exporté
+      chargerCode(code);
+    });
+
+    lancer();
+
+    // La clé « code » ne sert qu'au passage depuis une leçon : on la consomme une fois,
+    // sinon revenir sur l'éditeur écraserait toujours le travail en cours.
+    sessionStorage.removeItem('editeur:code');
+  </script>
+</body>
+</html>

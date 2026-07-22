@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Tutoriel Three.js — 3D Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>Tutoriel Three.js</h1>
+    <p class="sub">
+      Deux niveaux, plus le catalogue des formes. Sur chaque page, le bouton
+      <b>&lt;/&gt; Voir le code</b> en bas à droite affiche le source commenté de la démo en cours.
+      À ouvrir via <code>http://localhost/3D_simulator/</code> (pas en double-cliquant le fichier).
+    </p>
+
+    <a class="card card-bac" href="atelier.html">
+      <span class="num">✎</span>L'atelier — un script qui pilote la page
+      <div class="desc">
+        La scène tourne déjà : votre script <b>agit dessus</b> au lieu de la remplacer.
+        <code>scene</code>, <code>camera</code>, <code>ajouter()</code>,
+        <code>chaqueImage()</code> — vous écrivez une ligne, l'écran change. On n'apprend pas
+        à programmer en lisant du code : en le cassant.
+      </div>
+    </a>
+
+    <a class="card card-bac" href="editeur.html">
+      <span class="num">▶</span>Bac à sable — éditer le code en direct
+      <div class="desc">
+        Le code à gauche, le rendu à droite, la console en bas. Cinq exemples <b>finis</b>,
+        à démonter.<br>
+        Sur chaque leçon, le bouton <b>&lt;/&gt; Éditer le code</b> permet la même chose,
+        sans quitter la page.
+      </div>
+    </a>
+
+    <h2 class="section">Niveau 1 — Premiers pas <span>Commencez ici</span></h2>
+    <p class="sub sub-serre">
+      Douze micro-étapes. Chacune n'ajoute qu'<b>une seule idée</b> par rapport à la précédente.
+      Les étapes marquées d'une lettre (<b>0b</b>, <b>1b</b>, <b>1c</b>, <b>4b</b>, <b>5b</b>) sont
+      des <b>détours</b> : elles ne font avancer aucune démo, elles s'arrêtent sur une notion que
+      le fil principal survole. Celles marquées d'un point (<b>3.1</b>…) sont des
+      <b class="simu-mot">simulations</b> : elles n'apprennent rien de neuf, elles font
+      <i>servir</i> l'étape dont elles portent le numéro. Sautez-les si vous êtes pressé,
+      revenez-y quand quelque chose vous échappe.
+    </p>
+
+    <h3 class="groupe">Le socle</h3>
+
+    <a class="card card-debutant" href="debutant/00-canvas-vide.html">
+      <span class="num">0</span>Un écran vide (mais qui marche)
+      <div class="desc">Scène, caméra, renderer. Le socle de tout le reste.</div>
+    </a>
+    <a class="card card-debutant" href="debutant/00b-couleur-du-fond.html">
+      <span class="num">0b</span>La couleur du fond
+      <div class="desc">
+        L'hexadécimal expliqué, <code>THREE.Color</code>, fond transparent,
+        et pourquoi votre couleur s'affiche exactement telle que demandée.
+      </div>
+    </a>
+
+    <h3 class="groupe">Le premier objet</h3>
+
+    <a class="card card-debutant" href="debutant/01-premier-cube.html">
+      <span class="num">1</span>Mon premier cube
+      <div class="desc">Géométrie + matériau = mesh. Et pourquoi il faut reculer la caméra.</div>
+    </a>
+    <a class="card card-debutant" href="debutant/01b-couleur-du-cube.html">
+      <span class="num">1b</span>La couleur du cube
+      <div class="desc">
+        Pourquoi il était arc-en-ciel. <code>material.color</code>, wireframe,
+        opacité, et les faces qu'on ne dessine pas.
+      </div>
+    </a>
+
+    <h3 class="groupe">Se repérer, placer, animer</h3>
+
+    <a class="card card-debutant" href="debutant/01c-repere-3d.html">
+      <span class="num">1c</span>Le repère 3D et les unités
+      <div class="desc">
+        X, Y, Z : où pointe chacun. Le « Y en haut », les radians,
+        et pourquoi un cube posé au sol est en y = 0.5.
+      </div>
+    </a>
+    <a class="card card-debutant" href="debutant/02-bouger.html">
+      <span class="num">2</span>Placer un objet
+      <div class="desc">position, rotation, scale — pilotées par des curseurs.</div>
+    </a>
+    <a class="card card-debutant" href="debutant/02b-la-camera.html">
+      <span class="num">2b</span>La caméra
+      <div class="desc">
+        Ses <b>quatre arguments</b>, présents depuis l'étape 0 et jamais expliqués. Trois
+        focales à sujet identique : le FOV n'est pas un zoom. Et pourquoi
+        <code>near = 0.001</code> est exactement le contraire de ce qu'il faut faire.
+      </div>
+    </a>
+    <a class="card card-debutant" href="debutant/03-animation.html">
+      <span class="num">3</span>Faire bouger
+      <div class="desc">La boucle de rendu et requestAnimationFrame.</div>
+    </a>
+    <a class="card card-simu" href="debutant/03.1-chute-et-rebond.html">
+      <span class="num">3.1</span>Simulation — la chute et le rebond
+      <div class="desc">
+        <b>Lune, Terre et Jupiter côte à côte</b>, lâchées ensemble. Gravité, rebond,
+        amortissement. Pourquoi Jupiter n'est pas 15× plus rapide que la Lune alors que sa
+        gravité l'est.
+      </div>
+    </a>
+    <a class="card card-simu" href="debutant/03.2-pendule.html">
+      <span class="num">3.2</span>Simulation — le pendule
+      <div class="desc">
+        <b>Trois pendules identiques</b>, seule la gravité change. Et la preuve, chiffrée,
+        que le T = 2π√(L/g) du lycée se trompe de 144 % à grand angle.
+      </div>
+    </a>
+
+    <a class="card card-simu" href="debutant/03.3-ressort.html">
+      <span class="num">3.3</span>Simulation — le ressort
+      <div class="desc">
+        <b>Sous-amorti · critique · sur-amorti</b>, lâchés ensemble. Les maths de tout
+        mouvement lissé — et le piège du <code>x += (cible − x) * 0.1</code> que tout le
+        monde écrit, et qui dépend des images par seconde.
+      </div>
+    </a>
+
+    <div class="sous-chapitres">
+      <h4 class="sous-groupe">Chaque régime, seul <span>— avec sa loi, vérifiable à l'écran</span></h4>
+      <p class="sub sub-serre">
+        La page 3.3 <b>compare</b> les trois. Celles-ci les isolent, avec ζ réglable
+        librement — parce que c'est un <b>continuum</b>, pas trois objets différents.
+      </p>
+      <div class="formes-liste">
+        <a href="ressorts/sous-amorti.html"><b>Sous-amorti</b><span>ζ &lt; 1 · le décrément logarithmique</span></a>
+        <a href="ressorts/critique.html"><b>Critique</b><span>ζ = 1 · c = 2√(km)</span></a>
+        <a href="ressorts/sur-amorti.html"><b>Sur-amorti</b><span>ζ &gt; 1 · deux exponentielles</span></a>
+      </div>
+    </div>
+
+    <div class="sous-chapitres">
+      <h4 class="sous-groupe">Chaque astre, seul <span>— la même physique, sans rien pour distraire</span></h4>
+      <p class="sub sub-serre">
+        Les pages ci-dessus <b>comparent</b> les trois astres. Celles-ci font l'inverse :
+        un seul astre à l'écran, ses chiffres, et ce qu'on sait de lui. Les deux servent —
+        aucune ne remplace l'autre.
+      </p>
+
+      <h5 class="sous-groupe">La Lune <span>— g = 1.62 m/s²</span></h5>
+      <div class="formes-liste">
+        <a href="astres/lune-chute.html"><b>La chute</b><span>t = √(2h/g)</span></a>
+        <a href="astres/lune-pendule.html"><b>Le pendule</b><span>T = 2π√(L/g)</span></a>
+        <a href="astres/lune-tir.html"><b>Le tir</b><span>portée = v²·sin(2θ)/g</span></a>
+      </div>
+
+      <h5 class="sous-groupe">La Terre <span>— g = 9.81 m/s²</span></h5>
+      <div class="formes-liste">
+        <a href="astres/terre-chute.html"><b>La chute</b><span>t = √(2h/g)</span></a>
+        <a href="astres/terre-pendule.html"><b>Le pendule</b><span>T = 2π√(L/g)</span></a>
+        <a href="astres/terre-tir.html"><b>Le tir</b><span>portée = v²·sin(2θ)/g</span></a>
+      </div>
+
+      <h5 class="sous-groupe">Jupiter <span>— g = 24.79 m/s²</span></h5>
+      <div class="formes-liste">
+        <a href="astres/jupiter-chute.html"><b>La chute</b><span>t = √(2h/g)</span></a>
+        <a href="astres/jupiter-pendule.html"><b>Le pendule</b><span>T = 2π√(L/g)</span></a>
+        <a href="astres/jupiter-tir.html"><b>Le tir</b><span>portée = v²·sin(2θ)/g</span></a>
+      </div>
+    </div>
+
+    <a class="card card-simu" href="debutant/03.4-ecrasement.html">
+      <span class="num">3.4</span>Simulation — l'écrasement au sol
+      <div class="desc">
+        Trois cubes, même chute, <b>trois matières</b> : rigide, mou, cassant. Le
+        <i>squash &amp; stretch</i> de Disney, et une fracture en 125 morceaux <b>qui sont
+        le cube</b> — volume conservé, gerbe plate. Impact vérifié à √(2gh).
+      </div>
+    </a>
+
+    <a class="card card-simu" href="debutant/03.4b-deformation-maillee.html">
+      <span class="num">3.4b</span>Simulation — la déformation maillée
+      <div class="desc">
+        Le même écrasement, mais <b>sommet par sommet</b> : le cube ne s'échelonne plus, il se
+        <b>renfle</b> comme un tonneau. Choisissez le nombre de <b>carreaux</b> — à 1, il n'a
+        que 8 coins et n'en est pas capable. Volume <b>mesuré</b> à 1,000000, pas supposé.
+      </div>
+    </a>
+
+    <div class="sous-chapitres">
+      <h4 class="sous-groupe">Chaque matière, seule <span>— avec sa loi, vérifiable à l'écran</span></h4>
+      <p class="sub sub-serre">
+        La page ci-dessus <b>compare</b> les trois. Celles-ci font l'inverse : une matière à
+        l'écran, ses réglages à elle, et une loi que le compteur vérifie sous vos yeux.
+      </p>
+      <div class="formes-liste">
+        <a href="matieres/rigide.html"><b>Rigide</b><span>h′ = e²·h · 5 matières réelles</span></a>
+        <a href="matieres/mou.html"><b>Mou</b><span>enfoncement = 0,64 · v/ω</span></a>
+        <a href="matieres/cassant.html"><b>Cassant</b><span>E = m·g·h · jusqu'à 400 morceaux</span></a>
+      </div>
+    </div>
+
+    <h3 class="groupe">La lumière et le décor</h3>
+
+    <a class="card card-debutant" href="debutant/04-lumiere.html">
+      <span class="num">4</span>La lumière
+      <div class="desc">Pourquoi votre objet est tout noir, et comment l'éclairer.</div>
+    </a>
+    <a class="card card-simu" href="debutant/04.1-jour-nuit.html">
+      <span class="num">4.1</span>Simulation — le cycle jour / nuit
+      <div class="desc">
+        Le soleil tourne, le ciel suit. <b>Ambiante seule · directionnelle seule · les deux</b>,
+        côte à côte au même instant : on voit enfin ce que chaque lumière fait, et ne fait pas.
+      </div>
+    </a>
+    <a class="card card-debutant" href="debutant/04b-autour-du-cube.html">
+      <span class="num">4b</span>Ce qui entoure le cube
+      <div class="desc">
+        Le sol, la grille, le brouillard, l'environnement reflété.
+        Pourquoi une scène vide ne donne aucun repère — ni aucun reflet.
+      </div>
+    </a>
+
+    <h3 class="groupe">Les formes</h3>
+
+    <a class="card card-debutant" href="debutant/05-plusieurs-objets.html">
+      <span class="num">5</span>Plusieurs objets
+      <div class="desc">Cube, sphère, tore. Le repère des axes X / Y / Z.</div>
+    </a>
+    <a class="card card-simu" href="debutant/05.1-systeme-solaire.html">
+      <span class="num">5.1</span>Simulation — le système solaire
+      <div class="desc">
+        Six planètes, la Lune, les anneaux de Saturne. <b>La Lune n'est jamais calculée</b> :
+        elle est enfant de la Terre, donc elle suit. Et pourquoi toute maquette ment.
+      </div>
+    </a>
+    <a class="card card-simu" href="debutant/05.1b-systeme-solaire-libre.html">
+      <span class="num">5.1b</span>Simulation — le système solaire, en vol libre
+      <div class="desc">
+        Le même système, mais <b>vous pilotez</b> : ZQSD, souris, et un suivi de planète.
+        Allez voir les anneaux de Saturne de près. Le piège d'<code>OrbitControls</code> qui
+        casse toute navigation, et <code>getWorldPosition</code> pour retrouver un enfant.
+      </div>
+    </a>
+    <a class="card card-simu" href="debutant/05.3-mille-objets.html">
+      <span class="num">5.3</span>Simulation — mille objets
+      <div class="desc">
+        1000 <code>Mesh</code> contre un <code>InstancedMesh</code>, <b>images identiques</b>,
+        appels de dessin mesurés : <b>2 000 contre 1</b>, et 27× moins de temps processeur.
+        La leçon de performance n°1 de toute la 3D.
+      </div>
+    </a>
+    <a class="card card-simu" href="debutant/05.3b-mille-objets-libre.html">
+      <span class="num">5.3b</span>Simulation — mille objets, en vol libre
+      <div class="desc">
+        Entrez <b>dans</b> le tas de cubes : le compteur tombe de 2 000 à 997 appels selon
+        où vous regardez. C'est le <b>frustum culling</b> qui travaille sous vos yeux — et la
+        limite de l'<code>InstancedMesh</code>, testé en bloc.
+      </div>
+    </a>
+    <a class="card card-debutant" href="debutant/05b-toutes-les-formes.html">
+      <span class="num">5b</span>Toutes les formes — le catalogue
+      <div class="desc">
+        Les <b>19 géométries</b> de Three.js côte à côte, avec le nombre de triangles
+        de chacune. Et le compromis segments / triangles, en direct.
+      </div>
+    </a>
+
+    <div class="sous-chapitres">
+      <h4 class="sous-groupe">Les 19 formes, une par une <span>— un sous-chapitre par géométrie</span></h4>
+      <p class="sub sub-serre">
+        Le catalogue montre qu'elles existent ; ces pages apprennent à s'en servir. Chacune est
+        seule à l'écran avec <b>tous ses paramètres en curseurs</b>, son appel de constructeur
+        qui s'écrit en direct, son compte de triangles, et ses pièges propres.
+      </p>
+
+      <h5 class="sous-groupe">Les primitives</h5>
+      <div class="formes-liste">
+        <a href="formes/01-box.html"><b>BoxGeometry</b><span>La boîte</span></a>
+        <a href="formes/02-sphere.html"><b>SphereGeometry</b><span>La sphère</span></a>
+        <a href="formes/03-cylinder.html"><b>CylinderGeometry</b><span>Le cylindre</span></a>
+        <a href="formes/04-cone.html"><b>ConeGeometry</b><span>Le cône</span></a>
+        <a href="formes/05-capsule.html"><b>CapsuleGeometry</b><span>La capsule</span></a>
+      </div>
+
+      <h5 class="sous-groupe">Tores et surfaces plates</h5>
+      <div class="formes-liste">
+        <a href="formes/06-torus.html"><b>TorusGeometry</b><span>Le tore</span></a>
+        <a href="formes/07-torusknot.html"><b>TorusKnotGeometry</b><span>Le nœud torique</span></a>
+        <a href="formes/08-plane.html"><b>PlaneGeometry</b><span>Le plan</span></a>
+        <a href="formes/09-circle.html"><b>CircleGeometry</b><span>Le disque</span></a>
+        <a href="formes/10-ring.html"><b>RingGeometry</b><span>L’anneau</span></a>
+      </div>
+
+      <h5 class="sous-groupe">Les polyèdres</h5>
+      <div class="formes-liste">
+        <a href="formes/11-tetrahedron.html"><b>TetrahedronGeometry</b><span>Le tétraèdre</span></a>
+        <a href="formes/12-octahedron.html"><b>OctahedronGeometry</b><span>L’octaèdre</span></a>
+        <a href="formes/13-icosahedron.html"><b>IcosahedronGeometry</b><span>L’icosaèdre</span></a>
+        <a href="formes/14-dodecahedron.html"><b>DodecahedronGeometry</b><span>Le dodécaèdre</span></a>
+        <a href="formes/15-polyhedron.html"><b>PolyhedronGeometry</b><span>Le polyèdre libre</span></a>
+      </div>
+
+      <h5 class="sous-groupe">Les génératives</h5>
+      <div class="formes-liste">
+        <a href="formes/16-lathe.html"><b>LatheGeometry</b><span>Le tour de potier</span></a>
+        <a href="formes/17-tube.html"><b>TubeGeometry</b><span>Le tuyau le long d’une courbe</span></a>
+        <a href="formes/18-shape.html"><b>ShapeGeometry</b><span>Le contour dessiné</span></a>
+        <a href="formes/19-extrude.html"><b>ExtrudeGeometry</b><span>Le contour extrudé</span></a>
+      </div>
+    </div>
+
+    <h3 class="groupe">La navigation</h3>
+
+    <a class="card card-debutant" href="debutant/06-souris.html">
+      <span class="num">6</span>La souris et la fenêtre
+      <div class="desc">OrbitControls et redimensionnement. Le squelette est complet.</div>
+    </a>
+    <a class="card card-simu" href="debutant/06.1-tir-au-but.html">
+      <span class="num">6.1</span>Simulation — le tir
+      <div class="desc">
+        Visez à la souris, cliquez pour tirer. <b>Trois billes, même vitesse, même
+        direction</b> — trois trajectoires. Tout se rejoint : boucle, gravité, caméra libre.
+      </div>
+    </a>
+
+    <h2 class="section">Niveau 2 — Les leçons <span>Une fois le niveau 1 digéré</span></h2>
+    <p class="sub sub-serre">
+      Chaque page combine désormais plusieurs notions et va plus loin dans le détail.
+    </p>
+
+    <h3 class="groupe">Les fondamentaux</h3>
+
+    <a class="card" href="lecons/01-scene-basique.html">
+      <span class="num">01</span>Scène, caméra, renderer
+      <div class="desc">Le trio minimal, revu proprement, avec les commentaires complets.</div>
+    </a>
+
+    <a class="card" href="lecons/02-geometries-materiaux.html">
+      <span class="num">02</span>Géométries &amp; matériaux
+      <div class="desc">Cube, sphère, tore, plan. Basic vs Lambert vs Standard vs Wireframe.</div>
+    </a>
+
+    <a class="card" href="lecons/03-lumieres-ombres.html">
+      <span class="num">03</span>Lumières &amp; ombres
+      <div class="desc">Ambient, directional, point, spot. Activer les ombres portées.</div>
+    </a>
+
+    <a class="card" href="lecons/04-textures.html">
+      <span class="num">04</span>Textures &amp; PBR
+      <div class="desc">Map, normalMap, roughness, metalness. Textures générées en canvas.</div>
+    </a>
+
+    <h3 class="groupe">Interaction, modèles, physique</h3>
+
+    <a class="card" href="lecons/05-interaction.html">
+      <span class="num">05</span>Interaction
+      <div class="desc">OrbitControls, raycaster (cliquer un objet), survol, redimensionnement.</div>
+    </a>
+
+    <a class="card" href="lecons/06-modele-gltf.html">
+      <span class="num">06</span>Charger un modèle glTF
+      <div class="desc">GLTFLoader, barre de progression, centrage automatique du modèle.</div>
+    </a>
+
+    <a class="card" href="lecons/07-physique.html">
+      <span class="num">07</span>Animation &amp; physique
+      <div class="desc">Delta time, gravité, rebonds, collisions simples sans moteur externe.</div>
+    </a>
+
+    <h3 class="groupe">Les projets complets</h3>
+
+    <a class="card" href="lecons/08-simulateur.html">
+      <span class="num">08</span>Mini-simulateur
+      <div class="desc">Tout combiné : scène éclairée, objets cliquables, panneau de réglages.</div>
+    </a>
+
+    <a class="card" href="lecons/09-blender.html">
+      <span class="num">09</span>Votre modèle Blender
+      <div class="desc">
+        Déposez votre propre <code>.glb</code> sur la page : cadrage automatique, ombres,
+        et lecture de vos animations.
+      </div>
+    </a>
+
+    <a class="card" href="lecons/10-clavier.html">
+      <span class="num">10</span>Se déplacer au clavier
+      <div class="desc">
+        ZQSD ou flèches, monter, descendre, courir. Comment translater la caméra
+        sans casser OrbitControls.
+      </div>
+    </a>
+  </div>
+</body>
+</html>

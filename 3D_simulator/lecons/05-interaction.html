@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>05 — Interaction</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>05 — Interaction</h2>
+    <p>
+      <kbd>clic gauche</kbd> tourner · <kbd>molette</kbd> zoomer · <kbd>clic droit</kbd> déplacer<br>
+      Survolez un cube : il s'éclaircit. Cliquez : il change de couleur et saute.
+    </p>
+    <p id="info">Aucun objet sélectionné.</p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 6, 10);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.1; // empêche de passer sous le sol
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 2);
+    dir.position.set(5, 10, 5);
+    dir.castShadow = true;
+    scene.add(dir);
+
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshStandardMaterial({ color: 0x161b22 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.receiveShadow = true;
+    scene.add(sol);
+
+    // Une grille de cubes, chacun avec SON PROPRE matériau (on va le modifier individuellement).
+    const cubes = [];
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    for (let x = -2; x <= 2; x++) {
+      for (let z = -2; z <= 2; z++) {
+        const cube = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x58a6ff }));
+        cube.position.set(x * 1.6, 0.5, z * 1.6);
+        cube.castShadow = true;
+        // userData : espace libre pour stocker vos propres données sur un objet.
+        cube.userData = { baseY: 0.5, vitesseY: 0, nom: `cube ${x},${z}` };
+        scene.add(cube);
+        cubes.push(cube);
+      }
+    }
+
+    // --- RAYCASTER : convertir un clic 2D en objet 3D ---
+    // Principe : on lance un rayon depuis la caméra à travers le pixel visé,
+    // et on demande quels objets il traverse, triés du plus proche au plus loin.
+    const raycaster = new THREE.Raycaster();
+    const pointeur = new THREE.Vector2();
+    let survole = null;
+
+    function majPointeur(event) {
+      // Les coordonnées écran (0..largeur) doivent devenir des coordonnées normalisées (-1..1).
+      pointeur.x = (event.clientX / innerWidth) * 2 - 1;
+      pointeur.y = -(event.clientY / innerHeight) * 2 + 1; // l'axe Y est inversé en 3D
+    }
+
+    function objetSousLaSouris() {
+      raycaster.setFromCamera(pointeur, camera);
+      const touches = raycaster.intersectObjects(cubes); // [] si rien
+      return touches.length ? touches[0].object : null;
+    }
+
+    addEventListener('pointermove', (e) => {
+      majPointeur(e);
+      const cible = objetSousLaSouris();
+      if (cible === survole) return;
+
+      if (survole) survole.material.emissive.setHex(0x000000);
+      survole = cible;
+      if (survole) survole.material.emissive.setHex(0x223344);
+
+      document.body.style.cursor = survole ? 'pointer' : 'default';
+    });
+
+    addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return; // seulement le clic gauche
+      majPointeur(e);
+      const cible = objetSousLaSouris();
+      if (!cible) return;
+
+      cible.material.color.setHSL(Math.random(), 0.7, 0.6);
+      cible.userData.vitesseY = 6; // impulsion vers le haut
+      document.getElementById('info').textContent = `Sélectionné : ${cible.userData.nom}`;
+    });
+
+    // --- Boucle avec delta time (voir leçon 07) ---
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+
+      for (const c of cubes) {
+        const d = c.userData;
+        if (d.vitesseY !== 0 || c.position.y > d.baseY) {
+          d.vitesseY -= 20 * dt;             // gravité
+          c.position.y += d.vitesseY * dt;
+          if (c.position.y <= d.baseY) {     // atterrissage
+            c.position.y = d.baseY;
+            d.vitesseY = 0;
+          }
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>03 — Lumières &amp; ombres</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>03 — Lumières &amp; ombres</h2>
+    <p>Cochez/décochez pour isoler la contribution de chaque lumière.</p>
+    <label><input type="checkbox" id="ambient" checked> Ambient (uniforme, pas d'ombre)</label>
+    <label><input type="checkbox" id="directional" checked> Directional (soleil, rayons parallèles)</label>
+    <label><input type="checkbox" id="point"> Point (ampoule, rayonne dans tous les sens)</label>
+    <label><input type="checkbox" id="spot"> Spot (cône de lumière)</label>
+    <label><input type="checkbox" id="helpers"> Afficher les helpers</label>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(6, 5, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // Étape 1 pour avoir des ombres : les activer sur le renderer.
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // bords adoucis
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 1, 0);
+
+    // --- Lumières ---
+    const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+
+    const directional = new THREE.DirectionalLight(0xffffff, 2);
+    directional.position.set(5, 8, 4);
+    directional.castShadow = true;
+    // La caméra d'ombre d'une DirectionalLight est orthographique : il faut cadrer la zone
+    // qui reçoit des ombres, sinon elles sont pixellisées ou absentes.
+    directional.shadow.camera.top = 8;
+    directional.shadow.camera.bottom = -8;
+    directional.shadow.camera.left = -8;
+    directional.shadow.camera.right = 8;
+    directional.shadow.mapSize.set(1024, 1024);
+
+    const point = new THREE.PointLight(0xff7b72, 30, 20); // (couleur, intensité, portée)
+    point.position.set(-3, 3, 2);
+    point.castShadow = true;
+
+    const spot = new THREE.SpotLight(0x7ee787, 60, 20, Math.PI / 7, 0.4);
+    spot.position.set(3, 6, 3);
+    spot.castShadow = true;
+
+    const lights = { ambient, directional, point, spot };
+    scene.add(ambient, directional);
+
+    // --- Helpers : visualiser où sont les lumières ---
+    const helpers = new THREE.Group();
+    helpers.add(new THREE.DirectionalLightHelper(directional, 1));
+    helpers.add(new THREE.PointLightHelper(point, 0.3));
+    helpers.add(new THREE.SpotLightHelper(spot));
+    helpers.visible = false;
+    scene.add(helpers);
+
+    // --- Objets ---
+    // Étape 2 : chaque objet déclare s'il projette (castShadow) et/ou reçoit (receiveShadow) une ombre.
+    const mat = new THREE.MeshStandardMaterial({ color: 0xe6edf3, roughness: 0.6 });
+
+    const sol = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), mat);
+    sol.rotation.x = -Math.PI / 2; // le plan est vertical par défaut, on le couche
+    sol.receiveShadow = true;
+    scene.add(sol);
+
+    const objets = [
+      new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), mat),
+      new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 16), mat),
+      new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.3, 16, 64), mat),
+    ];
+    objets[0].position.set(-2.5, 0.75, 0);
+    objets[1].position.set(0, 0.9, 0);
+    objets[2].position.set(2.5, 1, 0);
+    for (const o of objets) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      scene.add(o);
+    }
+
+    // --- Contrôles UI ---
+    for (const [nom, light] of Object.entries(lights)) {
+      document.getElementById(nom).addEventListener('change', (e) => {
+        e.target.checked ? scene.add(light) : scene.remove(light);
+      });
+    }
+    document.getElementById('helpers').addEventListener('change', (e) => {
+      helpers.visible = e.target.checked;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      objets[2].rotation.x += 0.01;
+      objets[0].rotation.y += 0.01;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

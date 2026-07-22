@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>09 — Votre modèle Blender</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>09 — Votre modèle Blender</h2>
+    <p>
+      Dans Blender : <b>Fichier → Exporter → glTF 2.0</b>, format <b>glTF Binary (.glb)</b>.
+      Puis déposez le fichier sur cette page.
+    </p>
+    <p><label class="bouton-fichier">
+      Choisir un .glb<input type="file" id="fichier" accept=".glb,.gltf" hidden>
+    </label></p>
+    <p>
+      Souris pour orienter · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou
+      <kbd>flèches</kbd> pour se déplacer · <kbd>Espace</kbd>/<kbd>C</kbd> monter et descendre.
+    </p>
+    <p id="statut">Chargement du robot de démonstration…</p>
+    <div id="animations"></div>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <div id="zone-depot"><span>Déposez votre .glb ici</span></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 1000);
+    camera.position.set(3, 2, 4);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15; // ACES assombrit : on compense légèrement
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Les matériaux exportés par Blender sont du PBR : sans environnement à réfléchir,
+    // le métal apparaît noir même bien éclairé.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(4, 8, 4);
+    soleil.castShadow = true;
+
+    // PIÈGE : sans `normalBias`, chaque surface s'ombre ELLE-MÊME. Le modèle devient
+    // entièrement noir, comme s'il n'était pas éclairé. C'est l'« acné d'ombre » :
+    // la profondeur enregistrée dans la shadow map et celle du pixel dessiné sont
+    // trop proches, et l'arrondi décide au hasard qui est devant.
+    soleil.shadow.normalBias = 0.02;
+    soleil.shadow.bias = -0.0005;
+    soleil.shadow.mapSize.set(2048, 2048);
+
+    // La caméra d'ombre par défaut couvre ±5 unités. Un modèle de 1,8 unité n'en occupe
+    // qu'un cinquième : la résolution est gâchée et les ombres deviennent baveuses.
+    const c = soleil.shadow.camera;
+    c.top = c.right = 3;
+    c.bottom = c.left = -3;
+    c.near = 0.5;
+    c.far = 25;
+    c.updateProjectionMatrix();
+
+    scene.add(soleil);
+
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.ShadowMaterial({ opacity: 0.35 }) // invisible, mais reçoit les ombres
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.receiveShadow = true;
+    scene.add(sol);
+    const grille = new THREE.GridHelper(10, 10, 0x3d444d, 0x232a33);
+    scene.add(grille);
+
+    const statut = document.getElementById('statut');
+    const listeAnims = document.getElementById('animations');
+    const loader = new GLTFLoader();
+
+    let modele = null;
+    let mixer = null;
+
+    // Au démarrage : l'humanoïde fabriqué par scripts/creer-optimus.py, exporté depuis Blender.
+    loader.load(
+      '../models/optimus.glb',
+      (gltf) => {
+        afficher(gltf.scene, gltf.animations);
+        statut.innerHTML = 'optimus.glb — fabriqué dans Blender par <code>scripts/creer-optimus.py</code>.';
+      },
+      undefined,
+      () => {
+        // Le fichier peut ne pas exister : on retombe sur une forme générée par le code.
+        afficher(new THREE.Mesh(
+          new THREE.TorusKnotGeometry(0.6, 0.2, 128, 32),
+          new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.25, metalness: 0.8 })
+        ));
+        statut.textContent = 'models/robot.glb introuvable. Déposez votre propre fichier.';
+      }
+    );
+
+    /** Remplace le modèle courant, le recentre et cadre la caméra dessus. */
+    function afficher(objet, animations = []) {
+      if (modele) {
+        scene.remove(modele);
+        // La mémoire GPU n'est pas libérée par le ramasse-miettes de JavaScript.
+        modele.traverse((n) => {
+          if (!n.isMesh) return;
+          n.geometry.dispose();
+          for (const mat of [n.material].flat()) {
+            for (const v of Object.values(mat)) v?.isTexture && v.dispose();
+            mat.dispose();
+          }
+        });
+      }
+
+      // Un fichier glTF n'offre aucune garantie d'échelle ni de centrage :
+      // un personnage Blender de 1,80 m arrive à 1,8 unité, une planète à 6 000 000.
+      const boite = new THREE.Box3().setFromObject(objet);
+      const centre = boite.getCenter(new THREE.Vector3());
+      const taille = boite.getSize(new THREE.Vector3());
+      const diagonale = taille.length();
+
+      objet.position.sub(centre);          // centre sur l'origine…
+      objet.position.y += taille.y / 2;    // …puis pose la base sur le sol
+
+      objet.traverse((n) => {
+        if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
+      });
+
+      scene.add(objet);
+      modele = objet;
+
+      // Cadrer la caméra : on recule d'une distance proportionnelle à la taille de l'objet.
+      const distance = diagonale * 1.6;
+      camera.position.set(distance * 0.6, taille.y * 0.7 + diagonale * 0.3, distance * 0.8);
+      camera.near = diagonale / 100;
+      camera.far = diagonale * 100;
+      camera.updateProjectionMatrix();
+      controls.target.set(0, taille.y / 2, 0);
+      controls.update();
+
+      grille.scale.setScalar(Math.max(1, diagonale / 5));
+
+      // --- Animations : Blender exporte ses actions comme des « clips » ---
+      mixer = null;
+      listeAnims.replaceChildren();
+      if (!animations.length) return;
+
+      mixer = new THREE.AnimationMixer(objet);
+      animations.forEach((clip, i) => {
+        const label = document.createElement('label');
+        const coche = Object.assign(document.createElement('input'), { type: 'checkbox' });
+        const action = mixer.clipAction(clip);
+
+        // Le premier clip démarre seul : une animation qu'il faut cocher pour voir
+        // donne l'impression d'un modèle figé.
+        if (i === 0) {
+          coche.checked = true;
+          action.play();
+        }
+
+        coche.addEventListener('change', () => (coche.checked ? action.play() : action.stop()));
+        label.append(coche, ` ${clip.name} (${clip.duration.toFixed(1)} s)`);
+        listeAnims.append(label);
+      });
+    }
+
+    /** Charge un fichier local choisi par l'utilisateur. */
+    function chargerFichier(fichier) {
+      if (!/\.(glb|gltf)$/i.test(fichier.name)) {
+        statut.textContent = 'Format refusé. Exportez en .glb depuis Blender.';
+        return;
+      }
+
+      // createObjectURL fabrique une URL temporaire vers le fichier, en mémoire.
+      // Rien n'est envoyé à un serveur : tout se passe dans votre navigateur.
+      const url = URL.createObjectURL(fichier);
+      statut.textContent = `Chargement de ${fichier.name}…`;
+
+      loader.load(
+        url,
+        (gltf) => {
+          URL.revokeObjectURL(url); // l'URL a servi, on libère le fichier
+          afficher(gltf.scene, gltf.animations);
+
+          let sommets = 0;
+          gltf.scene.traverse((n) => n.isMesh && (sommets += n.geometry.attributes.position.count));
+          statut.textContent =
+            `${fichier.name} — ${sommets.toLocaleString('fr')} sommets, ` +
+            `${gltf.animations.length} animation(s).`;
+        },
+        undefined,
+        (err) => {
+          URL.revokeObjectURL(url);
+          // Un .gltf « séparé » référence un .bin et des images voisines, introuvables ici.
+          statut.textContent = 'Échec. Si c\'est un .gltf, réexportez en .glb (fichier unique).';
+          console.error(err);
+        }
+      );
+    }
+
+    // --- Glisser-déposer ---
+    const zone = document.getElementById('zone-depot');
+    addEventListener('dragover', (e) => {
+      e.preventDefault();          // sans ça, le navigateur ouvre le fichier à la place
+      zone.classList.add('actif');
+    });
+    addEventListener('dragleave', () => zone.classList.remove('actif'));
+    addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('actif');
+      if (e.dataTransfer.files[0]) chargerFichier(e.dataTransfer.files[0]);
+    });
+
+    document.getElementById('fichier').addEventListener('change', (e) => {
+      if (e.target.files[0]) chargerFichier(e.target.files[0]);
+    });
+
+    // --- Déplacement au clavier (détaillé dans la leçon 10) ---
+    // `event.code` vise la touche physique : ZQSD sur AZERTY, WASD sur QWERTY.
+    const TOUCHES = {
+      avant: ['KeyW', 'ArrowUp'], arriere: ['KeyS', 'ArrowDown'],
+      gauche: ['KeyA', 'ArrowLeft'], droite: ['KeyD', 'ArrowRight'],
+      monter: ['Space'], descendre: ['KeyC'], vite: ['ShiftLeft', 'ShiftRight'],
+    };
+    const enfoncees = new Set();
+    const actif = (nom) => TOUCHES[nom].some((c) => enfoncees.has(c));
+
+    addEventListener('keydown', (e) => {
+      if (['TEXTAREA', 'INPUT'].includes(e.target.tagName)) return; // ne pas gêner l'éditeur
+      if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+      enfoncees.add(e.code);
+    });
+    addEventListener('keyup', (e) => enfoncees.delete(e.code));
+    addEventListener('blur', () => enfoncees.clear()); // sinon la touche reste « collée »
+
+    const _avant = new THREE.Vector3();
+    const _droite = new THREE.Vector3();
+    const _pas = new THREE.Vector3();
+    const HAUT = new THREE.Vector3(0, 1, 0);
+
+    function deplacer(dt) {
+      _avant.subVectors(controls.target, camera.position).setY(0).normalize();
+      _droite.crossVectors(_avant, HAUT).normalize();
+
+      _pas.set(0, 0, 0);
+      if (actif('avant')) _pas.add(_avant);
+      if (actif('arriere')) _pas.sub(_avant);
+      if (actif('droite')) _pas.add(_droite);
+      if (actif('gauche')) _pas.sub(_droite);
+      if (actif('monter')) _pas.add(HAUT);
+      if (actif('descendre')) _pas.sub(HAUT);
+      if (_pas.lengthSq() === 0) return;
+
+      // La caméra ET la cible d'OrbitControls avancent ensemble : le regard ne dérive pas.
+      _pas.normalize().multiplyScalar(3 * (actif('vite') ? 3 : 1) * dt);
+      camera.position.add(_pas);
+      controls.target.add(_pas);
+    }
+
+    const horloge = new THREE.Clock();
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = horloge.getDelta();
+      deplacer(Math.min(dt, 1 / 30));
+
+      mixer?.update(dt);                                  // fait avancer les animations Blender
+      if (!mixer && modele) modele.rotation.y += dt * 0.3; // sinon, rotation de présentation
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

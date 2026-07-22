@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Écrasement — Mou</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Écrasement — Mou</h2>
+    <p class="famille">une matière, seule · enfoncement = 0,64 · v/ω</p>
+    <p>Il encaisse en se déformant, puis se relève. C'est le <i>squash &amp; stretch</i> — le premier des douze principes de l'animation.</p>
+    <label>vitesse de lecture <span class="deg" id="lr">×0.25 · 4× plus lent</span>
+      <input type="range" id="vlecture" min="-3" max="0.602" step="0.002" value="-0.6"></label>
+
+    <label>hauteur de lâcher — m <span class="deg" id="lh">6.0</span>
+      <input type="range" id="hauteur" min="1" max="12" step="0.1" value="6"></label>
+    <label>souplesse <span class="deg" id="ls">1.0</span>
+      <input type="range" id="souplesse" min="0.2" max="3" step="0.05" value="1"></label>
+    <label>vitesse de lancer — m/s vers le bas <span class="deg" id="lv">0.0</span>
+      <input type="range" id="lance" min="0" max="30" step="0.5" value="0"></label>
+    <p><button type="button" id="relancer">↻ Le lâcher</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Mou — ce qu'il faut savoir (7)</summary>
+      <ul>
+        <li><b>L'écrasement DOIT conserver le volume.</b> Ce qu'on perd en hauteur, il faut le rendre en largeur : <code>x = z = 1/√s</code>, ce qui garde <code>x·y·z = 1</code>. Sans ça le cube <i>rétrécit</i>, et l'œil le repère instantanément — même sans savoir pourquoi.</li>
+        <li><b>Le sol est un ressort, et la déformation EST l'enfoncement.</b> On ne replace jamais le cube de force : on le laisse s'enfoncer, le sol le repousse d'autant plus fort, et sa demi-hauteur vaut alors exactement sa hauteur de centre — son bas retombe sur zéro tout seul. Ma première version le repositionnait à la main : elle <b>saccadait</b>, et ça se voyait.</li>
+        <li><b>Profondeur et durée sont le MÊME réglage</b>, et c'est frustrant : l'enfoncement vaut <code>v/ω</code> et le contact dure <code>π/ω</code>, avec ω = √k. Un ressort raide s'écrase peu <i>et</i> vite ; un ressort mou creuse <i>et</i> dure. On ne peut pas avoir un écrasement profond et bref, ni superficiel et long. Le compteur affiche les deux.</li>
+        <li><b>Le <code>v/ω</code> qu'on lit partout suppose un ressort SANS amortissement.</b> Le nôtre en a (ζ = 0,35), et il creuse donc <b>36 % de moins</b> — le facteur exact sort de la solution de l'oscillateur amorti. La page affichait d'abord 21 % là où elle en mesurait 49 : la mesure avait raison, c'était la formule qui était trop simple. Une prédiction qui ne colle pas à la mesure est une prédiction fausse, pas une simulation cassée.</li>
+        <li><b>Le contact doit être testé plus souvent que l'image.</b> Une seule détection par frame, et à 10 m/s le cube s'enfonce de 17 cm avant qu'on s'en aperçoive — le remonter d'un coup est une téléportation, et l'œil la voit. D'où les 12 sous-pas : l'enfoncement tombe à 1,4 cm. C'est pour ça que les moteurs physiques tournent à 240 Hz pendant que l'écran est à 60.</li>
+        <li><b>Le squash & stretch donne le poids.</b> Un objet parfaitement rigide paraît <b>mort</b>. Même une balle de golf se déforme à l'impact — trop peu et trop vite pour qu'on le voie. En animation, on exagère : c'est ce qui fait sentir la masse.</li>
+        <li><b>Attention au <code>scale</code> nul.</b> Une échelle à zéro rend la matrice de l'objet non inversible : les normales deviennent absurdes, l'objet vire au noir ou disparaît. Le code plafonne à 0,15 — jamais 0.</li>
+      </ul>
+    </details>
+
+    <p class="famille">Les trois matières ensemble :
+      <a href="../debutant/03.4-ecrasement.html">la page comparée →</a></p>
+    <a href="rigide.html">← Précédent</a> ·
+    <a href="cassant.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // La SEULE chose qui distingue cette page de ses deux sœurs : la matière.
+    const COULEUR = 0x7ee787;
+    const G = 9.81;      // on reste sur Terre : ici la variable est la MATIÈRE
+    const COTE = 1;
+    const DEMI = COTE / 2;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(2.6, 3.4, 11);
+    camera.lookAt(2.6, 2.6, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    scene.add(new THREE.GridHelper(16, 16, 0x2a313c, 0x2a313c));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(2, 7, 6);
+    scene.add(lampe);
+
+    const matiere = new THREE.MeshStandardMaterial({
+      color: COULEUR, roughness: 0.45, emissive: COULEUR, emissiveIntensity: 0.2,
+    });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(COTE, COTE, COTE), matiere);
+    scene.add(cube);
+
+    // La vitesse de lecture vit à part : elle ne doit RIEN relancer, on doit pouvoir la bouger en
+    // plein vol — comme le ×0.5 d'une vidéo. D'où l'objet plutôt qu'une variable, pour
+    // que la boucle lise toujours la valeur courante.
+    // Le curseur travaille en PUISSANCES DE 10 : la plage utile va de ×0.001 à ×4, soit
+    // un facteur 4000. Un curseur linéaire mettrait 99,9 % de sa course au-dessus de
+    // ×0.1 — il aurait fallu choisir entre le très lent et le rapide. En logarithmique,
+    // chaque millimètre vaut le même RAPPORT, et on garde les deux bouts.
+    const LECTURE = { valeur: 0.25 };
+
+    // À ×0.001, l'impact de 60 ms s'étale sur une minute. « ×0.004 » ne parle à
+    // personne ; « 250× plus lent », si.
+    const etiquetteVitesse = (v) => (v >= 1
+      ? '×' + v.toFixed(2)
+      : '×' + Number(v.toPrecision(2)) + ' · ' + Math.round(1 / v) + '× plus lent');
+
+    document.getElementById('vlecture').addEventListener('input', (e) => {
+      LECTURE.valeur = Math.pow(10, Number(e.target.value));
+      document.getElementById('lr').textContent = etiquetteVitesse(LECTURE.valeur);
+    });
+
+    // --- LA SIMULATION ---
+
+    const P = { hauteur: 6, lance: 0, souplesse: 1 };
+    let vitesse = 0, ecrase = 1, endormi = false, creux = 1, impact = 0;
+
+    function lancer() {
+      cube.position.set(0, P.hauteur, 0);
+      cube.scale.set(1, 1, 1);
+      vitesse = -P.lance;   // vers le BAS
+      ecrase = 1; endormi = false; creux = 1; impact = 0;
+    }
+    lancer();
+
+    // Souple = ressort mou : s'écrase plus, et le contact dure plus longtemps.
+    const raideur = () => 700 / P.souplesse;
+
+    function pas(dt) {
+      if (endormi && ecrase > 0.999) return;
+
+      // 12 SOUS-PAS, et ce n'est pas cosmétique : le contact n'est testé qu'une fois par
+      // pas. À 10 m/s et 1/60 s, le cube s'enfoncerait de 17 cm avant qu'on le remarque.
+      // Les sous-pas SUIVENT la vitesse de lecture : accélérer le temps ne donne pas le
+      // droit de faire des pas plus grands, sinon le tunneling revient.
+      const SOUS_PAS = Math.ceil(12 * Math.max(1, LECTURE.valeur)), h = dt / SOUS_PAS;
+      const k = raideur();
+
+      for (let i = 0; i < SOUS_PAS; i++) {
+        let acc = -G;
+
+        // LE SOL EST UN RESSORT. On ne replace jamais le cube de force : on le laisse
+        // s'enfoncer, et le sol le repousse d'autant plus fort. Rien ne se téléporte —
+        // la déformation EST l'enfoncement, image après image.
+        if (cube.position.y < DEMI) {
+          if (!impact) impact = Math.abs(vitesse);   // ICI, avant que le sol ne freine
+          // ζ ≈ 0.35 : un rebond mou. À ζ = 1 il se poserait sans jamais repartir.
+          acc += k * (DEMI - cube.position.y) - 2 * Math.sqrt(k) * 0.35 * vitesse;
+        }
+
+        vitesse += acc * h;
+        cube.position.y += vitesse * h;
+
+        // Garde-fou : un ressort trop mou pour la vitesse laisserait passer le cube.
+        if (cube.position.y < DEMI * 0.15) {
+          cube.position.y = DEMI * 0.15;
+          vitesse = Math.abs(vitesse) * 0.3;
+        }
+      }
+
+      // La déformation ne se calcule pas : elle se LIT. Le cube est enfoncé de
+      // (DEMI − y), donc sa demi-hauteur vaut y, donc son échelle vaut y/DEMI.
+      // Et son bas retombe exactement sur zéro, tout seul.
+      ecrase = THREE.MathUtils.clamp(cube.position.y / DEMI, 0.15, 1);   // JAMAIS zéro
+      creux = Math.min(creux, ecrase);
+
+      // LA CONSERVATION DU VOLUME : (1/√s) · s · (1/√s) = 1.
+      const large = 1 / Math.sqrt(ecrase);
+      cube.scale.set(large, ecrase, large);
+
+      // Le repos exige d'avoir TOUCHÉ : sans `impact`, la première image le déclarerait
+      // au repos — il vient d'être lâché, sa vitesse vaut encore 0,16 — et il se
+      // téléporterait au sol avant de tomber. Un objet lent n'est pas un objet posé.
+      if (impact && Math.abs(cube.position.y - DEMI) < 0.01 && Math.abs(vitesse) < 0.4) {
+        vitesse = 0;
+        cube.position.y = DEMI;
+        endormi = true;
+      }
+    }
+
+    const ZETA = 0.35;   // le taux d'amortissement du contact
+
+    // L'enfoncement maximal d'un ressort AMORTI lancé à v. Le v/ω qu'on lit partout ne
+    // vaut que sans amortissement : ici il surestime le creux d'un bon tiers. Le facteur
+    // correctif sort de la solution exacte de l'oscillateur amorti — et il valait mieux
+    // le poser que le deviner : ma première version affichait 21 % là où la page en
+    // mesurait 49.
+    const RACINE = Math.sqrt(1 - ZETA * ZETA);
+    const FACTEUR = Math.exp((-ZETA / RACINE) * Math.atan(RACINE / ZETA));
+
+    function etat() {
+      const h = P.hauteur - DEMI;
+      const v = Math.sqrt(P.lance ** 2 + 2 * G * h);   // lancé ou lâché : seule v compte
+      const w = Math.sqrt(raideur());
+      const enfoncement = (v / w) * FACTEUR;
+      const prevu = Math.max(1 - enfoncement / DEMI, 0.15);
+      // La durée du contact : une DEMI-période amortie, π/(ω·√(1−ζ²)).
+      const contact = (Math.PI / (w * RACINE)) * 1000;
+      const volume = (1 / Math.sqrt(ecrase)) ** 2 * ecrase;
+      return `impact √(2gh) = ${v.toFixed(2)} m/s${impact ? ` · mesuré ${impact.toFixed(2)}` : ''}\n` +
+             `hauteur actuelle : ${(ecrase * 100).toFixed(0)} % · creux atteint ${(creux * 100).toFixed(0)} %\n` +
+             `creux prévu : ${(prevu * 100).toFixed(0)} % · contact ${contact.toFixed(0)} ms\n` +
+             `volume x·y·z = ${volume.toFixed(6)} (doit valoir 1)`;
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Plafonné : au retour d'un onglet, getDelta() peut valoir 30 s et le cube
+      // traverserait le sol en un seul pas.
+      //
+      // Puis RALENTI. Un impact réel dure 60 ms — quatre images : l'œil n'y voit qu'un
+      // clac. Ralentir le temps ne triche pas sur la physique, chaque pas reste juste.
+      // C'est exactement pour ça qu'on filme les crash-tests à 10 000 images/s.
+      const dt = Math.min(horloge.getDelta(), 1 / 30) * LECTURE.valeur;
+      pas(dt);
+      renderer.render(scene, camera);
+      lecture.textContent = etat();   // APRÈS le rendu : renderer.info n'est à jour qu'ensuite
+    }
+    animer();
+
+    // Un brancheur unique : le curseur écrit dans P, met son étiquette à jour, et relance.
+    function brancher(id, etiq, decimales, apres) {
+      const champ = document.getElementById(id);
+      champ.addEventListener('input', () => {
+        P[id] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(decimales);
+        apres();
+      });
+    }
+
+    brancher('hauteur', 'lh', 1, lancer);
+    brancher('souplesse', 'ls', 1, lancer);
+    brancher('lance', 'lv', 1, lancer);
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

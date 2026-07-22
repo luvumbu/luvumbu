@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 4b — Ce qui entoure le cube</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 4b — Ce qui entoure le cube</h2>
+    <p>
+      Le cube flotte dans le vide. Rien ne dit s'il est gros et loin, ou petit et près :
+      une scène vide ne donne <b>aucun repère</b>. Ce qu'on ajoute autour compte
+      autant que l'objet lui-même.
+    </p>
+    <label><input type="checkbox" id="sol"> Un sol</label>
+    <label><input type="checkbox" id="grille"> Une grille</label>
+    <label><input type="checkbox" id="brouillard"> Du brouillard</label>
+    <label><input type="checkbox" id="env"> Un environnement à refléter</label>
+    <label>Rugosité du cube <input type="range" id="rug" min="0" max="1" step="0.05" value="0.25"></label>
+    <p><code id="lecture"></code></p>
+    <p><b>Nouveau ici :</b> <code>PlaneGeometry</code>, <code>GridHelper</code>,
+      <code>scene.fog</code>, <code>scene.environment</code>.</p>
+    <a href="04.1-jour-nuit.html">← Précédent</a> ·
+    <a href="05-plusieurs-objets.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    // --- Le socle des étapes précédentes ---
+    const FOND = 0x0e1116;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(FOND);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(3, 2, 5);
+    camera.lookAt(0, 0.2, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    soleil.position.set(3, 5, 4);
+    scene.add(soleil);
+
+    // Un cube métallique : c'est lui qui révélera l'environnement.
+    //
+    // Sa couleur est claire et presque neutre, et ce n'est pas un hasard : un métal
+    // TEINTE ses reflets de sa couleur de base. Un métal orange vif ne peut renvoyer
+    // qu'un reflet orange sombre — physiquement juste, mais on n'y voit rien.
+    // Un métal clair se comporte en miroir et montre son environnement tel quel.
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial({ color: 0xe6edf3, metalness: 1, roughness: 0.25 })
+    );
+    cube.position.y = 0.5;   // posé sur le sol : origine au centre, donc hauteur / 2
+    scene.add(cube);
+
+    // --- Ce qui est nouveau ---
+
+    // 1) LE SOL
+    //
+    // PlaneGeometry naît DEBOUT, dans le plan X/Y — une feuille face à vous.
+    // Pour en faire un sol, il faut le coucher : un quart de tour autour de X.
+    // Le signe négatif oriente sa face visible vers le haut ; avec +Math.PI / 2 le plan
+    // serait couché lui aussi, mais vous en verriez le dos, et il paraîtrait noir
+    // (souvenez-vous de `side` à l'étape 1b).
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.MeshStandardMaterial({ color: 0x1c222b, roughness: 0.9 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+
+    // 2) LA GRILLE
+    //
+    // Moins réaliste qu'un sol, mais plus lisible : elle donne l'échelle, la direction
+    // et le mouvement. C'est pour ça que tous les logiciels 3D en affichent une.
+    const grille = new THREE.GridHelper(40, 40, 0x58a6ff, 0x2a313c);
+    grille.position.y = 0.002;   // 2 mm au-dessus du sol. Voir le piège ci-dessous.
+
+    // LE PIÈGE DU Z-FIGHTING : deux surfaces exactement à la même hauteur, et la carte
+    // graphique ne sait plus laquelle est devant. Le résultat scintille et clignote
+    // quand la caméra bouge. La parade est ce décalage minuscule.
+
+    // 3) LE BROUILLARD
+    //
+    // Il fond les objets lointains dans une couleur, à mesure qu'ils s'éloignent.
+    // C'est le moyen le plus économique de donner de la profondeur, et de masquer
+    // proprement la limite du sol au lieu de la laisser trancher net.
+    //
+    //    THREE.Fog(couleur, near, far) : invisible avant `near`, couleur pure à `far`.
+    //    THREE.FogExp2(couleur, densité) : densité exponentielle, plus naturelle dehors.
+    //
+    // LA RÈGLE ABSOLUE : la couleur du brouillard doit être celle du fond. Sinon les
+    // objets lointains se fondent vers une couleur qui n'est pas celle du ciel, et
+    // l'œil voit immédiatement la triche. D'où la constante FOND, définie une fois.
+    // Réglé pour n'attraper QUE le lointain : le cube est à ~6 unités de la caméra, donc
+    // intact ; c'est le sol, qui file jusqu'à 20, qui s'efface. Un brouillard qui mange
+    // déjà le sujet est un brouillard mal réglé.
+    const brouillard = new THREE.Fog(FOND, 10, 30);
+
+    // Le brouillard n'affecte QUE les matériaux dont .fog vaut true (le défaut).
+    // Il ne touche jamais scene.background : le fond ne s'éclaircit pas, ce sont les
+    // objets qui vont VERS lui.
+
+    // 4) L'ENVIRONNEMENT
+    //
+    // Un métal ne produit aucune couleur : il ne fait que REFLÉTER. Dans une scène
+    // vide, il n'a rien à refléter — il est noir, même en pleine lumière. C'est la
+    // cause n°1 des « modèles glTF tout noirs » (leçons 06 et 09).
+    //
+    // scene.environment lui donne un décor à refléter. RoomEnvironment est une petite
+    // pièce éclairée, fabriquée par le code : aucun fichier à télécharger.
+    // PMREMGenerator la pré-mâche pour que le flou des reflets suive la rugosité.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const environnement = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    // scene.environment ≠ scene.background : l'un est ce que les objets REFLÈTENT,
+    // l'autre ce que VOUS voyez derrière. On peut n'avoir que le premier — c'est ce
+    // que fait cette page. Pour voir le décor lui-même : scene.background = environnement.
+
+    // Le curseur de rugosité rend l'environnement lisible : à 0 le cube est un miroir
+    // et vous voyez la pièce dedans ; à 1 les reflets sont si diffus qu'ils ne font
+    // plus qu'éclairer. Entre les deux, tout le vocabulaire des matériaux réels.
+
+    const lecture = document.getElementById('lecture');
+
+    function animer() {
+      requestAnimationFrame(animer);
+      cube.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    function etat() {
+      const actifs = [
+        sol.parent && 'sol',
+        grille.parent && 'grille',       // .parent vaut null tant qu'un objet n'est pas ajouté
+        scene.fog && 'fog',
+        scene.environment && 'environment',
+      ].filter(Boolean);
+
+      lecture.textContent = actifs.length ? actifs.join(' + ') : 'scène vide — aucun repère';
+    }
+    etat();
+
+    document.getElementById('sol').addEventListener('change', (e) => {
+      e.target.checked ? scene.add(sol) : scene.remove(sol);
+      etat();
+    });
+
+    document.getElementById('grille').addEventListener('change', (e) => {
+      e.target.checked ? scene.add(grille) : scene.remove(grille);
+      etat();
+    });
+
+    document.getElementById('brouillard').addEventListener('change', (e) => {
+      scene.fog = e.target.checked ? brouillard : null;
+
+      // Changer le brouillard modifie le programme de shader des matériaux : il faut
+      // le dire à Three.js, sinon rien ne change à l'écran. C'est l'un des rares
+      // endroits où needsUpdate est indispensable.
+      scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+      etat();
+    });
+
+    document.getElementById('env').addEventListener('change', (e) => {
+      scene.environment = e.target.checked ? environnement : null;
+      etat();
+    });
+
+    document.getElementById('rug').addEventListener('input', (e) => {
+      cube.material.roughness = Number(e.target.value);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.4b — La déformation maillée</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.4b — La maille</h2>
+    <p class="famille">Simulation · la 3.4, mais déformée sommet par sommet</p>
+    <p>
+      En <a href="03.4-ecrasement.html">3.4</a>, le cube mou s'écrase avec un
+      <code>scale</code>. C'est un mensonge commode : un objet mou <b>ne s'échelonne pas</b>,
+      il se <b>renfle</b> — sa base s'aplatit contre le sol, son ventre déborde sur les côtés.
+    </p>
+    <p>
+      Pour ça, il faut des <b>sommets</b>. Mettez la découpe à 1 : le cube n'a que 8 coins,
+      il ne <i>peut</i> que s'échelonner. Montez-la : le tonneau apparaît.
+    </p>
+
+    <label>carreaux — N par arête <span class="deg" id="ln">8</span>
+      <input type="range" id="carreaux" min="1" max="20" step="1" value="8"></label>
+    <label>renflement <span class="deg" id="lb">1.0</span>
+      <input type="range" id="renflement" min="0" max="2.5" step="0.05" value="1"></label>
+    <label>vitesse de lecture <span class="deg" id="lr">×0.25 · 4× plus lent</span>
+      <input type="range" id="vlecture" min="-3" max="0.602" step="0.002" value="-0.6"></label>
+    <label>hauteur de lâcher — m <span class="deg" id="lh">6.0</span>
+      <input type="range" id="hauteur" min="1" max="12" step="0.1" value="6"></label>
+    <label>souplesse <span class="deg" id="ls">1.0</span>
+      <input type="range" id="souplesse" min="0.2" max="3" step="0.05" value="1"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les carreaux</label>
+
+    <p><button type="button" id="relancer">↻ Le lâcher</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (6)</summary>
+      <ul>
+        <li>
+          <b>La finesse du maillage BORNE le réalisme de la déformation.</b> Mettez les
+          carreaux à 1 : le cube n'a que 8 sommets, tous des coins — aucun ne peut se renfler,
+          il n'y a rien entre eux. Il ne <i>peut</i> qu'être mis à l'échelle. Montez à 8 : les
+          sommets du milieu existent, et le tonneau apparaît. On ne déforme jamais mieux que
+          ce que la géométrie permet.
+        </li>
+        <li>
+          <b>Le volume n'est pas supposé ici : il est MESURÉ.</b> Le compteur calcule le vrai
+          volume du maillage déformé, par le théorème de la divergence — la somme des
+          <code>(v₀ × v₁) · v₂ / 6</code> sur tous les triangles. Puis le code corrige la
+          largeur de <code>1/√V</code> pour le ramener à 1 exactement. En 3.4, le
+          <code>1/√s</code> suffisait parce que la forme restait une boîte ; ici le tonneau
+          n'a plus de formule simple, alors on mesure.
+        </li>
+        <li>
+          <b><code>computeVertexNormals()</code> est obligatoire après chaque déformation.</b>
+          Les normales sont calculées une fois, à la construction. Bouger les sommets sans les
+          recalculer laisse l'éclairage de la forme <b>au repos</b> : le cube s'écrase et sa
+          lumière ne bouge pas. C'est subtil, ça a l'air d'un bug de matériau, et ça coûte des
+          heures.
+        </li>
+        <li>
+          <b>On garde les positions de repos à part.</b> Déformer en repartant des positions
+          déjà déformées ferait <b>dériver</b> le maillage image après image — chaque erreur
+          s'ajoutant à la précédente, le cube fondrait lentement. Toute déformation part
+          <i>toujours</i> du repos.
+        </li>
+        <li>
+          <b>Le profil du renflement est un choix, pas une loi.</b> Ici <code>sin(πt)</code> :
+          nul en bas, nul en haut, maximal au milieu — le tonneau. C'est une caricature
+          convaincante, pas de la mécanique des milieux continus. Un vrai solide déformable se
+          calcule par éléments finis, et c'est une autre discipline.
+        </li>
+        <li>
+          <b>Ça coûte.</b> À 20 carreaux, ce sont 2 400 triangles et 2 646 sommets recalculés
+          <b>à chaque image</b>, plus les normales. Le compteur affiche le temps. C'est
+          pourquoi les jeux ne font presque jamais ça sur le processeur : ils le font dans un
+          <i>vertex shader</i>, où la carte graphique traite tous les sommets à la fois.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03.4-ecrasement.html">← Précédent</a> ·
+    <a href="04-lumiere.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight);
+    // Le cube tombe en x = 2, pas en 0 : le HUD couvre le tiers gauche de l'écran, et un
+    // cube à l'origine s'y cacherait entièrement — renflement compris.
+    camera.position.set(2.5, 2.2, 9);
+    camera.lookAt(2.5, 1, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    scene.add(new THREE.GridHelper(14, 14, 0x2a313c, 0x2a313c));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(3, 6, 5);
+    scene.add(lampe);
+
+    const G = 9.81;
+    const COTE = 1;
+    const DEMI = COTE / 2;
+
+    const P = { carreaux: 8, renflement: 1, lecture: 0.25, hauteur: 6, souplesse: 1 };
+
+    const matiere = new THREE.MeshStandardMaterial({
+      color: 0x7ee787, roughness: 0.45, emissive: 0x7ee787, emissiveIntensity: 0.18,
+    });
+
+    let maille = null;
+    let repos = null;     // LES POSITIONS AU REPOS, gardées à part — voir le piège n°4
+    let sommets = 0, triangles = 0;
+
+    function remailler() {
+      if (maille) { scene.remove(maille); maille.geometry.dispose(); }
+
+      const n = P.carreaux;
+      // Les trois derniers arguments sont les SEGMENTS : c'est là que se joue tout.
+      const geo = new THREE.BoxGeometry(COTE, COTE, COTE, n, n, n);
+      maille = new THREE.Mesh(geo, matiere);
+      maille.position.x = 2;   // à droite du HUD
+      scene.add(maille);
+
+      // On copie les positions de repos AVANT toute déformation. Sans cette copie, on
+      // déformerait la déformation précédente, et le maillage dériverait à chaque image.
+      repos = Float32Array.from(geo.attributes.position.array);
+      sommets = geo.attributes.position.count;
+      triangles = geo.index.count / 3;
+    }
+
+    // Le VRAI volume d'un maillage fermé, par le théorème de la divergence : la somme
+    // des volumes signés des tétraèdres (origine, v₀, v₁, v₂). On ne suppose rien.
+    function volume(geo) {
+      const p = geo.attributes.position.array;
+      const idx = geo.index.array;
+      let v = 0;
+      for (let i = 0; i < idx.length; i += 3) {
+        const a = idx[i] * 3, b = idx[i + 1] * 3, c = idx[i + 2] * 3;
+        const ax = p[a], ay = p[a + 1], az = p[a + 2];
+        const bx = p[b], by = p[b + 1], bz = p[b + 2];
+        const cx = p[c], cy = p[c + 1], cz = p[c + 2];
+        v += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
+      }
+      return Math.abs(v);
+    }
+
+    // La moyenne de sin(πt) sur [0,1] vaut 2/π. En la retranchant, le profil de
+    // renflement a une moyenne nulle : il redistribue la matière sans en ajouter.
+    const MOYENNE_SIN = 2 / Math.PI;
+
+    function deformer(s) {
+      const geo = maille.geometry;
+      const p = geo.attributes.position.array;
+      const large = 1 / Math.sqrt(s);   // la largeur moyenne, comme en 3.4
+
+      for (let i = 0; i < p.length; i += 3) {
+        const lx = repos[i], ly = repos[i + 1], lz = repos[i + 2];
+        const t = (ly + DEMI) / COTE;   // 0 en bas, 1 en haut
+
+        // 1) L'ÉCRASEMENT VERTICAL. La base reste collée au sol (−DEMI en local), et
+        //    toute la hauteur est comprimée d'un facteur s.
+        p[i + 1] = -DEMI + t * COTE * s;
+
+        // 2) LE RENFLEMENT — ce que 3.4 ne peut pas faire. Nul en bas, nul en haut,
+        //    maximal au ventre : le tonneau. C'est la matière chassée par l'écrasement
+        //    qui n'a nulle part où aller sauf sur les côtés.
+        const profil = 1 + P.renflement * (large - 1) * (Math.sin(t * Math.PI) - MOYENNE_SIN);
+        p[i] = lx * large * profil;
+        p[i + 2] = lz * large * profil;
+      }
+
+      // 3) LA CORRECTION DE VOLUME. Le tonneau n'a pas de formule simple : on MESURE, puis
+      //    on corrige. Le volume varie comme le carré de la largeur, donc multiplier x et z
+      //    par 1/√V le ramène à 1 — exactement, en une passe.
+      const v = volume(geo);
+      if (v > 1e-6) {
+        const k = 1 / Math.sqrt(v);
+        for (let i = 0; i < p.length; i += 3) { p[i] *= k; p[i + 2] *= k; }
+      }
+
+      geo.attributes.position.needsUpdate = true;
+      // SANS CETTE LIGNE, l'éclairage reste celui de la forme au repos. Le cube s'écrase
+      // et sa lumière ne bouge pas — ça ressemble à un bug de matériau (piège n°3).
+      geo.computeVertexNormals();
+    }
+
+    let y = 6, vitesse = 0, ecrase = 1, creux = 1, impact = 0, endormi = false;
+
+    function lancer() {
+      remailler();
+      y = P.hauteur;
+      vitesse = 0; ecrase = 1; creux = 1; impact = 0; endormi = false;
+      deformer(1);
+    }
+    lancer();
+
+    const horloge = new THREE.Clock();
+    let ms = 0;
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Ralenti : un impact réel dure 60 ms, l'œil n'y voit qu'un clac (voir 3.4).
+      const dt = Math.min(horloge.getDelta(), 1 / 30) * P.lecture;
+
+      if (!(endormi && ecrase > 0.999)) {
+        // 12 sous-pas : le contact doit être testé bien plus souvent que l'image.
+        // Les sous-pas suivent la lecture : accélérer ne donne pas le droit de faire des
+        // pas plus grands, sinon le tunneling revient.
+        const SOUS = Math.ceil(12 * Math.max(1, P.lecture)), h = dt / SOUS;
+        const k = 700 / P.souplesse;
+
+        for (let i = 0; i < SOUS; i++) {
+          let acc = -G;
+          // Le sol est un ressort : on ne replace jamais le cube de force (voir 3.4).
+          if (y < DEMI) {
+            if (!impact) impact = Math.abs(vitesse);
+            acc += k * (DEMI - y) - 2 * Math.sqrt(k) * 0.35 * vitesse;
+          }
+          vitesse += acc * h;
+          y += vitesse * h;
+          if (y < DEMI * 0.15) { y = DEMI * 0.15; vitesse = Math.abs(vitesse) * 0.3; }
+        }
+
+        ecrase = THREE.MathUtils.clamp(y / DEMI, 0.15, 1);
+        creux = Math.min(creux, ecrase);
+
+        // La base est en local −DEMI : la maille se pose donc à DEMI dès le contact,
+        // et suit le centre en chute libre. Les deux se rejoignent pile à y = DEMI.
+        maille.position.y = Math.max(y, DEMI);
+
+        const t0 = performance.now();
+        deformer(ecrase);
+        ms += (performance.now() - t0 - ms) * 0.1;
+
+        if (impact && Math.abs(y - DEMI) < 0.01 && Math.abs(vitesse) < 0.4) {
+          vitesse = 0; y = DEMI; endormi = true;
+        }
+      }
+
+      renderer.render(scene, camera);
+      afficher();
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      const v = volume(maille.geometry);
+      lecture.textContent =
+        `${P.carreaux}×${P.carreaux} carreaux par face · ${sommets} sommets · ${triangles} triangles\n` +
+        `écrasé à ${(ecrase * 100).toFixed(0)} % · creux ${(creux * 100).toFixed(0)} %` +
+        `${impact ? ` · choc ${impact.toFixed(1)} m/s` : ''}\n` +
+        `volume MESURÉ du maillage : ${v.toFixed(6)} m³ (doit valoir 1)\n` +
+        `déformation : ${ms.toFixed(2)} ms par image`;
+    }
+    animer();
+
+    const curseurs = {
+      carreaux: ['ln', 0, true],
+      renflement: ['lb', 1, false],
+      hauteur: ['lh', 1, true],
+      souplesse: ['ls', 1, true],
+    };
+
+    for (const [nom, [etiq, dec, relance]] of Object.entries(curseurs)) {
+      document.getElementById(nom).addEventListener('input', (e) => {
+        P[nom] = Number(e.target.value);
+        document.getElementById(etiq).textContent = P[nom].toFixed(dec);
+        if (relance) lancer();
+      });
+    }
+
+    // La vitesse de lecture ne relance pas : on doit pouvoir la bouger en plein vol.
+    //
+    // Elle travaille en PUISSANCES DE 10 : la plage utile va de ×0.001 à ×4, soit un
+    // facteur 4000. Un curseur linéaire mettrait 99,9 % de sa course au-dessus de ×0.1 —
+    // tout le ralenti tiendrait dans le dernier millimètre, et il aurait fallu choisir
+    // entre le très lent et le rapide. En logarithmique, on garde les deux.
+    const etiquetteVitesse = (v) => (v >= 1
+      ? '×' + v.toFixed(2)
+      : '×' + Number(v.toPrecision(2)) + ' · ' + Math.round(1 / v) + '× plus lent');
+
+    document.getElementById('vlecture').addEventListener('input', (e) => {
+      P.lecture = Math.pow(10, Number(e.target.value));
+      document.getElementById('lr').textContent = etiquetteVitesse(P.lecture);
+    });
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      matiere.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

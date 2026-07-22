@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 5.3b — Mille objets, en vol libre</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 5.3b — En vol libre</h2>
+    <p class="famille">Simulation · la 5.3, mais vous pilotez</p>
+    <p>
+      Les mêmes cubes qu'en <a href="05.3-mille-objets.html">5.3</a>. Sauf qu'ici
+      <b>vous entrez dedans</b> — et le compteur d'appels de dessin réagit à chaque
+      mouvement de tête. C'est le <b>frustum culling</b> qui travaille sous vos yeux.
+    </p>
+    <p>
+      <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou les flèches · <kbd>A</kbd> descendre ·
+      <kbd>E</kbd> monter · <kbd>Maj</kbd> foncer · <b>souris</b> pour regarder.
+    </p>
+
+    <label>nombre de cubes
+      <select id="nombre">
+        <option value="500">500</option>
+        <option value="2000" selected>2 000</option>
+        <option value="8000">8 000</option>
+        <option value="20000">20 000</option>
+      </select>
+    </label>
+    <label>façon de dessiner
+      <select id="mode">
+        <option value="mesh">Un Mesh par cube</option>
+        <option value="instance">Un seul InstancedMesh</option>
+      </select>
+    </label>
+    <label>vitesse de vol <span class="deg" id="lp">8</span>
+      <input type="range" id="pilotage" min="1" max="40" step="0.5" value="8"></label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li>
+          <b>Tournez sur place et regardez le compteur.</b> En mode « un Mesh par cube », le
+          nombre d'appels <b>change en permanence</b> : Three.js teste chaque objet contre le
+          cône de vision de la caméra et ne dessine que ce qui y entre. Vous ne payez que ce
+          que vous voyez — c'est gratuit, automatique, et personne ne le sait.
+        </li>
+        <li>
+          <b>L'InstancedMesh, lui, reste à 1 — mais il est testé EN BLOC.</b> Tournez le dos
+          au tas : le compteur tombe à 0. Regardez un seul cube du bord : il remonte à 1, et
+          les 20 000 sont dessinés. C'est la contrepartie de l'instanciation — on ne peut plus
+          écarter les copies une par une. Sur une forêt qui couvre une carte entière, c'est un
+          vrai problème, et on la découpe alors en plusieurs InstancedMesh par zone.
+        </li>
+        <li>
+          <b>Le culling ne rend pas la scène gratuite.</b> Le test lui-même coûte, et il a
+          lieu pour chaque objet, chaque image. À 20 000 Mesh, Three.js fait 20 000 tests
+          avant même de dessiner quoi que ce soit. C'est pour ça que le mode Mesh rame même
+          en regardant ailleurs.
+        </li>
+        <li>
+          <b>Ce compteur est votre premier réflexe de débogage.</b> Une scène qui rame ?
+          <code>renderer.info.render.calls</code>, avant tout le reste. S'il est dans les
+          milliers, le problème est là — inutile de toucher aux textures ou aux ombres.
+        </li>
+      </ul>
+    </details>
+
+    <a href="05.3-mille-objets.html">← Précédent (la version fixe)</a> ·
+    <a href="05b-toutes-les-formes.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 6, 24);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2.2);
+    lampe.position.set(4, 8, 6);
+    scene.add(lampe);
+
+    // --- Les cubes, comme en 5.3 ---
+
+    const P = { nombre: 2000, mode: 'mesh', pilotage: 8 };
+
+    const forme = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+    const matiere = new THREE.MeshStandardMaterial({ roughness: 0.5 });
+
+    const MAX = 20000;
+    const places = [];
+    for (let i = 0; i < MAX; i++) {
+      const t = i / MAX;
+      const rayon = 2 + t * 14;
+      const angle = i * 0.5;
+      places.push({
+        x: Math.cos(angle) * rayon,
+        y: (t - 0.5) * 10,
+        z: Math.sin(angle) * rayon,
+        phase: i * 0.37,
+      });
+    }
+
+    let meshes = [];
+    let instances = null;
+
+    const _matrice = new THREE.Matrix4();
+    const _quat = new THREE.Quaternion();
+    const _euler = new THREE.Euler();
+    const _pos = new THREE.Vector3();
+    const _echelle = new THREE.Vector3(1, 1, 1);
+
+    function construire() {
+      for (const m of meshes) scene.remove(m);
+      meshes = [];
+      if (instances) { scene.remove(instances); instances.dispose(); instances = null; }
+
+      if (P.mode === 'mesh') {
+        for (let i = 0; i < P.nombre; i++) {
+          const m = new THREE.Mesh(forme, matiere);
+          m.position.set(places[i].x, places[i].y, places[i].z);
+          m.rotation.y = places[i].phase;
+          scene.add(m);
+          meshes.push(m);
+        }
+      } else {
+        instances = new THREE.InstancedMesh(forme, matiere, P.nombre);
+        for (let i = 0; i < P.nombre; i++) {
+          const p = places[i];
+          _pos.set(p.x, p.y, p.z);
+          _euler.set(0, p.phase, 0);
+          _quat.setFromEuler(_euler);
+          _matrice.compose(_pos, _quat, _echelle);
+          instances.setMatrixAt(i, _matrice);
+        }
+        // Sans cette ligne, la carte graphique ne saurait rien du tableau qu'on vient
+        // de remplir : tous les cubes s'empileraient à l'origine.
+        instances.instanceMatrix.needsUpdate = true;
+        scene.add(instances);
+      }
+    }
+    construire();
+
+    // --- Ce qui est nouveau : LE PILOTAGE ---
+
+    const touches = new Set();
+    addEventListener('keydown', (e) => {
+      touches.add(e.code);
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    });
+    addEventListener('keyup', (e) => touches.delete(e.code));
+    // Sans ça, perdre le focus touche enfoncée laisserait la caméra filer à l'infini.
+    addEventListener('blur', () => touches.clear());
+
+    const _avant = new THREE.Vector3();
+    const _droite = new THREE.Vector3();
+    const _mouvement = new THREE.Vector3();
+
+    function piloter(dt) {
+      _mouvement.set(0, 0, 0);
+      camera.getWorldDirection(_avant);              // là où l'on REGARDE
+      _droite.crossVectors(_avant, camera.up).normalize();
+
+      if (touches.has('KeyZ') || touches.has('KeyW') || touches.has('ArrowUp')) _mouvement.add(_avant);
+      if (touches.has('KeyS') || touches.has('ArrowDown')) _mouvement.sub(_avant);
+      if (touches.has('KeyD') || touches.has('ArrowRight')) _mouvement.add(_droite);
+      if (touches.has('KeyQ') || touches.has('KeyA') || touches.has('ArrowLeft')) _mouvement.sub(_droite);
+      if (touches.has('KeyE') || touches.has('Space')) _mouvement.y += 1;
+      if (touches.has('ShiftRight') || touches.has('ControlLeft')) _mouvement.y -= 1;
+
+      if (_mouvement.lengthSq() === 0) return;
+
+      // normalize() avant de multiplier : sinon la diagonale irait √2 fois plus vite.
+      _mouvement.normalize().multiplyScalar(P.pilotage * dt * (touches.has('ShiftLeft') ? 4 : 1));
+
+      // La caméra ET la cible : ne bouger que la caméra la ferait tourner autour de la
+      // cible au lieu d'avancer. C'est LE piège d'OrbitControls.
+      camera.position.add(_mouvement);
+      controls.target.add(_mouvement);
+    }
+
+    const lecture = document.getElementById('lecture');
+    const horloge = new THREE.Clock();
+    let images = 0, fps = 0, chrono = 0, ms = 0;
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      images++;
+      chrono += dt;
+      if (chrono >= 0.5) { fps = images / chrono; images = 0; chrono = 0; }
+
+      piloter(dt);
+      controls.update();   // OBLIGATOIRE avec enableDamping
+
+      renderer.info.reset();
+      const t0 = performance.now();
+      renderer.render(scene, camera);
+      ms += (performance.now() - t0 - ms) * 0.05;   // lissé, sinon illisible
+
+      const appels = renderer.info.render.calls;
+      const total = P.mode === 'mesh' ? P.nombre : 1;
+      lecture.textContent =
+        `${P.nombre.toLocaleString('fr')} cubes · ${P.mode === 'mesh' ? 'un Mesh chacun' : 'un seul InstancedMesh'}\n` +
+        `appels de dessin : ${appels.toLocaleString('fr')} sur ${total.toLocaleString('fr')} possible${total > 1 ? 's' : ''}\n` +
+        `${renderer.info.render.triangles.toLocaleString('fr')} triangles dessinés · ${ms.toFixed(2)} ms processeur\n` +
+        `${fps.toFixed(0)} images/s`;
+    }
+    animer();
+
+    document.getElementById('nombre').addEventListener('change', (e) => {
+      P.nombre = Number(e.target.value);
+      construire();
+    });
+
+    document.getElementById('mode').addEventListener('change', (e) => {
+      P.mode = e.target.value;
+      construire();
+    });
+
+    document.getElementById('pilotage').addEventListener('input', (e) => {
+      P.pilotage = Number(e.target.value);
+      document.getElementById('lp').textContent = P.pilotage.toFixed(0);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

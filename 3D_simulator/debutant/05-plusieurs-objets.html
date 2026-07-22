@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 5 — Plusieurs objets</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 5 — Plusieurs objets</h2>
+    <p>
+      Trois formes différentes, côte à côte. Rien de nouveau conceptuellement :
+      on répète l'étape 1, en changeant la géométrie et la position.
+    </p>
+    <p>
+      Le trépied de couleurs au centre est l'<code>AxesHelper</code> :
+      <span style="color:#ff6b6b">X</span> rouge,
+      <span style="color:#7ee787">Y</span> vert,
+      <span style="color:#58a6ff">Z</span> bleu. Gardez-le tant que vous n'avez pas les axes en tête.
+    </p>
+    <p><b>Nouveau ici :</b> d'autres géométries, <code>AxesHelper</code>, et un tableau d'objets.</p>
+    <a href="04b-autour-du-cube.html">← Précédent</a> ·
+    <a href="05.1-systeme-solaire.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(0, 1.5, 6);   // set(x, y, z) : un peu en hauteur, et reculé
+    camera.lookAt(0, 0, 0);           // et on la fait regarder vers l'origine
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    soleil.position.set(3, 5, 4);
+    scene.add(soleil);
+
+    // --- Ce qui est nouveau ---
+
+    // Un repère visuel pour comprendre où pointent les axes. À retirer en production.
+    scene.add(new THREE.AxesHelper(3));
+
+    // Chaque géométrie a ses propres paramètres. Consultez la doc pour les découvrir :
+    // https://threejs.org/docs/ → section "Geometries".
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),                 // largeur, hauteur, profondeur
+      new THREE.MeshStandardMaterial({ color: 0x58a6ff })
+    );
+    cube.position.x = -2.2;
+
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.7, 32, 16),          // rayon, segments horizontaux, verticaux
+      new THREE.MeshStandardMaterial({ color: 0xf78166 })
+    );
+
+    const tore = new THREE.Mesh(
+      new THREE.TorusGeometry(0.6, 0.25, 16, 64),     // rayon, épaisseur, segments…
+      new THREE.MeshStandardMaterial({ color: 0x7ee787 })
+    );
+    tore.position.x = 2.2;
+
+    // scene.add() accepte plusieurs objets d'un coup.
+    scene.add(cube, sphere, tore);
+
+    // Un tableau, pour les animer ensemble sans recopier trois fois la même ligne.
+    const objets = [cube, sphere, tore];
+
+    // Essayez : baissez les segments de la sphère à (0.7, 6, 4). Vous verrez ses triangles.
+    // Plus de segments = plus lisse, mais plus lourd pour la carte graphique.
+
+    function animer() {
+      requestAnimationFrame(animer);
+      for (const objet of objets) objet.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animer();
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

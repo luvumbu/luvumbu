@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 5.1b — Le système solaire, en vol libre</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 5.1b — En vol libre</h2>
+    <p class="famille">Simulation · la 5.1, mais vous pilotez</p>
+    <p>
+      Le même système solaire qu'en <a href="05.1-systeme-solaire.html">5.1</a> — mêmes
+      orbites, même hiérarchie. Sauf qu'ici <b>vous vous déplacez</b>. Allez voir les anneaux
+      de Saturne de près, ou posez-vous à côté de la Lune pour la regarder tourner autour de
+      la Terre.
+    </p>
+    <p>
+      <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou les flèches · <kbd>A</kbd> descendre ·
+      <kbd>E</kbd> monter · <kbd>Maj</kbd> foncer · <b>souris</b> pour regarder ·
+      <b>molette</b> pour zoomer.
+    </p>
+
+    <label>suivre
+      <select id="suivre">
+        <option value="">— vol libre —</option>
+        <option value="Soleil">le Soleil</option>
+        <option value="Mercure">Mercure</option>
+        <option value="Vénus">Vénus</option>
+        <option value="Terre">la Terre</option>
+        <option value="Mars">Mars</option>
+        <option value="Jupiter">Jupiter</option>
+        <option value="Saturne">Saturne</option>
+      </select>
+    </label>
+    <label>vitesse de vol <span class="deg" id="lp">6</span>
+      <input type="range" id="pilotage" min="1" max="30" step="0.5" value="6"></label>
+    <label>vitesse du temps <span class="deg" id="lv">1 année en 10.0 s</span>
+      <input type="range" id="vitesse" min="0" max="4" step="0.05" value="1"></label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li>
+          <b>Le piège qui casse toute navigation :</b> avec <code>OrbitControls</code>, avancer
+          en ne bougeant que <code>camera.position</code> ne marche pas. La caméra reste
+          accrochée à sa cible : elle tourne autour d'elle au lieu d'avancer. Il faut
+          déplacer <b>la caméra ET la cible du même vecteur</b> — c'est la seule ligne qui
+          compte dans tout le pilotage.
+        </li>
+        <li>
+          <b>« Avancer » n'est pas <code>position.z -= 1</code>.</b> Avancer, c'est aller là
+          où l'on <i>regarde</i> : <code>camera.getWorldDirection()</code> donne ce vecteur.
+          Le vecteur « à droite » s'en déduit par un produit vectoriel avec le haut de la
+          caméra. Deux lignes, et le pilotage est correct dans toutes les orientations.
+        </li>
+        <li>
+          <b>Suivre une planète demande <code>getWorldPosition</code>.</b> La Terre a une
+          <code>position</code> de <code>(4.2, 0, 0)</code> — figée, puisqu'elle est relative
+          à son pivot (voir 5.1). Sa vraie place dans le monde n'existe nulle part en clair :
+          il faut la calculer en remontant la chaîne des parents. C'est le prix de la
+          hiérarchie, et il est minuscule comparé à ce qu'elle rapporte.
+        </li>
+        <li>
+          <b>Le vide est immense, et vous allez le sentir.</b> Mettez la vitesse à fond et
+          filez vers Saturne : c'est long, et ce n'est <b>même pas à l'échelle</b> (5.1 le
+          détaille). À l'échelle réelle, avec le Soleil gros comme ici, Saturne serait à
+          quarante minutes de vol.
+        </li>
+      </ul>
+    </details>
+
+    <a href="05.1-systeme-solaire.html">← Précédent (la version fixe)</a> ·
+    <a href="05.3-mille-objets.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070c);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 500);
+    camera.position.set(6, 7, 16);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    // Pas de maxPolarAngle : dans l'espace, il n'y a pas de sol sous lequel passer.
+
+    addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Le système solaire de 5.1, à l'identique ---
+
+    const soleil = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffcc55 })
+    );
+    scene.add(soleil);
+
+    const lumiere = new THREE.PointLight(0xfff0cc, 260, 0, 2);
+    scene.add(lumiere);
+    scene.add(new THREE.AmbientLight(0x8899bb, 0.25));
+
+    // Un ciel d'étoiles : sans repère fixe, on ne sent pas qu'on se déplace.
+    // Un seul Points pour 3000 étoiles — un objet par étoile serait 3000 appels
+    // de dessin (voir 5.3).
+    const etoiles = new Float32Array(3000 * 3);
+    for (let i = 0; i < 3000; i++) {
+      // Des points au hasard sur une grande sphère, loin de tout.
+      const t = Math.acos(2 * ((i * 0.6180339887) % 1) - 1);
+      const p = i * 2.399963;
+      const r = 120 + (i % 40);
+      etoiles[i * 3] = Math.sin(t) * Math.cos(p) * r;
+      etoiles[i * 3 + 1] = Math.cos(t) * r;
+      etoiles[i * 3 + 2] = Math.sin(t) * Math.sin(p) * r;
+    }
+    const geoEtoiles = new THREE.BufferGeometry();
+    geoEtoiles.setAttribute('position', new THREE.BufferAttribute(etoiles, 3));
+    scene.add(new THREE.Points(geoEtoiles, new THREE.PointsMaterial({ color: 0xaab6c8, size: 0.35 })));
+
+    const PLANETES = [
+      { nom: 'Mercure', distance: 2.2, rayon: 0.11, periode: 0.24, couleur: 0x9a8f88 },
+      { nom: 'Vénus',   distance: 3.1, rayon: 0.19, periode: 0.62, couleur: 0xd8b26a },
+      { nom: 'Terre',   distance: 4.2, rayon: 0.2,  periode: 1.00, couleur: 0x58a6ff, lune: true },
+      { nom: 'Mars',    distance: 5.2, rayon: 0.14, periode: 1.88, couleur: 0xc1502e },
+      { nom: 'Jupiter', distance: 7.4, rayon: 0.52, periode: 11.9, couleur: 0xf78166 },
+      { nom: 'Saturne', distance: 9.3, rayon: 0.44, periode: 29.5, couleur: 0xe3d3a3, anneau: true },
+    ];
+
+    const formeOrbite = new THREE.RingGeometry(1, 1.004, 128);
+
+    for (const p of PLANETES) {
+      p.pivot = new THREE.Group();
+      scene.add(p.pivot);
+
+      p.corps = new THREE.Mesh(
+        new THREE.SphereGeometry(p.rayon, 32, 16),
+        new THREE.MeshStandardMaterial({ color: p.couleur, roughness: 0.8 })
+      );
+      p.corps.position.x = p.distance;
+      p.pivot.add(p.corps);
+
+      if (p.lune) {
+        p.pivotLune = new THREE.Group();
+        p.corps.add(p.pivotLune);
+        const lune = new THREE.Mesh(
+          new THREE.SphereGeometry(0.07, 16, 12),
+          new THREE.MeshStandardMaterial({ color: 0x8b949e, roughness: 0.9 })
+        );
+        lune.position.x = 0.45;
+        p.pivotLune.add(lune);
+      }
+
+      if (p.anneau) {
+        const anneau = new THREE.Mesh(
+          new THREE.RingGeometry(p.rayon * 1.4, p.rayon * 2.2, 64),
+          new THREE.MeshStandardMaterial({ color: 0xc9b98a, side: THREE.DoubleSide, roughness: 1 })
+        );
+        anneau.rotation.x = -Math.PI / 2.2;
+        p.corps.add(anneau);
+      }
+
+      const trace = new THREE.Mesh(formeOrbite, new THREE.MeshBasicMaterial({ color: 0x2a313c, side: THREE.DoubleSide }));
+      trace.rotation.x = -Math.PI / 2;
+      trace.scale.setScalar(p.distance);
+      scene.add(trace);
+    }
+
+    // --- Ce qui est nouveau : LE PILOTAGE ---
+
+    const P = { vitesse: 1, pilotage: 6, suivre: '' };
+    const ANNEES_PAR_SECONDE = 0.1;
+    let annees = 0;
+
+    // Un Set plutôt qu'une rafale de booléens : plusieurs touches à la fois marchent
+    // sans rien coder de plus, et c'est ce qu'on veut (avancer ET monter).
+    const touches = new Set();
+    addEventListener('keydown', (e) => {
+      touches.add(e.code);
+      // Sans ça, Espace et les flèches font défiler la page sous le canvas.
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    });
+    addEventListener('keyup', (e) => touches.delete(e.code));
+    // Si la fenêtre perd le focus, on ne recevra jamais le keyup : la touche resterait
+    // « enfoncée » pour toujours et la caméra partirait à l'infini.
+    addEventListener('blur', () => touches.clear());
+
+    // Réutilisés à chaque image : en créer par frame ferait travailler le ramasse-miettes.
+    const _avant = new THREE.Vector3();
+    const _droite = new THREE.Vector3();
+    const _mouvement = new THREE.Vector3();
+    const _monde = new THREE.Vector3();
+
+    function piloter(dt) {
+      _mouvement.set(0, 0, 0);
+
+      // « Avancer », c'est aller là où l'on REGARDE — pas vers −Z.
+      camera.getWorldDirection(_avant);
+      // Le vecteur « à droite » : perpendiculaire au regard ET au haut. Produit vectoriel.
+      _droite.crossVectors(_avant, camera.up).normalize();
+
+      if (touches.has('KeyZ') || touches.has('KeyW') || touches.has('ArrowUp')) _mouvement.add(_avant);
+      if (touches.has('KeyS') || touches.has('ArrowDown')) _mouvement.sub(_avant);
+      if (touches.has('KeyD') || touches.has('ArrowRight')) _mouvement.add(_droite);
+      if (touches.has('KeyQ') || touches.has('KeyA') || touches.has('ArrowLeft')) _mouvement.sub(_droite);
+      if (touches.has('KeyE') || touches.has('Space')) _mouvement.y += 1;
+      if (touches.has('ShiftRight') || touches.has('ControlLeft')) _mouvement.y -= 1;
+
+      if (_mouvement.lengthSq() === 0) return false;
+
+      // normalize() AVANT de multiplier : sinon avancer en diagonale irait √2 fois
+      // plus vite qu'en ligne droite. C'est le bug de tous les premiers jeux maison.
+      _mouvement.normalize().multiplyScalar(P.pilotage * dt * (touches.has('ShiftLeft') ? 4 : 1));
+
+      // LA LIGNE QUI COMPTE : la caméra ET sa cible, du même vecteur. Ne bouger que la
+      // caméra la ferait tourner autour de la cible au lieu d'avancer.
+      camera.position.add(_mouvement);
+      controls.target.add(_mouvement);
+      return true;
+    }
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      annees += dt * P.vitesse * ANNEES_PAR_SECONDE;
+      for (const p of PLANETES) {
+        p.pivot.rotation.y = (annees / p.periode) * Math.PI * 2;
+        p.corps.rotation.y += dt * 0.6 * P.vitesse;
+        if (p.pivotLune) p.pivotLune.rotation.y = annees * 13.4 * Math.PI * 2;
+      }
+      soleil.rotation.y += dt * 0.2;
+
+      const pilote = piloter(dt);
+
+      // Le suivi : on recale la cible sur la planète, et on emmène la caméra avec le
+      // même écart — sinon elle resterait plantée pendant que la cible file.
+      if (P.suivre && !pilote) {
+        const cible = P.suivre === 'Soleil'
+          ? soleil.getWorldPosition(_monde)
+          : PLANETES.find((p) => p.nom === P.suivre).corps.getWorldPosition(_monde);
+        _mouvement.subVectors(cible, controls.target);
+        controls.target.copy(cible);
+        camera.position.add(_mouvement);
+      }
+
+      controls.update();   // OBLIGATOIRE avec enableDamping
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    const lecture = document.getElementById('lecture');
+
+    function afficher() {
+      const d = camera.position.length();
+      lecture.textContent =
+        `année ${annees.toFixed(2)}\n` +
+        `vous êtes à (${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})\n` +
+        `${d.toFixed(1)} unités du Soleil` +
+        (P.suivre ? ` · vous suivez ${P.suivre}` : '');
+    }
+    animer();
+
+    document.getElementById('suivre').addEventListener('change', (e) => {
+      P.suivre = e.target.value;
+    });
+
+    document.getElementById('pilotage').addEventListener('input', (e) => {
+      P.pilotage = Number(e.target.value);
+      document.getElementById('lp').textContent = P.pilotage.toFixed(0);
+    });
+
+    document.getElementById('vitesse').addEventListener('input', (e) => {
+      P.vitesse = Number(e.target.value);
+      document.getElementById('lv').textContent = P.vitesse === 0
+        ? 'arrêté'
+        : `1 année en ${(1 / (P.vitesse * ANNEES_PAR_SECONDE)).toFixed(1)} s`;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

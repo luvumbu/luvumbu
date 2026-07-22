@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>ExtrudeGeometry — Le contour extrudé</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>ExtrudeGeometry</h2>
+    <p class="famille">Les génératives · Le contour extrudé</p>
+    <p>Le <b>même contour qu'à la page précédente</b>, mais poussé en profondeur, avec un
+            biseau sur les bords. C'est la géométrie la plus riche du catalogue — et celle
+            qui transforme un dessin en objet.</p>
+
+      <label>branches de l’étoile
+        <input type="range" data-p="branches" min="3" max="12" step="1" value="5"></label>
+      <label>rayon extérieur
+        <input type="range" data-p="rExterieur" min="0.3" max="1.2" step="0.05" value="0.85"></label>
+      <label>rayon intérieur
+        <input type="range" data-p="rInterieur" min="0.05" max="1" step="0.05" value="0.36"></label>
+      <label>depth — épaisseur
+        <input type="range" data-p="depth" min="0.05" max="1.5" step="0.05" value="0.4"></label>
+      <label><input type="checkbox" data-p="bevelEnabled" checked> bevelEnabled — biseauter les bords</label>
+      <label>bevelThickness — profondeur du biseau
+        <input type="range" data-p="bevelThickness" min="0.01" max="0.3" step="0.01" value="0.06"></label>
+      <label>bevelSize — largeur du biseau
+        <input type="range" data-p="bevelSize" min="0.01" max="0.3" step="0.01" value="0.06"></label>
+      <label>bevelSegments — arrondi du biseau
+        <input type="range" data-p="bevelSegments" min="1" max="8" step="1" value="2"></label>
+      <label>steps — tranches en profondeur
+        <input type="range" data-p="steps" min="1" max="12" step="1" value="1"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li>L'extrusion part de <code>z = 0</code> et va vers <code>z = depth</code> : le résultat n'est <b>pas centré</b> sur l'origine. D'où le <code>.center()</code> à la fin, qui le recadre sur sa boîte englobante. Sans lui, l'objet tourne de travers.</li>
+        <li><code>bevelSize</code> <b>déborde</b> du contour : l'objet est plus large que ce que vous avez dessiné. Avec <code>bevelSize</code> trop grand par rapport au rayon intérieur de l'étoile, les biseaux s'auto-intersectent et la forme se replie sur elle-même. Poussez le curseur pour le voir.</li>
+        <li><code>steps</code> ne change <b>rien</b> à la silhouette : il découpe l'épaisseur en tranches. Utile seulement pour déformer ensuite, ou pour extruder le long d'une courbe (<code>extrudePath</code>).</li>
+        <li>Le biseau est ce qui distingue un objet crédible d'un objet plat : dans le monde réel, <b>aucune arête n'est parfaitement vive</b>, et c'est le liseré de lumière sur les bords qui donne la matière. Décochez la case pour voir tout de suite la différence.</li>
+      </ul>
+    </details>
+
+    <a href="18-shape.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="../debutant/06-souris.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de ExtrudeGeometry, dans l'ordre de sa signature.
+    const P = {
+      branches: 5,
+      rExterieur: 0.85,
+      rInterieur: 0.36,
+      depth: 0.4,
+      bevelEnabled: true,
+      bevelThickness: 0.06,
+      bevelSize: 0.06,
+      bevelSegments: 2,
+      steps: 1,
+    };
+
+    // Exactement le même contour qu'à ShapeGeometry : c'est tout l'intérêt.
+    // Un Shape n'est pas une géométrie, c'est un DESSIN — deux classes savent le lire.
+    function etoile() {
+      const s = new THREE.Shape();
+      const branches = Math.round(P.branches);
+      for (let i = 0; i < branches * 2; i++) {
+        const r = i % 2 ? P.rInterieur : P.rExterieur;
+        const a = (i / (branches * 2)) * Math.PI * 2 + Math.PI / 2;
+        const [x, y] = [Math.cos(a) * r, Math.sin(a) * r];
+        i === 0 ? s.moveTo(x, y) : s.lineTo(x, y);
+      }
+      s.closePath();
+      return s;
+    }
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.ExtrudeGeometry(etoile(), {
+      depth: P.depth,
+      bevelEnabled: P.bevelEnabled,
+      bevelThickness: P.bevelThickness,
+      bevelSize: P.bevelSize,
+      bevelSegments: P.bevelSegments,
+      steps: P.steps,
+      curveSegments: 12,
+    }).center();
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.ExtrudeGeometry(etoile(), {
+      depth: ${fmt(P.depth)},
+      bevelEnabled: ${fmt(P.bevelEnabled)},
+      bevelThickness: ${fmt(P.bevelThickness)},
+      bevelSize: ${fmt(P.bevelSize)},
+      bevelSegments: ${fmt(P.bevelSegments)},
+      steps: ${fmt(P.steps)},
+      curveSegments: 12,
+    }).center()`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

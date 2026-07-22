@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>TubeGeometry — Le tuyau le long d’une courbe</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>TubeGeometry</h2>
+    <p class="famille">Les génératives · Le tuyau le long d’une courbe</p>
+    <p>Vous donnez une <b>courbe dans l'espace</b>, elle l'habille d'un tuyau. Un câble,
+            une route, une trajectoire, un toboggan.</p>
+
+      <label>tubularSegments — le long de la courbe
+        <input type="range" data-p="tubularSegments" min="4" max="200" step="2" value="64"></label>
+      <label>radius — épaisseur
+        <input type="range" data-p="radius" min="0.02" max="0.4" step="0.01" value="0.12"></label>
+      <label>radialSegments — tour du tuyau
+        <input type="range" data-p="radialSegments" min="3" max="24" step="1" value="10"></label>
+      <label><input type="checkbox" data-p="closed"> closed — refermer la boucle</label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li><code>CatmullRomCurve3</code> passe <b>par</b> les points que vous donnez. Une <code>CubicBezierCurve3</code>, non : ses points du milieu sont des aimants, la courbe ne les touche jamais. C'est la confusion classique.</li>
+        <li>Baissez <code>tubularSegments</code> : le tuyau se casse en segments droits. Une courbe très sinueuse en demande beaucoup — c'est ici que le compteur de triangles s'envole.</li>
+        <li>Les deux bouts sont <b>ouverts</b> : un tube n'a pas de bouchons. Il faut les ajouter soi-même (deux <code>CircleGeometry</code>) ou vivre avec.</li>
+        <li><code>closed: true</code> ne ferme que si le départ et l'arrivée coïncident à peu près. Sinon la courbe fait un raccourci brutal pour se rejoindre.</li>
+      </ul>
+    </details>
+
+    <a href="16-lathe.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="18-shape.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de TubeGeometry, dans l'ordre de sa signature.
+    const P = {
+      tubularSegments: 64,
+      radius: 0.12,
+      radialSegments: 10,
+      closed: false,
+    };
+
+    // Une courbe 3D. CatmullRomCurve3 passe PAR tous les points donnés
+    // (contrairement à une Bézier, dont les points de contrôle sont hors de la courbe).
+    const courbe = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.9, -0.7,  0.2),
+      new THREE.Vector3( 0.7, -0.2,  0.6),
+      new THREE.Vector3(-0.5,  0.4, -0.5),
+      new THREE.Vector3( 0.8,  0.9,  0.2),
+    ]);
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.TubeGeometry(courbe, P.tubularSegments, P.radius, P.radialSegments, P.closed);
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.TubeGeometry(courbe, ${fmt(P.tubularSegments)}, ${fmt(P.radius)}, ${fmt(P.radialSegments)}, ${fmt(P.closed)})`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

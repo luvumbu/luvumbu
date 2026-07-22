@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 6 — Tourner autour à la souris</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 6 — La souris, et la fenêtre</h2>
+    <p>
+      <kbd>clic gauche</kbd> tourner · <kbd>molette</kbd> zoomer · <kbd>clic droit</kbd> déplacer.
+      Redimensionnez aussi la fenêtre : l'image ne se déforme plus.
+    </p>
+    <p>
+      Vous avez maintenant le squelette complet d'une scène Three.js.
+      Les 8 leçons du sommaire ne font que le remplir.
+    </p>
+    <p><b>Nouveau ici :</b> <code>OrbitControls</code>, la gestion du redimensionnement,
+      et <code>setPixelRatio</code>.</p>
+    <a href="05b-toutes-les-formes.html">← Précédent</a> ·
+    <a href="06.1-tir-au-but.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // Les "addons" ne sont pas dans le cœur de Three.js : on les importe un par un.
+    // C'est pour cela que l'import map de cette page a une seconde ligne, "three/addons/".
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(
+      50,                                            // champ de vision, en degrés
+      window.innerWidth / window.innerHeight,        // ratio largeur / hauteur
+      0.1,                                           // "near" : rien de plus proche n'est dessiné
+      100                                            // "far"  : rien de plus loin n'est dessiné
+    );
+    camera.position.set(3, 3, 5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Sur un écran très dense (4K, Retina), on plafonne à 2 pixels physiques par pixel CSS.
+    // Sans ce plafond, le GPU dessine 4 à 9 fois trop de pixels et tout rame.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    soleil.position.set(3, 5, 4);
+    scene.add(soleil);
+
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 1.5, 1.5),
+      new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.4 })
+    );
+    scene.add(cube);
+    scene.add(new THREE.GridHelper(10, 10, 0x3d444d, 0x232a33)); // un sol quadrillé, pour se repérer
+
+    // --- Ce qui est nouveau ---
+
+    // OrbitControls fait tourner la caméra autour d'un point cible, à votre place.
+    // On lui donne la caméra à piloter et l'élément HTML qui écoute la souris.
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;   // inertie : le mouvement ralentit doucement au relâchement
+
+    function animer() {
+      requestAnimationFrame(animer);
+
+      // PIÈGE : avec enableDamping, cet appel est OBLIGATOIRE à chaque image.
+      // Sans lui, la caméra se fige dès que vous lâchez le bouton de la souris.
+      controls.update();
+
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Sans ce bloc, agrandir la fenêtre étire l'image comme un ballon écrasé.
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();   // à appeler après TOUTE modification de la caméra
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

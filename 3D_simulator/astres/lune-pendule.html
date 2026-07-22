@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Le pendule sur Lune</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Le pendule — Lune</h2>
+    <p class="famille">g = 1.62 m/s² · T = 2π√(L/g)</p>
+    <p>Un pendule sur la Lune. Sa période ne dépend que de la longueur et de la gravité — jamais de la masse. Et la formule du lycée n'est vraie qu'aux petits angles : poussez le curseur d'angle pour la voir craquer.</p>
+    <p>Six fois moins que la Terre. C'est peu, et pourtant ce n'est pas rien : on n'y flotte pas, on y tombe — lentement.</p>
+
+    <label>longueur — m <span class="deg" id="ll">2.0</span>
+      <input type="range" id="longueur" min="0.5" max="3.5" step="0.05" value="2"></label>
+    <label>angle de lâcher — ° <span class="deg" id="la">20</span>
+      <input type="range" id="angle" min="1" max="170" step="1" value="20"></label>
+    <p><button type="button" id="relancer">↻ Relancer</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Lune — ce qu'il faut savoir (3)</summary>
+      <ul>
+        <li><b>Une plume et un marteau y tombent ensemble</b>, et ce n'est pas une expérience de pensée : David Scott l'a fait devant la caméra, sur place, en 1971 (Apollo 15). Sur Terre, seul l'air les sépare. Cette page simule le vide — comme la Lune.</li>
+        <li><b>Un homme y saute six fois plus haut</b>, mais tombe six fois moins vite. Les astronautes d'Apollo, avec 80 kg de scaphandre, se déplaçaient en bondissant : c'était plus efficace que marcher, parce que chaque bond durait une éternité.</li>
+        <li><b>Sa gravité n'est pas uniforme.</b> Des concentrations de masse sous les mers de basalte — les « mascons » — perturbent les orbites lunaires au point qu'aucune orbite basse n'y est stable très longtemps. Le 1.62 de cette page est une moyenne.</li>
+      </ul>
+    </details>
+
+    <p class="famille">Les trois astres ensemble : <a href="../debutant/03.2-pendule.html">la page comparée →</a></p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // La SEULE chose qui distingue cette page de ses deux sœurs.
+    const G = 1.62;            // m/s², la gravité de la Lune
+    const COULEUR = 0x8b949e;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    camera.position.set(1.6, 2.4, 8); camera.lookAt(1.6, 2.6, 0);
+
+    const grille = new THREE.GridHelper(120, 60, 0x2a313c, 0x1c222b);
+    scene.add(grille);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2);
+    lampe.position.set(3, 6, 6);
+    scene.add(lampe);
+
+    // --- LA SIMULATION ---
+
+    const PIVOT = 4.2, ORIGINE = 1.6;
+    const matiere = new THREE.MeshStandardMaterial({ color: COULEUR, roughness: 0.4, emissive: COULEUR, emissiveIntensity: 0.25 });
+    const bille = new THREE.Mesh(new THREE.SphereGeometry(0.22, 32, 16), matiere);
+    // La tige fait 1 de haut : on l'étire avec scale.y plutôt que de la reconstruire.
+    const tige = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1, 0.04), matiere);
+    scene.add(bille, tige);
+
+    const P = { longueur: 2, angle: 20 };
+    let theta = 0, omega = 0, temps = 0, dernierPassage = null, periode = 0;
+
+    function lancer() {
+      theta = THREE.MathUtils.degToRad(P.angle);
+      omega = 0; temps = 0; dernierPassage = null; periode = 0;
+      placer();
+    }
+
+    function placer() {
+      const dx = Math.sin(theta), dy = -Math.cos(theta);
+      bille.position.set(ORIGINE + dx * P.longueur, PIVOT + dy * P.longueur, 0);
+      tige.position.set(ORIGINE + dx * P.longueur / 2, PIVOT + dy * P.longueur / 2, 0);
+      tige.scale.y = P.longueur;
+      // Une Box est alignée sur +Y : θ + π la couche le long de la tige, pointe en bas.
+      tige.rotation.z = theta + Math.PI;
+    }
+    lancer();
+
+    function pas(dt) {
+      temps += dt;
+      // 8 SOUS-PAS : à 1/60 s, Euler « coupe le virage » au point bas et la période sort
+      // 15 % trop courte. La page afficherait un chiffre faux.
+      const SOUS_PAS = 8, h = dt / SOUS_PAS;
+      for (let i = 0; i < SOUS_PAS; i++) {
+        const avant = theta;
+        // L'équation EXACTE : c'est le sin(θ) qui fait craquer la formule aux grands angles.
+        omega += (-(G / P.longueur) * Math.sin(theta)) * h;
+        theta += omega * h;
+        // Deux passages consécutifs par la verticale = une DEMI-période, qu'on double.
+        if (Math.sign(avant) !== Math.sign(theta) && avant !== 0) {
+          const t = temps - (SOUS_PAS - 1 - i) * h;
+          if (dernierPassage !== null) periode = 2 * (t - dernierPassage);
+          dernierPassage = t;
+        }
+      }
+      placer();
+    }
+
+    function etat() {
+      const theorie = 2 * Math.PI * Math.sqrt(P.longueur / G);
+      if (!periode) return `angle ${THREE.MathUtils.radToDeg(theta).toFixed(1)}°\nT théorique 2π√(L/g) = ${theorie.toFixed(3)} s\nT mesurée … (attendez une oscillation)`;
+      const ecart = ((periode - theorie) / theorie) * 100;
+      return `angle ${THREE.MathUtils.radToDeg(theta).toFixed(1)}°\n` +
+             `T théorique 2π√(L/g) = ${theorie.toFixed(3)} s\n` +
+             `T mesurée = ${periode.toFixed(3)} s · écart ${ecart >= 0 ? '+' : ''}${ecart.toFixed(1)} %`;
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Plafonné : au retour d'un onglet, getDelta() peut valoir 30 s et l'objet
+      // traverserait le sol en un pas.
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      pas(dt);
+      lecture.textContent = etat();
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un brancheur unique : le curseur écrit dans P, met son étiquette à jour, et relance.
+    function brancher(id, etiq, decimales, apres) {
+      const champ = document.getElementById(id);
+      champ.addEventListener('input', () => {
+        P[id] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(decimales);
+        apres();
+      });
+    }
+
+    brancher('longueur', 'll', 1, lancer);
+    brancher('angle', 'la', 0, lancer);
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

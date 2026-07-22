@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>OctahedronGeometry — L’octaèdre</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>OctahedronGeometry</h2>
+    <p class="famille">Les polyèdres · L’octaèdre</p>
+    <p>8 faces triangulaires, deux pyramides collées base à base. L'un des cinq <b>solides de Platon</b>, et l'un des quatre que Three.js
+            fournit. Deux paramètres seulement — mais le second est un piège.</p>
+
+      <label>radius — rayon de la sphère circonscrite
+        <input type="range" data-p="radius" min="0.2" max="1.5" step="0.05" value="1"></label>
+      <label>detail — subdivisions
+        <input type="range" data-p="detail" min="0" max="4" step="1" value="0"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li><b>detail n'est pas un réglage de finesse.</b> Poussez le curseur : votre solide devient une <b>sphère</b>. Il subdivise chaque face, puis repousse les nouveaux sommets sur la sphère circonscrite. Il ne lisse pas la forme, il la remplace.</li>
+        <li>C'est pour ça que <code>new THREE.IcosahedronGeometry(1, 3)</code> est la bonne façon de faire une sphère : ses triangles sont <b>réguliers partout</b>, sans le pincement aux pôles de <code>SphereGeometry</code>. C'est la « géosphère » des modeleurs.</li>
+        <li><code>radius</code> est le rayon de la sphère <b>circonscrite</b> : la distance du centre aux <b>sommets</b>, pas aux faces. Le solide est donc toujours plus petit que la sphère de même rayon.</li>
+        <li>Ces quatre classes héritent toutes de <code>PolyhedronGeometry</code> et n'ajoutent rien : juste une table de sommets. Il manque le cinquième solide de Platon, le cube — parce que <code>BoxGeometry</code> existe déjà.</li>
+      </ul>
+    </details>
+
+    <a href="11-tetrahedron.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="13-icosahedron.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de OctahedronGeometry, dans l'ordre de sa signature.
+    const P = {
+      radius: 1,
+      detail: 0,
+    };
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.OctahedronGeometry(P.radius, P.detail);
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.OctahedronGeometry(${fmt(P.radius)}, ${fmt(P.detail)})`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

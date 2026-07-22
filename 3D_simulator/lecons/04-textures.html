@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>04 — Textures &amp; PBR</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>04 — Textures &amp; PBR</h2>
+    <p>
+      Les textures sont générées ici en <code>&lt;canvas&gt;</code> : aucune image à télécharger,
+      et vous voyez exactement d'où viennent les pixels.
+    </p>
+    <label>Roughness (rugosité) <input type="range" id="rough" min="0" max="1" step="0.01" value="0.4"></label>
+    <label>Metalness (métallicité) <input type="range" id="metal" min="0" max="1" step="0.01" value="0.6"></label>
+    <label>Répétition de la texture <input type="range" id="repeat" min="1" max="8" step="1" value="3"></label>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 2, 6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const key = new THREE.DirectionalLight(0xffffff, 3);
+    key.position.set(4, 6, 4);
+    scene.add(key);
+    const fill = new THREE.PointLight(0x58a6ff, 40, 20);
+    fill.position.set(-4, 2, 3);
+    scene.add(fill);
+
+    // --- Fabriquer une texture à la main ---
+    // Une texture Three.js accepte n'importe quelle source d'image, y compris un canvas 2D.
+    // En production vous chargeriez un .jpg avec `new THREE.TextureLoader().load('bois.jpg')`.
+    function damierTexture() {
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      const ctx = c.getContext('2d');
+      const case_ = 32;
+      for (let y = 0; y < c.height; y += case_) {
+        for (let x = 0; x < c.width; x += case_) {
+          ctx.fillStyle = ((x + y) / case_) % 2 ? '#3d444d' : '#c9d1d9';
+          ctx.fillRect(x, y, case_, case_);
+        }
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Une normal map encode une direction (x, y, z) dans les canaux (r, g, b).
+    // Le bleu dominant (0.5, 0.5, 1) = surface plate. On y ajoute des bosses.
+    function bossesNormalTexture() {
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = 'rgb(128,128,255)';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 40; i++) {
+        // Positions déterministes pour que le résultat soit reproductible.
+        const x = (i * 61) % 256, y = (i * 113) % 256, r = 8 + (i % 5) * 3;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, 'rgb(180,180,255)');
+        g.addColorStop(1, 'rgb(128,128,255)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.NoColorSpace; // une normal map n'est PAS une couleur : pas de correction sRGB
+      return tex;
+    }
+
+    const map = damierTexture();
+    map.colorSpace = THREE.SRGBColorSpace; // une texture de couleur, elle, doit être en sRGB
+    const normalMap = bossesNormalTexture();
+
+    // wrapS/wrapT = comportement au-delà de [0,1]. RepeatWrapping permet le carrelage.
+    for (const t of [map, normalMap]) {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(3, 3);
+    }
+
+    // MeshStandardMaterial = modèle PBR (Physically Based Rendering).
+    // roughness 0 = miroir, 1 = mat.  metalness 0 = diélectrique (bois, plastique), 1 = métal.
+    const material = new THREE.MeshStandardMaterial({
+      map,
+      normalMap,
+      roughness: 0.4,
+      metalness: 0.6,
+    });
+
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.3, 64, 32), material);
+    sphere.position.x = -1.8;
+    scene.add(sphere);
+
+    const box = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), material);
+    box.position.x = 1.8;
+    scene.add(box);
+
+    // --- Réglages en direct ---
+    document.getElementById('rough').addEventListener('input', (e) => {
+      material.roughness = +e.target.value;
+    });
+    document.getElementById('metal').addEventListener('input', (e) => {
+      material.metalness = +e.target.value;
+    });
+    document.getElementById('repeat').addEventListener('input', (e) => {
+      const n = +e.target.value;
+      map.repeat.set(n, n);
+      normalMap.repeat.set(n, n);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      sphere.rotation.y += 0.004;
+      box.rotation.y -= 0.004;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

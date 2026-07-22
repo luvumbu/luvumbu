@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 5.1 — Le système solaire</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 5.1 — Le système solaire</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 5</p>
+    <p>
+      L'étape 5 posait trois objets côte à côte, chacun indépendant. Ici, ils sont
+      <b>accrochés les uns aux autres</b> — et c'est ce qui change tout.
+    </p>
+    <p>
+      <b>La Lune n'est jamais calculée.</b> Pas une ligne ne dit où elle se trouve. Elle est
+      simplement <i>enfant</i> de la Terre : quand la Terre se déplace, la Lune suit.
+      Gratuitement.
+    </p>
+
+    <label>vitesse du temps <span class="deg" id="lv">1 année en 10 s</span>
+      <input type="range" id="vitesse" min="0" max="4" step="0.05" value="1"></label>
+    <label><input type="checkbox" id="orbites" checked> montrer les orbites</label>
+    <label><input type="checkbox" id="reel"> distances réelles (à l'échelle)</label>
+
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (5)</summary>
+      <ul>
+        <li>
+          <b>Un objet peut être ajouté à un autre objet</b>, pas seulement à la scène.
+          <code>terre.add(lune)</code> et la Lune vit désormais dans le repère de la Terre :
+          sa <code>position</code> devient <i>relative</i> à sa planète. C'est la
+          <b>hiérarchie</b>, et c'est l'idée la plus rentable de toute la 3D.
+        </li>
+        <li>
+          Chaque planète est en réalité <b>deux objets</b> : un <code>Group</code> vide
+          centré sur le Soleil, et la planète posée <i>à côté</i>, à sa distance. Faire
+          tourner le groupe promène la planète en cercle — sans une seule ligne de
+          trigonométrie. Faire tourner la planète elle-même la fait pivoter sur place.
+          Orbite et rotation propre : deux <code>rotation.y</code>, deux objets.
+        </li>
+        <li>
+          <b>Tout ce qu'on fait au parent arrive à l'enfant.</b> Bougez, tournez ou
+          agrandissez la Terre, et la Lune suit — y compris le <code>scale</code>, ce qui
+          surprend toujours : mettre un parent à l'échelle 2 double aussi tous ses enfants.
+        </li>
+        <li>
+          <b>Cette maquette ment, et toutes mentent.</b> Cochez « distances réelles » :
+          tout disparaît. À l'échelle, si la Terre est ce point, Neptune est à trente fois sa
+          distance au Soleil, et le Soleil lui-même fait 109 fois le diamètre terrestre.
+          Aucun schéma de manuel n'est à l'échelle — aucun ne peut l'être.
+        </li>
+        <li>
+          Le Soleil est en <code>MeshBasicMaterial</code> et non <code>Standard</code> : il
+          <b>émet</b> la lumière, il ne la reçoit pas. Un matériau qui réagit à l'éclairage
+          serait tout noir au centre — la <code>PointLight</code> est <i>dans</i> lui.
+        </li>
+      </ul>
+    </details>
+
+    <a href="05-plusieurs-objets.html">← Précédent</a> ·
+    <a href="05.1b-systeme-solaire-libre.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070c);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(3, 9, 13);
+    camera.lookAt(3, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // --- Ce qui est nouveau : LA HIÉRARCHIE ---
+
+    // Le Soleil ÉMET : MeshBasicMaterial ignore l'éclairage (étape 1b), c'est exactement
+    // ce qu'on veut. Un MeshStandardMaterial serait noir — la lumière est à l'intérieur.
+    const soleil = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffcc55 })
+    );
+    scene.add(soleil);
+
+    // La lumière du Soleil rayonne DEPUIS un point, dans toutes les directions.
+    // (Une PointLight — l'étape 4 n'a montré que l'ambiante et la directionnelle.)
+    const lumiere = new THREE.PointLight(0xfff0cc, 260, 0, 2);
+    scene.add(lumiere);
+
+    // Un fond d'ambiante, pour que les faces nocturnes ne soient pas des trous noirs.
+    scene.add(new THREE.AmbientLight(0x8899bb, 0.25));
+
+    // distance : en unités de maquette · reelle : en unités astronomiques (1 UA = Terre-Soleil)
+    // periode  : années terrestres pour un tour · rayon : taille de maquette
+    const PLANETES = [
+      { nom: 'Mercure', distance: 2.2, reelle: 0.39, rayon: 0.11, periode: 0.24, couleur: 0x9a8f88 },
+      { nom: 'Vénus',   distance: 3.1, reelle: 0.72, rayon: 0.19, periode: 0.62, couleur: 0xd8b26a },
+      { nom: 'Terre',   distance: 4.2, reelle: 1.00, rayon: 0.2,  periode: 1.00, couleur: 0x58a6ff, lune: true },
+      { nom: 'Mars',    distance: 5.2, reelle: 1.52, rayon: 0.14, periode: 1.88, couleur: 0xc1502e },
+      { nom: 'Jupiter', distance: 7.4, reelle: 5.20, rayon: 0.52, periode: 11.9, couleur: 0xf78166 },
+      { nom: 'Saturne', distance: 9.3, reelle: 9.54, rayon: 0.44, periode: 29.5, couleur: 0xe3d3a3, anneau: true },
+    ];
+
+    const formeOrbite = new THREE.RingGeometry(1, 1.004, 128);   // un cercle très fin
+    const orbites = [];
+
+    for (const p of PLANETES) {
+      // 1) LE PIVOT : un Group vide, centré sur le Soleil. C'est LUI qui tournera.
+      //    Un Group n'a aucune apparence — c'est juste un repère qu'on fait pivoter.
+      p.pivot = new THREE.Group();
+      scene.add(p.pivot);
+
+      // 2) LA PLANÈTE, posée À CÔTÉ du pivot, à sa distance. Faire tourner le pivot
+      //    la promène en cercle : aucun cos, aucun sin, aucune trigonométrie.
+      p.corps = new THREE.Mesh(
+        new THREE.SphereGeometry(p.rayon, 32, 16),
+        new THREE.MeshStandardMaterial({ color: p.couleur, roughness: 0.8 })
+      );
+      p.corps.position.x = p.distance;
+      p.pivot.add(p.corps);          // <- enfant du pivot, pas de la scène
+
+      // 3) LA LUNE — le cœur de la démonstration. Elle est ajoutée à la TERRE.
+      //    Sa position (0.45, 0, 0) est relative à la Terre : « 0.45 à droite de ma
+      //    planète ». On ne calculera JAMAIS où elle est dans le monde.
+      if (p.lune) {
+        p.pivotLune = new THREE.Group();
+        p.corps.add(p.pivotLune);    // <- enfant de la Terre elle-même
+
+        const lune = new THREE.Mesh(
+          new THREE.SphereGeometry(0.07, 16, 12),
+          new THREE.MeshStandardMaterial({ color: 0x8b949e, roughness: 0.9 })
+        );
+        lune.position.x = 0.45;
+        p.pivotLune.add(lune);
+      }
+
+      if (p.anneau) {
+        const anneau = new THREE.Mesh(
+          new THREE.RingGeometry(p.rayon * 1.4, p.rayon * 2.2, 64),
+          new THREE.MeshStandardMaterial({ color: 0xc9b98a, side: THREE.DoubleSide, roughness: 1 })
+        );
+        anneau.rotation.x = -Math.PI / 2.2;   // à plat, légèrement inclinés
+        p.corps.add(anneau);                  // enfants de Saturne : ils la suivent
+      }
+
+      // Le tracé de l'orbite, posé à plat dans le plan X/Z.
+      p.trace = new THREE.Mesh(
+        formeOrbite,
+        new THREE.MeshBasicMaterial({ color: 0x2a313c, side: THREE.DoubleSide })
+      );
+      p.trace.rotation.x = -Math.PI / 2;
+      p.trace.scale.setScalar(p.distance);
+      scene.add(p.trace);
+      orbites.push(p.trace);
+    }
+
+    const P = { vitesse: 1 };
+    let annees = 0;
+
+    // À vitesse 1, une année terrestre passe en 10 secondes.
+    //
+    // Le choix n'est pas anodin. Une année par seconde — le réflexe — donne un manège
+    // illisible : Mercure boucle 4 fois par seconde et la Lune 13. À l'autre bout,
+    // Saturne met 29,5 ans par tour : trop lent et elle paraît immobile. Aucun réglage
+    // ne convient aux deux, parce que le système solaire couvre un facteur 123 entre la
+    // période de Mercure et celle de Saturne. On cadre donc sur la Terre, et le curseur
+    // fait le reste.
+    const ANNEES_PAR_SECONDE = 0.1;
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+
+      // En années par SECONDE, jamais par image : le système tourne à la même vitesse
+      // sur un écran 60 Hz et sur un 144 Hz (étape 3).
+      annees += dt * P.vitesse * ANNEES_PAR_SECONDE;
+
+      for (const p of PLANETES) {
+        // L'ORBITE : on tourne le pivot. La planète, qui est à côté, décrit un cercle.
+        p.pivot.rotation.y = (annees / p.periode) * Math.PI * 2;
+
+        // LA ROTATION PROPRE : on tourne la planète sur elle-même. Ce sont bien deux
+        // rotations distinctes, sur deux objets distincts.
+        //
+        // Sa vitesse, elle, est ARBITRAIRE — et c'est un aveu. À l'échelle, la Terre
+        // tournerait 365 fois par année, soit 36 tours par seconde ici : un flou. Les
+        // orbites de cette page sont vraies, les rotations propres non.
+        p.corps.rotation.y += dt * 0.6 * P.vitesse;
+
+        // Et la Lune tourne autour de la Terre, dans le repère de la Terre.
+        // 13.4 tours par an : c'est le vrai chiffre.
+        if (p.pivotLune) p.pivotLune.rotation.y = annees * 13.4 * Math.PI * 2;
+      }
+
+      soleil.rotation.y += dt * 0.2;
+      afficher();
+      renderer.render(scene, camera);
+    }
+
+    const lecture = document.getElementById('lecture');
+
+    // Un Vector3 réutilisé, créé UNE fois hors de la boucle : en créer un par image
+    // ferait travailler le ramasse-miettes 60 fois par seconde pour rien.
+    const _monde = new THREE.Vector3();
+
+    function afficher() {
+      // getWorldPosition remonte toute la chaîne des parents. C'est la seule façon de
+      // savoir où est vraiment la Lune — et on n'en a besoin QUE pour l'afficher ici.
+      const terre = PLANETES.find((p) => p.nom === 'Terre');
+      terre.pivotLune.children[0].getWorldPosition(_monde);
+
+      lecture.textContent =
+        `année ${annees.toFixed(2)}\n` +
+        `Lune dans le monde : (${_monde.x.toFixed(2)}, ${_monde.y.toFixed(2)}, ${_monde.z.toFixed(2)})\n` +
+        `— jamais calculée, seulement héritée de la Terre`;
+    }
+    animer();
+
+    document.getElementById('vitesse').addEventListener('input', (e) => {
+      P.vitesse = Number(e.target.value);
+      // Un nombre nu ne dit rien. On affiche ce que le curseur FAIT.
+      document.getElementById('lv').textContent = P.vitesse === 0
+        ? 'arrêté'
+        : `1 année en ${(1 / (P.vitesse * ANNEES_PAR_SECONDE)).toFixed(1)} s`;
+    });
+
+    document.getElementById('orbites').addEventListener('change', (e) => {
+      for (const t of orbites) t.visible = e.target.checked;
+    });
+
+    document.getElementById('reel').addEventListener('change', (e) => {
+      // À l'échelle, Saturne part à 9.54 UA — et si l'on mettait Neptune, à 30.
+      // La maquette devient illisible, et c'est précisément la leçon.
+      for (const p of PLANETES) {
+        const d = e.target.checked ? p.reelle * 4.2 : p.distance;
+        p.corps.position.x = d;
+        p.trace.scale.setScalar(d);
+      }
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

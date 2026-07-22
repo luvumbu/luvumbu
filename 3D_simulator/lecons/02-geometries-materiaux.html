@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>02 — Géométries &amp; matériaux</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>02 — Géométries &amp; matériaux</h2>
+    <p>Chaque colonne est un matériau différent appliqué aux mêmes formes.</p>
+    <p>
+      <b>Basic</b> ignore la lumière.<br>
+      <b>Lambert</b> : diffus, mat, rapide.<br>
+      <b>Standard</b> : PBR réaliste.<br>
+      <b>Wireframe</b> : les arêtes des triangles.
+    </p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 2, 12);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Les matériaux "physiques" (Lambert, Standard) ont besoin de lumière pour être visibles.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const key = new THREE.DirectionalLight(0xffffff, 2);
+    key.position.set(5, 8, 5);
+    scene.add(key);
+
+    // LES GÉOMÉTRIES — une forme = un ensemble de sommets et de triangles.
+    const geometries = [
+      new THREE.BoxGeometry(1.2, 1.2, 1.2),
+      new THREE.SphereGeometry(0.8, 32, 16),      // (rayon, segments horizontaux, verticaux)
+      new THREE.TorusKnotGeometry(0.6, 0.2, 100, 16),
+      new THREE.ConeGeometry(0.8, 1.5, 32),
+    ];
+
+    // LES MATÉRIAUX — comment la surface réagit (ou non) à la lumière.
+    const materials = [
+      new THREE.MeshBasicMaterial({ color: 0x58a6ff }),
+      new THREE.MeshLambertMaterial({ color: 0x58a6ff }),
+      new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.25, metalness: 0.8 }),
+      new THREE.MeshBasicMaterial({ color: 0x58a6ff, wireframe: true }),
+    ];
+
+    // Grille 4x4 : une colonne par matériau, une ligne par géométrie.
+    const meshes = [];
+    materials.forEach((material, col) => {
+      geometries.forEach((geometry, row) => {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((col - 1.5) * 2.6, (1.5 - row) * 2.4, 0);
+        scene.add(mesh);
+        meshes.push(mesh);
+      });
+    });
+
+    // Une géométrie et un matériau consomment de la mémoire GPU. Ici ils sont partagés
+    // entre plusieurs Mesh : c'est la bonne pratique, ne les recréez pas par objet.
+
+    function animate() {
+      requestAnimationFrame(animate);
+      for (const mesh of meshes) mesh.rotation.y += 0.006;
+      controls.update(); // nécessaire quand enableDamping = true
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

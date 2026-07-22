@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 1c — Le repère 3D et les unités</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 1c — Le repère 3D</h2>
+    <p>
+      Avant de déplacer quoi que ce soit, il faut savoir <b>où l'on est</b>.
+      Trois axes, trois couleurs, une règle mnémotechnique : <b>R V B = X Y Z</b>.
+    </p>
+    <p>
+      <span style="color:#ff6b6b">■ X</span> la droite ·
+      <span style="color:#7ee787">■ Y</span> le haut ·
+      <span style="color:#58a6ff">■ Z</span> vers vous
+    </p>
+    <p>Changez de point de vue : chaque axe devient évident vu depuis un autre.</p>
+    <p>
+      <button type="button" data-vue="face">De face</button>
+      <button type="button" data-vue="dessus">De dessus</button>
+      <button type="button" data-vue="cote">De côté</button>
+      <button type="button" data-vue="trois-quarts" class="actif">3/4</button>
+    </p>
+    <p><code id="lecture"></code></p>
+    <p><b>Nouveau ici :</b> <code>AxesHelper</code>, <code>GridHelper</code>,
+      <code>camera.lookAt()</code>, les unités et les radians.</p>
+    <a href="01b-couleur-du-cube.html">← Précédent</a> ·
+    <a href="02-bouger.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle des étapes précédentes ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // --- Ce qui est nouveau ---
+
+    // 1) LES TROIS AXES
+    //
+    // AxesHelper dessine le repère du monde depuis l'origine (0, 0, 0).
+    // Le code couleur est universel — Blender, Unity et Godot l'utilisent aussi :
+    //
+    //    X rouge  → la droite     (+X à droite, −X à gauche)
+    //    Y vert   → le haut       (+Y en haut,  −Y en bas)
+    //    Z bleu   → vers VOUS     (+Z sort de l'écran, −Z s'enfonce dedans)
+    //
+    // Rouge Vert Bleu = X Y Z, dans l'ordre. C'est la seule chose à mémoriser.
+    scene.add(new THREE.AxesHelper(3));
+
+    // 2) « Y EN HAUT », UNE CONVENTION — PAS UNE LOI
+    //
+    // Three.js est Y-up : la verticale, c'est Y. Blender, lui, est Z-up : sa verticale
+    // est Z. Rien n'est « juste » ou « faux », ce sont deux conventions.
+    // Conséquence très concrète : à l'export glTF depuis Blender, la case « +Y Up »
+    // DOIT être cochée (leçon 09), sinon vos modèles arrivent couchés sur le flanc.
+
+    // 3) LA MAIN DROITE
+    //
+    // Le repère de Three.js est « direct ». Pour retrouver Z sans réfléchir :
+    // main droite, pouce vers la droite (X), index vers le haut (Y) — le majeur,
+    // perpendiculaire aux deux, pointe vers vous. C'est Z.
+
+    // 4) LE SOL, POUR VOIR LE PLAN HORIZONTAL
+    //
+    // GridHelper dessine une grille dans le plan X/Z, à hauteur Y = 0.
+    // (taille totale, nombre de divisions, couleur des 2 lignes centrales, couleur des autres)
+    const grille = new THREE.GridHelper(10, 10, 0x2a313c, 0x2a313c);
+
+    // Ses deux lignes centrales suivent EXACTEMENT les axes X et Z, à la même hauteur.
+    // Deux traits au même endroit, et la carte graphique ne sait plus lequel est devant :
+    // ils clignotent, ou l'un efface l'autre. C'est le « z-fighting ».
+    // Ici, sans ce décalage de 2 mm, la grille recouvre l'axe X et le rouge disparaît —
+    // fâcheux sur la page qui explique que X est rouge.
+    grille.position.y = -0.002;
+
+    scene.add(grille);
+
+    // 5) L'UNITÉ
+    //
+    // Une « unité » Three.js ne vaut rien de particulier : c'est vous qui décidez.
+    // Le seul vrai conseil : 1 unité = 1 mètre. C'est ce que supposent glTF, les
+    // moteurs physiques et les casques de VR. S'écarter de cette échelle, c'est
+    // s'exposer à des gravités absurdes et à des modèles importés minuscules.
+    // Notre grille fait donc 10 m de côté, et le cube 1 m d'arête.
+
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshNormalMaterial()
+    );
+
+    // 6) LE PIÈGE DU CUBE À MOITIÉ ENFONCÉ DANS LE SOL
+    //
+    // L'origine d'une BoxGeometry est en son CENTRE, pas sous ses pieds.
+    // Un cube de 1 de haut placé en y = 0 a donc sa moitié basse sous la grille.
+    // Pour le POSER sur le sol : y = hauteur / 2. Ici 0.5. Ce demi n'est pas un
+    // bricolage, c'est la règle — et elle vaut pour la plupart des géométries.
+    cube.position.set(2, 0.5, 1);   // 2 m à droite, posé au sol, 1 m vers vous
+
+    scene.add(cube);
+
+    // 7) LES ANGLES SONT EN RADIANS
+    //
+    //    un tour complet = 2π ≈ 6.283      un quart de tour = π/2 ≈ 1.571
+    //    un demi-tour    = π  ≈ 3.1416
+    //
+    // Aucune fonction de Three.js n'accepte de degrés. Pour continuer à penser en
+    // degrés, convertissez explicitement :
+    cube.rotation.y = THREE.MathUtils.degToRad(30);   // 30°, lisible, sans calcul mental
+
+    // 8) REGARDER UN POINT
+    //
+    // camera.lookAt(x, y, z) oriente la caméra vers un point du monde. À rappeler
+    // APRÈS chaque déplacement de la caméra : ce n'est pas un lien permanent, juste
+    // un calcul d'orientation fait une fois, à l'instant de l'appel.
+    const VUES = {
+      face:          [0, 1, 8],     // sur l'axe Z : on regarde vers −Z
+      dessus:        [0, 9, 0.01],  // au-dessus. Le 0.01 évite un cas dégénéré :
+                                    // pile à la verticale, « le haut » devient indéfini
+                                    // et l'image bascule au hasard.
+      cote:          [8, 1, 0],     // sur l'axe X : on regarde vers −X
+      'trois-quarts': [5, 4, 6],
+    };
+
+    const lecture = document.getElementById('lecture');
+    const boutons = document.querySelectorAll('.hud button');
+
+    function placer(nom) {
+      camera.position.set(...VUES[nom]);
+      camera.lookAt(0, 0, 0);       // toujours après position.set()
+      renderer.render(scene, camera);
+
+      const p = camera.position;
+      lecture.textContent =
+        `camera.position = (${p.x}, ${p.y}, ${p.z}) · cube en (2, 0.5, 1)`;
+
+      boutons.forEach((b) => b.classList.toggle('actif', b.dataset.vue === nom));
+    }
+    placer('trois-quarts');
+
+    boutons.forEach((b) => b.addEventListener('click', () => placer(b.dataset.vue)));
+
+    // Les helpers sont des objets comme les autres : ils sont dans la scène, ils se
+    // dessinent, ils coûtent. On les retire d'une application finie — mais gardez-les
+    // tant que le repère n'est pas devenu un réflexe.
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

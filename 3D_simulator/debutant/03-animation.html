@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 3 — La boucle de rendu</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 3 — Faire bouger</h2>
+    <p>
+      À l'étape 2, on appelait <code>render()</code> à la main après chaque changement.
+      Pour une animation, il faut redessiner <b>60 fois par seconde</b>.
+      C'est le rôle de la <b>boucle de rendu</b>.
+    </p>
+    <p><button id="pause">Mettre en pause</button></p>
+    <p><b>Nouveau ici :</b> <code>requestAnimationFrame</code>.</p>
+    <a href="02b-la-camera.html">← Précédent</a> ·
+    <a href="03.1-chute-et-rebond.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+    camera.position.z = 3;
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial());
+    scene.add(cube);
+
+    // --- Ce qui est nouveau ---
+
+    let enPause = false;
+
+    // requestAnimationFrame(f) dit au navigateur : "rappelle f juste avant le prochain
+    // rafraîchissement de l'écran". Comme animer() se redemande elle-même, on obtient
+    // une boucle infinie, mais qui laisse le navigateur respirer entre chaque image.
+    function animer() {
+      requestAnimationFrame(animer);
+
+      if (!enPause) {
+        cube.rotation.x += 0.01;   // +0,01 radian par image
+        cube.rotation.y += 0.01;
+      }
+
+      renderer.render(scene, camera);  // sans cette ligne, le cube tourne… invisiblement
+    }
+    animer();   // on lance la première image ; les suivantes s'enchaînent toutes seules
+
+    // NE FAITES JAMAIS ça : setInterval(animer, 16) ou une boucle while(true).
+    // requestAnimationFrame se synchronise avec l'écran et se met en pause quand
+    // l'onglet est en arrière-plan. Les deux autres saccadent et chauffent le portable.
+
+    // À RETENIR pour plus tard : "+= 0.01 par image" veut dire que le cube tourne
+    // deux fois plus vite sur un écran 120 Hz que sur un écran 60 Hz.
+    // La solution (le "delta time") arrive dans les leçons avancées.
+
+    document.getElementById('pause').addEventListener('click', (e) => {
+      enPause = !enPause;
+      e.target.textContent = enPause ? 'Reprendre' : 'Mettre en pause';
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

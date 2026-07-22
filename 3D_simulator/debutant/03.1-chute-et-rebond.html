@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulation 3.1 — La chute et le rebond</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Simulation 3.1 — La chute</h2>
+    <p class="famille">Simulation · s'appuie sur l'étape 3</p>
+    <p>
+      La boucle de rendu ne sert pas qu'à faire tourner un cube : c'est le <b>battement de
+      cœur</b> de toute simulation. À chaque battement, on avance le monde d'un petit pas.
+    </p>
+    <p>
+      Trois billes <b>identiques</b>, lâchées <b>en même temps</b>, de la <b>même hauteur</b>.
+      Seule la gravité change. C'est en les voyant ensemble qu'on comprend — l'une après
+      l'autre, on ne ferait que se souvenir.
+    </p>
+
+    <label>hauteur de lâcher — m <span class="deg" id="lh">5.0</span>
+      <input type="range" id="hauteur" min="1" max="9" step="0.1" value="5"></label>
+    <label>élasticité — énergie gardée au rebond <span class="deg" id="le">0.70</span>
+      <input type="range" id="elasticite" min="0" max="1" step="0.01" value="0.7"></label>
+
+    <p><button type="button" id="relancer">↻ Les relâcher</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (6)</summary>
+      <ul>
+        <li>
+          <b>La masse n'est nulle part dans le code.</b> Ce n'est pas un oubli : elle se
+          simplifie. Une plume et une enclume tombent exactement pareil — dans le vide. Ce que
+          vous voyez ici est le vide : aucune de ces billes ne subit l'air.
+        </li>
+        <li>
+          <b>Jupiter n'est pas 15× plus rapide que la Lune</b> alors que sa gravité l'est.
+          Le temps de chute va en <b>racine carrée</b> : t = √(2h/g). Un g 15 fois plus fort
+          ne donne qu'une chute √15 ≈ 3,9 fois plus courte. Regardez le chrono.
+        </li>
+        <li>
+          Une simulation, c'est toujours deux temps : <b>intégrer</b> (la gravité change la
+          vitesse, la vitesse change la position), puis <b>corriger</b> les pénétrations.
+          Jamais l'inverse.
+        </li>
+        <li>
+          <b>Corrigez la position AVANT d'inverser la vitesse.</b> Sinon la bille reste
+          coincée sous le sol : elle rebondit, retombe, est encore dessous, rebondit encore —
+          et vibre sur place pour toujours.
+        </li>
+        <li>
+          <b>Le <code>dt</code> doit être plafonné.</b> Changez d'onglet et revenez :
+          <code>getDelta()</code> peut valoir 30 secondes. Sans le
+          <code>Math.min(dt, 1/30)</code>, la bille avancerait de 30 × sa vitesse en un pas et
+          traverserait le sol sans le voir. C'est le bug n°1 de toute physique maison.
+        </li>
+        <li>
+          Le <b>seuil d'arrêt</b> n'est pas de la triche. Sans lui, la bille rebondit de moins
+          en moins haut, indéfiniment — une infinité de rebonds en un temps fini. Tous les
+          moteurs physiques ont ce seuil.
+        </li>
+      </ul>
+    </details>
+
+    <a href="03-animation.html">← Précédent</a> ·
+    <a href="03.2-pendule.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle des étapes 0 à 3 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    // Reculée, et volontairement décentrée : le HUD mange le tiers gauche de l'écran.
+    // Viser le milieu des trois billes en cacherait une derrière le panneau — et une
+    // comparaison à trois dont on n'en voit que deux ne compare rien.
+    camera.position.set(0.2, 3, 12);
+    camera.lookAt(0.2, 2.2, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // La grille de l'étape 1c : ici elle n'est pas décorative, c'est LE SOL,
+    // le plan y = 0 contre lequel les billes vont rebondir.
+    scene.add(new THREE.GridHelper(14, 14, 0x2a313c, 0x2a313c));
+
+    // --- Ce qui est nouveau : LA SIMULATION ---
+
+    // Les unités comptent (étape 1c) : 1 unité = 1 mètre, donc g est en m/s².
+    // Ces trois valeurs ne sont pas inventées, ce sont les vraies.
+    const CORPS = [
+      { nom: 'Lune',    g: 1.62,  x: 0, couleur: 0x8b949e },
+      { nom: 'Terre',   g: 9.81,  x: 3, couleur: 0x58a6ff },
+      { nom: 'Jupiter', g: 24.79, x: 6, couleur: 0xf78166 },
+    ];
+
+    const P = { hauteur: 5, elasticite: 0.7 };
+    const RAYON = 0.35;
+
+    // La géométrie est PARTAGÉE par les trois billes (étape 1b) : une seule
+    // sphère envoyée à la carte graphique. Le matériau, lui, est propre à chacune,
+    // puisqu'elles n'ont pas la même couleur.
+    const forme = new THREE.SphereGeometry(RAYON, 32, 16);
+
+    // Une étiquette : on dessine dans un <canvas> 2D et un Sprite l'affiche toujours
+    // face à la caméra. Sans nom sous chaque bille, la comparaison ne veut rien dire.
+    function etiquette(texte, sousTitre, couleur) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#' + couleur.toString(16).padStart(6, '0');
+      ctx.font = '600 44px system-ui, sans-serif';
+      ctx.fillText(texte, 256, 48);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '30px Consolas, monospace';
+      ctx.fillText(sousTitre, 256, 96);
+
+      const texture = new THREE.CanvasTexture(c);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+      sprite.scale.set(2.6, 0.65, 1);
+      return sprite;
+    }
+
+    for (const corps of CORPS) {
+      corps.bille = new THREE.Mesh(forme, new THREE.MeshStandardMaterial({
+        color: corps.couleur, roughness: 0.4, emissive: corps.couleur, emissiveIntensity: 0.25,
+      }));
+      scene.add(corps.bille);
+
+      const label = etiquette(corps.nom, `g = ${corps.g} m/s²`, corps.couleur);
+      label.position.set(corps.x, -0.6, 0);   // sous le sol : l'étiquette du couloir
+      scene.add(label);
+    }
+
+    // Un peu de lumière : les billes ont des couleurs à montrer, donc on ne peut plus
+    // se contenter de MeshNormalMaterial. (C'est l'étape 4, prise en avance de deux lignes.)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2);
+    soleil.position.set(2, 6, 6);
+    scene.add(soleil);
+
+    let chrono = 0;
+
+    function lancer() {
+      chrono = 0;
+      for (const corps of CORPS) {
+        corps.bille.position.set(corps.x, P.hauteur, 0);
+        corps.vitesse = 0;         // m/s, positive vers le haut
+        corps.rebonds = 0;
+        corps.endormie = false;
+        corps.tContact = null;     // le chrono jusqu'au premier contact
+      }
+    }
+    lancer();
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+
+      // LE PLAFOND SUR dt. Sans lui, un retour d'onglet donne un dt énorme et les billes
+      // traversent le sol : entre deux frames, elles passent de +10 à −20 sans jamais être
+      // DANS le sol, donc sans jamais déclencher la collision. C'est le « tunneling ».
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      chrono += dt;
+
+      // La MÊME boucle pour les trois. Rien ne les distingue que leur `g` : c'est
+      // exactement ce que la page cherche à montrer.
+      for (const corps of CORPS) {
+        if (corps.endormie) continue;
+
+        // 1) INTÉGRER — tout est multiplié par dt : on raisonne par SECONDE, pas par
+        //    frame. C'est ce qui rend la chute identique sur un 60 Hz et sur un 144 Hz.
+        corps.vitesse -= corps.g * dt;
+        corps.bille.position.y += corps.vitesse * dt;
+
+        // 2) CORRIGER — la bille est-elle passée sous le sol ?
+        if (corps.bille.position.y - RAYON < 0) {
+          // a. On la repose exactement dessus. AVANT de toucher à la vitesse.
+          corps.bille.position.y = RAYON;
+
+          if (corps.tContact === null) corps.tContact = chrono;
+
+          // b. Puis elle repart vers le haut, en perdant de l'énergie.
+          //    Math.abs, et NON -vitesse : au contact, la vitesse est parfois déjà
+          //    positive dans les cas limites, et le signe s'inverserait une frame sur deux.
+          corps.vitesse = Math.abs(corps.vitesse) * P.elasticite;
+          corps.rebonds++;
+
+          // c. LE SEUIL D'ARRÊT, sans quoi elle tremblote à l'infini.
+          if (corps.vitesse < 0.4) {
+            corps.vitesse = 0;
+            corps.endormie = true;
+          }
+        }
+      }
+
+      afficher(dt);
+      renderer.render(scene, camera);
+    }
+
+    // Déclaré AVANT animer() : la boucle appelle afficher() dès sa première frame, et une
+    // const n'existe pas tant que sa ligne n'a pas été exécutée (« zone morte temporelle »).
+    // Plus bas, ce serait une erreur à chaque image.
+    const lecture = document.getElementById('lecture');
+
+    function afficher(dt) {
+      const lignes = CORPS.map((c) => {
+        const h = (c.bille.position.y - RAYON).toFixed(2);
+        // La théorie, pour comparer : t = √(2h/g).
+        const theorie = Math.sqrt((2 * (P.hauteur - RAYON)) / c.g);
+        const chute = c.tContact
+          ? `posée en ${c.tContact.toFixed(2)} s (théorie ${theorie.toFixed(2)})`
+          : `à ${h} m — tombe encore`;
+        return `${c.nom.padEnd(8)} ${chute}`;
+      });
+
+      // Qui touche en premier ? La question que la comparaison rend évidente.
+      const arrivees = CORPS.filter((c) => c.tContact).sort((a, b) => a.tContact - b.tContact);
+      const podium = arrivees.length === CORPS.length
+        ? `\nordre d'arrivée : ${arrivees.map((c) => c.nom).join(' · ')}`
+        : '';
+
+      lecture.textContent =
+        lignes.join('\n') + podium + `\ndt = ${(dt * 1000).toFixed(1)} ms (${Math.round(1 / dt)} images/s)`;
+    }
+    animer();
+
+    // --- Les réglages ---
+
+    const curseurs = {
+      hauteur: [document.getElementById('hauteur'), document.getElementById('lh'), 1],
+      elasticite: [document.getElementById('elasticite'), document.getElementById('le'), 2],
+    };
+
+    for (const [nom, [champ, etiq, decimales]] of Object.entries(curseurs)) {
+      champ.addEventListener('input', () => {
+        P[nom] = Number(champ.value);
+        etiq.textContent = P[nom].toFixed(decimales);
+        lancer();   // on relâche les trois ensemble : sinon la comparaison n'a plus de sens
+      });
+    }
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+
+    // POUR ALLER PLUS LOIN : ces quinze lignes suffisent pour une bille et un sol plat.
+    // Dès qu'il faut des formes quelconques, des empilements ou des contraintes, passez à
+    // un vrai moteur — Rapier ou Cannon-es. La leçon 07 pousse jusqu'au choc entre deux
+    // sphères, et c'est à peu près la limite du raisonnable à la main.
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

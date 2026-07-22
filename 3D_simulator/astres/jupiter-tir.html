@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Le tir sur Jupiter</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>Le tir — Jupiter</h2>
+    <p class="famille">g = 24.79 m/s² · portée = v²·sin(2θ)/g</p>
+    <p>Un tir sur Jupiter. La portée d'un vol libre va en <b>1/g</b> — deux fois moins de gravité, deux fois plus loin. Cherchez l'angle qui porte le plus : il ne dépend ni de g, ni de la vitesse.</p>
+    <p>Deux fois et demie la Terre. La plus forte gravité de surface du système solaire, si l'on excepte le Soleil.</p>
+
+    <label>angle de tir — ° <span class="deg" id="la">45</span>
+      <input type="range" id="angle" min="5" max="85" step="1" value="45"></label>
+    <label>vitesse de tir — m/s <span class="deg" id="lv">5.0</span>
+      <input type="range" id="vitesse" min="3" max="12" step="0.5" value="5"></label>
+    <p><button type="button" id="relancer">↻ Relancer</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Jupiter — ce qu'il faut savoir (3)</summary>
+      <ul>
+        <li><b>Il n'y a pas de sol sur Jupiter.</b> Le « 24,79 » est mesuré au sommet des nuages, là où la pression vaut celle de notre atmosphère. En dessous, on s'enfonce dans un gaz de plus en plus dense, sans jamais rencontrer de surface. Le sol de cette page est une commodité, pas une réalité.</li>
+        <li><b>Un humain de 80 kg y pèserait 200 kg</b> — et ne tiendrait pas debout. Ce n'est pas une question de force : le squelette humain flanche bien avant.</li>
+        <li><b>Jupiter est plus aplati que rond.</b> Il boucle un tour en 9 h 56 malgré sa taille, et cette rotation le renfle à l'équateur de 7 %. Sa gravité y est donc sensiblement plus faible qu'aux pôles.</li>
+      </ul>
+    </details>
+
+    <p class="famille">Les trois astres ensemble : <a href="../debutant/06.1-tir-au-but.html">la page comparée →</a></p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // La SEULE chose qui distingue cette page de ses deux sœurs.
+    const G = 24.79;            // m/s², la gravité de Jupiter
+    const COULEUR = 0xf78166;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.1;
+
+    const grille = new THREE.GridHelper(120, 60, 0x2a313c, 0x1c222b);
+    scene.add(grille);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2);
+    lampe.position.set(3, 6, 6);
+    scene.add(lampe);
+
+    // --- LA SIMULATION ---
+
+    const RAYON = 0.22;
+    const DEPART = new THREE.Vector3(0, RAYON, 0);   // on part de la hauteur d'arrivée :
+    // c'est ce qui rend la portée comparable à v²·sin(2θ)/g, qui suppose départ = arrivée.
+
+    const bille = new THREE.Mesh(
+      new THREE.SphereGeometry(RAYON, 24, 14),
+      new THREE.MeshStandardMaterial({ color: COULEUR, roughness: 0.4, emissive: COULEUR, emissiveIntensity: 0.3 })
+    );
+    scene.add(bille);
+
+    const canon = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.14, 0.14),
+      new THREE.MeshStandardMaterial({ color: 0xe6edf3, roughness: 0.5 })
+    );
+    scene.add(canon);
+
+    const P = { angle: 45, vitesse: 5 };
+    const vitesse = new THREE.Vector3();
+    let vol = 0, contacts = 0, endormie = true, trace = null;
+
+    const direction = () => {
+      const a = THREE.MathUtils.degToRad(P.angle);
+      return new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+    };
+
+    function placerCanon() {
+      canon.rotation.z = THREE.MathUtils.degToRad(P.angle);
+      canon.position.copy(DEPART).addScaledVector(direction(), 0.6);
+    }
+
+    let points = [];
+
+    function lancer() {
+      if (trace) { scene.remove(trace); trace.geometry.dispose(); trace.material.dispose(); trace = null; }
+      bille.position.copy(DEPART);
+      vitesse.copy(direction()).multiplyScalar(P.vitesse);
+      points = [DEPART.clone()];
+      vol = 0; contacts = 0; endormie = false;
+      cadrer();
+    }
+    placerCanon();
+    lancer();
+
+    function pas(dt) {
+      if (endormie) return;
+      // g ne touche QUE y. Jamais x. C'est pour ça qu'un tir va plus loin, pas plus vite.
+      vitesse.y -= G * dt;
+      bille.position.addScaledVector(vitesse, dt);
+
+      const dernier = points[points.length - 1];
+      if (dernier.distanceToSquared(bille.position) > 0.005) points.push(bille.position.clone());
+
+      if (bille.position.y - RAYON < 0) {
+        bille.position.y = RAYON;
+        if (contacts === 0) vol = bille.position.x;   // la portée du VOL : celle de la formule
+        contacts++;
+        vitesse.y = Math.abs(vitesse.y) * 0.5;
+        vitesse.x *= 0.86;
+        // Le seuil porte sur la vitesse VERTICALE : sur la totale, une bille sans rebond
+        // glisserait au sol et prendrait un frottement à chaque IMAGE — donc dépendant du
+        // nombre d'images par seconde.
+        if (vitesse.y < 0.5) {
+          endormie = true;
+          const g = new THREE.BufferGeometry().setFromPoints(points);
+          trace = new THREE.Line(g, new THREE.LineBasicMaterial({ color: COULEUR }));
+          scene.add(trace);
+        }
+      }
+    }
+
+    function etat() {
+      const a = THREE.MathUtils.degToRad(P.angle);
+      const theorie = (P.vitesse * P.vitesse * Math.sin(2 * a)) / G;
+      return `x = ${bille.position.x.toFixed(2)} m\n` +
+             (vol ? `portée du vol ${vol.toFixed(2)} m` : 'en vol') +
+             ` · théorie ${theorie.toFixed(2)} m\n` +
+             `portée maximale possible (45°) : ${((P.vitesse * P.vitesse) / G).toFixed(2)} m`;
+    }
+
+    // La portée varie d'un facteur 15 entre la Lune et Jupiter : on cadre sur ce que
+    // CET astre-ci fait, sinon la page est vide ou déborde.
+    function cadrer() {
+      const portee = (P.vitesse * P.vitesse) / G;
+      const large = Math.max(portee * 1.25, 3);
+      grille.position.x = large / 2;
+      camera.position.set(large * 0.35, large * 0.28, large * 1.3 + 4);
+      controls.target.set(large * 0.35, large * 0.1, 0);
+      controls.update();
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Plafonné : au retour d'un onglet, getDelta() peut valoir 30 s et l'objet
+      // traverserait le sol en un pas.
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      pas(dt);
+      lecture.textContent = etat();
+      controls.update();   // OBLIGATOIRE avec enableDamping
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un brancheur unique : le curseur écrit dans P, met son étiquette à jour, et relance.
+    function brancher(id, etiq, decimales, apres) {
+      const champ = document.getElementById(id);
+      champ.addEventListener('input', () => {
+        P[id] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(decimales);
+        apres();
+      });
+    }
+
+    brancher('angle', 'la', 0, () => { placerCanon(); lancer(); });
+    brancher('vitesse', 'lv', 1, () => { placerCanon(); lancer(); });
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

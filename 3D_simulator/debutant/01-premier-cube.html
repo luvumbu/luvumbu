@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 1 — Mon premier cube</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 1 — Mon premier cube</h2>
+    <p>
+      Un objet visible = une <b>forme</b> + une <b>apparence</b>.
+      En Three.js : une <i>geometry</i> + un <i>material</i>, réunis dans un <i>mesh</i>.
+    </p>
+    <p>
+      Le cube est immobile et vu de face, donc il ressemble à un carré. C'est normal.
+      Il tournera à l'étape 3.
+    </p>
+    <p><b>Nouveau ici :</b> <code>Mesh</code>, <code>scene.add()</code>, et reculer la caméra.</p>
+    <a href="00b-couleur-du-fond.html">← Précédent</a> ·
+    <a href="01b-couleur-du-cube.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Le socle de l'étape 0, inchangé ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // --- Ce qui est nouveau ---
+
+    // La FORME : une boîte de 1 x 1 x 1 (largeur, hauteur, profondeur).
+    const forme = new THREE.BoxGeometry(1, 1, 1);
+
+    // L'APPARENCE : "Normal" colore chaque face selon son orientation.
+    // On le choisit exprès parce qu'il n'a PAS besoin de lumière (voir étape 4).
+    const apparence = new THREE.MeshNormalMaterial();
+
+    // L'OBJET = forme + apparence.
+    const cube = new THREE.Mesh(forme, apparence);
+
+    // Ne l'oubliez jamais : un objet qui n'est pas ajouté à la scène n'existe pas à l'écran.
+    scene.add(cube);
+
+    // ATTENTION, le piège classique du débutant :
+    // la caméra ET le cube sont tous les deux en (0, 0, 0). La caméra est DANS le cube,
+    // et l'intérieur des faces n'est pas dessiné → écran noir.
+    // Il faut donc reculer la caméra. L'axe Z pointe vers vous.
+    camera.position.z = 3;
+
+    // (Essayez : mettez 1.5 pour vous rapprocher, 10 pour vous éloigner.)
+
+    renderer.render(scene, camera);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>La chute sur Terre</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>La chute — Terre</h2>
+    <p class="famille">g = 9.81 m/s² · t = √(2h/g)</p>
+    <p>Une bille lâchée sans vitesse, sur la Terre. Rien d'autre à l'écran : c'est le but. La page groupée compare les trois astres ; celle-ci vous laisse regarder la Terre seule.</p>
+    <p>La référence, celle que votre intuition connaît par cœur. C'est justement pour ça qu'elle sert d'étalon aux deux autres.</p>
+
+    <label>hauteur de lâcher — m <span class="deg" id="lh">5.0</span>
+      <input type="range" id="hauteur" min="1" max="9" step="0.1" value="5"></label>
+    <label>élasticité — énergie gardée au rebond <span class="deg" id="le">0.70</span>
+      <input type="range" id="elasticite" min="0" max="1" step="0.01" value="0.7"></label>
+    <p><button type="button" id="relancer">↻ Relancer</button></p>
+    <p><code id="lecture" class="multi"></code></p>
+
+    <details open>
+      <summary>Terre — ce qu'il faut savoir (3)</summary>
+      <ul>
+        <li><b>9,81 est une moyenne, pas une constante.</b> On mesure 9,78 à l'équateur et 9,83 aux pôles : la rotation vous éjecte un peu, et la Terre est aplatie, donc vous êtes plus loin du centre à l'équateur. Vous pesez environ 0,5 % de moins à Singapour qu'à Oslo.</li>
+        <li><b>La chute ne dépend pas de votre masse</b> — c'est contre-intuitif et pourtant vérifiable : la masse apparaît des deux côtés de l'équation et se simplifie. Si une bille de plomb tombe plus vite qu'une feuille, c'est l'<b>air</b>, jamais la gravité. Cette page simule le vide.</li>
+        <li><b>Une chute réelle plafonne.</b> Dans l'air, la résistance croît avec le carré de la vitesse jusqu'à équilibrer le poids : un humain se stabilise vers 200 km/h. Cette simulation, elle, accélère indéfiniment — c'est ce qui arriverait dans le vide.</li>
+      </ul>
+    </details>
+
+    <p class="famille">Les trois astres ensemble : <a href="../debutant/03.1-chute-et-rebond.html">la page comparée →</a></p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // La SEULE chose qui distingue cette page de ses deux sœurs.
+    const G = 9.81;            // m/s², la gravité de la Terre
+    const COULEUR = 0x58a6ff;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    camera.position.set(3.2, 3, 9); camera.lookAt(3.2, 2.4, 0);
+
+    const grille = new THREE.GridHelper(120, 60, 0x2a313c, 0x1c222b);
+    scene.add(grille);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const lampe = new THREE.DirectionalLight(0xffffff, 2);
+    lampe.position.set(3, 6, 6);
+    scene.add(lampe);
+
+    // --- LA SIMULATION ---
+
+    const RAYON = 0.35;
+    const bille = new THREE.Mesh(
+      new THREE.SphereGeometry(RAYON, 32, 16),
+      new THREE.MeshStandardMaterial({ color: COULEUR, roughness: 0.4, emissive: COULEUR, emissiveIntensity: 0.25 })
+    );
+    scene.add(bille);
+
+    const P = { hauteur: 5, elasticite: 0.7 };
+    let vitesse = 0, rebonds = 0, endormie = false, tContact = null, chrono = 0;
+
+    function lancer() {
+      bille.position.set(3.2, P.hauteur, 0);
+      vitesse = 0; rebonds = 0; endormie = false; tContact = null; chrono = 0;
+    }
+    lancer();
+
+    function pas(dt) {
+      chrono += dt;
+      if (endormie) return;
+
+      // 1) INTÉGRER — la gravité change la vitesse, la vitesse change la position.
+      vitesse -= G * dt;
+      bille.position.y += vitesse * dt;
+
+      // 2) CORRIGER — la position D'ABORD, la vitesse ensuite. Jamais l'inverse.
+      if (bille.position.y - RAYON < 0) {
+        bille.position.y = RAYON;
+        if (tContact === null) tContact = chrono;
+        vitesse = Math.abs(vitesse) * P.elasticite;   // Math.abs, jamais -vitesse
+        rebonds++;
+        if (vitesse < 0.4) { vitesse = 0; endormie = true; }
+      }
+    }
+
+    function etat() {
+      const theorie = Math.sqrt((2 * (P.hauteur - RAYON)) / G);
+      return `hauteur ${(bille.position.y - RAYON).toFixed(2)} m · vitesse ${vitesse.toFixed(2)} m/s\n` +
+             (tContact !== null
+               ? `touché en ${tContact.toFixed(2)} s · théorie √(2h/g) = ${theorie.toFixed(2)} s\n${rebonds} rebond${rebonds > 1 ? 's' : ''}${endormie ? ' · au repos' : ''}`
+               : `chute en cours · théorie √(2h/g) = ${theorie.toFixed(2)} s`);
+    }
+
+    // Déclaré AVANT animer() : sinon la première image lirait une const encore dans sa
+    // « zone morte temporelle » et la boucle planterait à chaque frame.
+    const lecture = document.getElementById('lecture');
+
+    const horloge = new THREE.Clock();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      // Plafonné : au retour d'un onglet, getDelta() peut valoir 30 s et l'objet
+      // traverserait le sol en un pas.
+      const dt = Math.min(horloge.getDelta(), 1 / 30);
+      pas(dt);
+      lecture.textContent = etat();
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un brancheur unique : le curseur écrit dans P, met son étiquette à jour, et relance.
+    function brancher(id, etiq, decimales, apres) {
+      const champ = document.getElementById(id);
+      champ.addEventListener('input', () => {
+        P[id] = Number(champ.value);
+        document.getElementById(etiq).textContent = P[id].toFixed(decimales);
+        apres();
+      });
+    }
+
+    brancher('hauteur', 'lh', 1, lancer);
+    brancher('elasticite', 'le', 2, lancer);
+
+    document.getElementById('relancer').addEventListener('click', lancer);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

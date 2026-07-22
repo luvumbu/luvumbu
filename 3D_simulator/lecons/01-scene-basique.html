@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>01 — Scène basique</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <!-- L'import map dit au navigateur où trouver le module "three".
+       Aucun bundler (Vite/Webpack) n'est nécessaire : le navigateur charge les modules ES nativement. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>01 — Scène, caméra, renderer</h2>
+    <p>Les trois objets indispensables de toute application Three.js.</p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // 1. LA SCÈNE — le conteneur de tout ce qui est affiché.
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    // 2. LA CAMÉRA — perspective(champ de vision, ratio, near, far).
+    //    Tout ce qui est à moins de `near` ou au-delà de `far` n'est pas dessiné.
+    const camera = new THREE.PerspectiveCamera(
+      75,                                     // FOV vertical en degrés
+      window.innerWidth / window.innerHeight, // ratio d'aspect
+      0.1,                                    // plan proche
+      1000                                    // plan lointain
+    );
+    camera.position.z = 3; // par défaut la caméra est en (0,0,0), donc DANS le cube
+
+    // 3. LE RENDERER — dessine la scène vue par la caméra dans un <canvas>.
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // évite de ramer sur écran 4K
+    document.body.appendChild(renderer.domElement);
+
+    // UN OBJET = géométrie (la forme) + matériau (l'apparence) → Mesh.
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshNormalMaterial(); // colore selon l'orientation des faces, pas besoin de lumière
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    // LA BOUCLE DE RENDU — appelée ~60 fois par seconde par le navigateur.
+    function animate() {
+      requestAnimationFrame(animate);
+
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Garder le rendu net quand la fenêtre change de taille.
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix(); // obligatoire après avoir modifié la caméra
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+
+  <!-- Affiche le code ci-dessus dans un panneau latéral. -->
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>06 — Charger un modèle glTF</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>06 — Charger un modèle glTF</h2>
+    <p>
+      glTF (<code>.gltf</code> / <code>.glb</code>) est le format standard du web 3D :
+      géométrie, matériaux PBR, animations et squelette dans un seul fichier.
+    </p>
+    <p id="statut">Chargement… 0 %</p>
+    <a href="../index.html">← Sommaire</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 4);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // compresse les hautes lumières, rendu plus "photo"
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.8;
+
+    // Un modèle PBR a besoin d'un environnement pour ses reflets, sinon le métal paraît noir.
+    // RoomEnvironment génère une petite pièce virtuelle : pas de fichier HDRI à télécharger.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    const statut = document.getElementById('statut');
+
+    // --- Le chargement est ASYNCHRONE : 3 callbacks (succès, progression, erreur) ---
+    const loader = new GLTFLoader();
+    loader.load(
+      // En local vous mettriez : 'models/mon-modele.glb'
+      'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf',
+
+      (gltf) => {
+        const modele = gltf.scene;
+
+        // Un fichier glTF n'a aucune garantie d'échelle ni de centrage.
+        // Box3 calcule la boîte englobante, on recentre et on normalise la taille.
+        const boite = new THREE.Box3().setFromObject(modele);
+        const centre = boite.getCenter(new THREE.Vector3());
+        const taille = boite.getSize(new THREE.Vector3()).length();
+
+        modele.position.sub(centre);            // recentre sur l'origine
+        modele.scale.setScalar(3 / taille);     // ramène à ~3 unités de diagonale
+
+        // traverse() parcourt tout l'arbre : le modèle est un Group d'enfants Mesh.
+        modele.traverse((noeud) => {
+          if (noeud.isMesh) {
+            noeud.castShadow = true;
+            noeud.receiveShadow = true;
+          }
+        });
+
+        scene.add(modele);
+        statut.textContent = 'Modèle chargé. Faites-le tourner à la souris.';
+
+        // Si le fichier contient des animations :
+        // const mixer = new THREE.AnimationMixer(modele);
+        // gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+        // ... puis dans la boucle : mixer.update(dt);
+      },
+
+      (evt) => {
+        if (evt.lengthComputable) {
+          const pct = Math.round((evt.loaded / evt.total) * 100);
+          statut.textContent = `Chargement… ${pct} %`;
+        }
+      },
+
+      (err) => {
+        statut.innerHTML = 'Échec du chargement (connexion ?).<br>Un cube de secours est affiché.';
+        console.error(err);
+        scene.add(new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 1.5, 1.5),
+          new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.3, metalness: 0.7 })
+        ));
+      }
+    );
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

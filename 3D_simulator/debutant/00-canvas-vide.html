@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 0 — Un écran vide (mais qui marche)</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 0 — Un écran vide</h2>
+    <p>
+      Oui, il n'y a rien à voir. C'est normal, et c'est le but : ces
+      <b>10 lignes</b> sont le socle de <i>toutes</i> les pages qui suivent.
+    </p>
+    <p>
+      Si le fond est bleu foncé, Three.js fonctionne. Si la page est blanche,
+      c'est que vous l'avez ouverte en double-cliquant : passez par
+      <code>http://localhost/</code>.
+    </p>
+    <p><b>Nouveau ici :</b> la scène, la caméra, le renderer.</p>
+    <a href="../index.html">← Sommaire</a> ·
+    <a href="00b-couleur-du-fond.html">Étape suivante →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // Une application Three.js répond toujours à 3 questions.
+
+    // 1) QUOI afficher ?  → la scène est la boîte qui contiendra nos objets.
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1c3a5e); // bleu, pour prouver que ça marche
+
+    // 2) VU D'OÙ ?  → la caméra. On règlera ses paramètres à l'étape suivante.
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+
+    // 3) DESSINÉ OÙ ?  → le renderer, qui fabrique une balise <canvas>.
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement); // sans ça, le canvas n'est pas dans la page
+
+    // Et on dessine. Une seule fois : rien ne bouge encore.
+    renderer.render(scene, camera);
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

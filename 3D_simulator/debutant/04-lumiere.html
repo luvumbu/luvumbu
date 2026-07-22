@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Étape 4 — Pourquoi mon objet est noir ?</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud">
+    <h2>Étape 4 — La lumière</h2>
+    <p>
+      Jusqu'ici on trichait avec <code>MeshNormalMaterial</code>, qui n'a pas besoin de lumière.
+      Un matériau réaliste, lui, ne fait que <b>renvoyer</b> la lumière qu'il reçoit.
+      Sans lumière : noir.
+    </p>
+    <p><label><input type="checkbox" id="allumer"> Allumer la lumière</label></p>
+    <p><b>Nouveau ici :</b> <code>MeshStandardMaterial</code>, <code>AmbientLight</code>,
+      <code>DirectionalLight</code>.</p>
+    <a href="03.4b-deformation-maillee.html">← Précédent</a> ·
+    <a href="04.1-jour-nuit.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+    camera.position.z = 3;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true }); // antialias : lisse les bords
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // --- Ce qui est nouveau ---
+
+    // Un matériau qui RÉAGIT à la lumière. Sa couleur orange n'apparaîtra
+    // que si quelque chose l'éclaire.
+    const materiau = new THREE.MeshStandardMaterial({ color: 0xf78166 });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materiau);
+    scene.add(cube);
+
+    // Deux lumières complémentaires, c'est la recette de base d'une scène crédible.
+
+    // 1) L'ambiante éclaire tout, partout, pareil. Elle ne crée aucun relief :
+    //    seule, elle donne une silhouette plate. Elle sert à déboucher les ombres.
+    const ambiante = new THREE.AmbientLight(0xffffff, 0.4); // (couleur, intensité)
+
+    // 2) La directionnelle envoie des rayons parallèles, comme le soleil.
+    //    C'est elle qui crée le relief : une face éclairée, une face sombre.
+    //    Seule sa DIRECTION compte ; la distance n'a aucun effet.
+    const soleil = new THREE.DirectionalLight(0xffffff, 3);
+    soleil.position.set(2, 3, 4);
+
+    document.getElementById('allumer').addEventListener('change', (e) => {
+      if (e.target.checked) scene.add(ambiante, soleil);
+      else scene.remove(ambiante, soleil);
+    });
+
+    // Donc, si un objet apparaît tout noir, posez-vous ces deux questions :
+    //   - y a-t-il une lumière dans la scène ?
+    //   - ai-je bien fait scene.add(...) sur cette lumière ?
+
+    function animer() {
+      requestAnimationFrame(animer);
+      cube.rotation.x += 0.005;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animer();
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

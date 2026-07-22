@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>CapsuleGeometry — La capsule</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>CapsuleGeometry</h2>
+    <p class="famille">Les primitives · La capsule</p>
+    <p>Un cylindre coiffé de deux demi-sphères. C'est <b>la</b> forme du corps d'un
+            personnage dans presque tous les moteurs de jeu, et pour une bonne raison.</p>
+
+      <label>radius — rayon
+        <input type="range" data-p="radius" min="0.1" max="1" step="0.05" value="0.4"></label>
+      <label>length — longueur du DROIT
+        <input type="range" data-p="length" min="0" max="2" step="0.05" value="0.8"></label>
+      <label>capSegments — finesse des calottes
+        <input type="range" data-p="capSegments" min="1" max="16" step="1" value="8"></label>
+      <label>radialSegments — côtés
+        <input type="range" data-p="radialSegments" min="3" max="48" step="1" value="16"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (4)</summary>
+      <ul>
+        <li><code>length</code> n'est <b>pas</b> la hauteur totale : c'est seulement la partie droite, entre les deux calottes. La hauteur réelle vaut <code>length + 2 × radius</code>. Mettez <code>length = 0</code> : il reste une sphère.</li>
+        <li><code>class CapsuleGeometry extends LatheGeometry</code> : une capsule est un profil arrondi qu'on fait tourner. Ce n'est pas un cylindre auquel on colle des sphères.</li>
+        <li>C'est la forme des collisions de personnage parce qu'elle n'a <b>aucune arête</b> : elle glisse le long des murs et monte les marches sans jamais s'accrocher.</li>
+        <li>Elle coûte cher en triangles pour sa taille — regardez le compteur. Deux calottes sphériques, ça se paie.</li>
+      </ul>
+    </details>
+
+    <a href="04-cone.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="06-torus.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de CapsuleGeometry, dans l'ordre de sa signature.
+    const P = {
+      radius: 0.4,
+      length: 0.8,
+      capSegments: 8,
+      radialSegments: 16,
+    };
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.CapsuleGeometry(P.radius, P.length, P.capSegments, P.radialSegments);
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.CapsuleGeometry(${fmt(P.radius)}, ${fmt(P.length)}, ${fmt(P.capSegments)}, ${fmt(P.radialSegments)})`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>

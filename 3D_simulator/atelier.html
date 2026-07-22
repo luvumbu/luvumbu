@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>L'atelier — un script qui pilote la page</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+<body class="page-editeur">
+
+  <header class="barre">
+    <a class="retour" href="index.html">←</a>
+    <strong id="titre">L'atelier</strong>
+
+    <select id="exercices" title="Choisir un exercice"></select>
+
+    <label class="auto"><input type="checkbox" id="auto" checked> Exécution auto</label>
+    <button id="lancer" type="button">Exécuter <kbd>Ctrl</kbd>+<kbd>↵</kbd></button>
+    <button id="solution" type="button" class="secondaire" title="Une solution possible">Solution</button>
+    <button id="reinit" type="button" class="secondaire">Réinitialiser</button>
+  </header>
+
+  <main class="atelier">
+    <section class="colonne-edition">
+      <div class="consigne" id="consigne"></div>
+      <!-- L'éditeur est injecté ici par js/editeur-widget.js — le même que partout. -->
+      <div id="zone-edition"></div>
+    </section>
+
+    <section class="rendu">
+      <div id="apercu"></div>
+      <div class="console">
+        <header>
+          Console
+          <button id="vider" type="button" class="secondaire">Vider</button>
+        </header>
+        <ul id="journal"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { creerEditeur } from './js/editeur-widget.js';
+    import { EXERCICES } from './js/atelier-exercices.js';
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Ici, contrairement à editeur.html, le code de l'utilisateur ne REMPLACE pas la
+    // page : la scène ci-dessous est créée UNE fois, elle tourne en continu, et le
+    // script vient agir dessus. D'où le new Function() plutôt qu'une iframe — il faut
+    // que le script touche NOS objets, pas une copie dans un autre document.
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    const apercu = document.getElementById('apercu');
+    const journalEl = document.getElementById('journal');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);   // un Color, jamais un nombre : le script écrit DEDANS
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    apercu.append(renderer.domElement);
+
+    // On note ce que le script ajoute pour pouvoir le retirer au lancement suivant.
+    // Un THREE.Group() serait plus simple à vider — mais il compterait comme un enfant
+    // de la scène, et scene.children.length afficherait 1 sur une scène vide. Mentir
+    // sur le premier exemple pour s'épargner trois lignes, non.
+    const ajoutes = [];
+    let rappels = [];      // les fonctions passées à chaqueImage()
+    let t0 = performance.now() / 1000;
+
+    function dimensionner() {
+      const l = apercu.clientWidth, h = apercu.clientHeight;
+      if (!l || !h) return;
+      renderer.setSize(l, h, false);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      camera.aspect = l / h;
+      camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(dimensionner).observe(apercu);
+
+    // ── L'API offerte au script ────────────────────────────────────────────────
+    function ajouter(objet) { scene.add(objet); ajoutes.push(objet); return objet; }
+    function chaqueImage(fn) { rappels.push(fn); }
+
+    function ecrire(classe, texte) {
+      const li = document.createElement('li');
+      li.className = classe;
+      li.textContent = texte;
+      journalEl.append(li);
+      journalEl.scrollTop = journalEl.scrollHeight;
+    }
+    const log = (...a) => ecrire('log', a.map(afficher).join(' '));
+
+    // Un Vector3 passé à String() donne « [object Object] » : inutile pour apprendre.
+    function afficher(v) {
+      if (v instanceof THREE.Vector3) return `(${v.x}, ${v.y}, ${v.z})`;
+      if (v instanceof THREE.Color) return '#' + v.getHexString();
+      if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(3);
+      if (typeof v === 'object' && v !== null) { try { return JSON.stringify(v); } catch { return String(v); } }
+      return String(v);
+    }
+
+    // new Function enveloppe le code : ligne 1 = « function anonymous(THREE,scene,… », 2 = « ) { »,
+    // et le corps commence en 3. On retranche 2 pour retomber sur la ligne que l'utilisateur voit.
+    function erreur(e) {
+      const m = /<anonymous>:(\d+):(\d+)/.exec(e.stack || '');
+      const ligne = m ? ` (ligne ${Math.max(1, +m[1] - 2)})` : '';
+      ecrire('erreur', `${e.name}: ${e.message}${ligne}`);
+    }
+
+    // ── Nettoyage entre deux exécutions ────────────────────────────────────────
+    function nettoyer() {
+      for (const objet of ajoutes) {
+        objet.traverse((o) => {
+          o.geometry?.dispose();
+          // material peut être un tableau (un matériau par face) : rare, mais réel.
+          for (const m of [o.material].flat()) m?.dispose?.();
+        });
+        scene.remove(objet);
+      }
+      ajoutes.length = 0;
+      rappels = [];
+      scene.background.set(0x000000);
+      camera.position.set(0, 0, 5);
+      camera.rotation.set(0, 0, 0);
+      t0 = performance.now() / 1000;
+    }
+
+    function executerScript(code) {
+      nettoyer();
+      try {
+        const fn = new Function('THREE', 'scene', 'camera', 'renderer', 'ajouter', 'chaqueImage', 'log', code);
+        fn(THREE, scene, camera, renderer, ajouter, chaqueImage, log);
+      } catch (e) {
+        erreur(e);
+      }
+    }
+
+    // ── La boucle : elle tourne depuis le chargement et ne s'arrête jamais ──────
+    let precedent = performance.now() / 1000;
+    function animer() {
+      requestAnimationFrame(animer);
+      const maintenant = performance.now() / 1000;
+      const dt = Math.min(maintenant - precedent, 0.1);   // un onglet en arrière-plan rendrait dt énorme
+      precedent = maintenant;
+
+      for (const fn of rappels) {
+        try {
+          fn(maintenant - t0, dt);
+        } catch (e) {
+          // Sans ce vidage, une erreur dans une boucle par image en cracherait 60 par
+          // seconde et la console deviendrait illisible en un clin d'œil.
+          rappels = [];
+          erreur(e);
+          ecrire('erreur', 'Boucle arrêtée. Corrigez, puis relancez.');
+          break;
+        }
+      }
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // ── Les exercices ──────────────────────────────────────────────────────────
+    const autoEl = document.getElementById('auto');
+    const selectEl = document.getElementById('exercices');
+    const consigneEl = document.getElementById('consigne');
+    const boutonSolution = document.getElementById('solution');
+
+    for (const ex of EXERCICES) selectEl.append(new Option(ex.titre, ex.id));
+
+    // Le travail en cours est gardé PAR EXERCICE : passer de 0 à 0b puis revenir ne doit
+    // pas effacer ce qu'on a écrit. Une seule clé partagée, et on perdrait tout.
+    const cle = (id) => 'atelier:' + id;
+
+    let courant = EXERCICES[0];
+    let minuteur;
+
+    const editeur = creerEditeur(document.getElementById('zone-edition'), {
+      code: sessionStorage.getItem(cle(courant.id)) || courant.code,
+      onExecuter: lancer,
+      onSaisie: () => {
+        sessionStorage.setItem(cle(courant.id), editeur.valeur());
+        if (!autoEl.checked) return;
+        // Sans ce délai, le script serait relancé à chaque touche — donc sur du code
+        // à moitié écrit, et la console ne montrerait que des erreurs de syntaxe.
+        clearTimeout(minuteur);
+        minuteur = setTimeout(lancer, 800);
+      },
+    });
+
+    function lancer() {
+      journalEl.replaceChildren();
+      dimensionner();
+      executerScript(editeur.valeur());
+      sessionStorage.setItem(cle(courant.id), editeur.valeur());
+    }
+
+    function afficherConsigne(ex) {
+      consigneEl.innerHTML =
+        `<h3>${ex.titre}</h3><p>${ex.consigne}</p>` +
+        (ex.essais
+          ? `<p class="essais"><b>À essayer</b></p><ul>${ex.essais.map((e) => `<li>${e}</li>`).join('')}</ul>`
+          : '');
+      boutonSolution.style.display = ex.solution ? '' : 'none';
+    }
+
+    function charger(ex, code) {
+      courant = ex;
+      document.getElementById('titre').textContent = ex.titre;
+      afficherConsigne(ex);
+      editeur.definir(code);
+      lancer();
+    }
+
+    document.getElementById('lancer').addEventListener('click', lancer);
+    document.getElementById('vider').addEventListener('click', () => journalEl.replaceChildren());
+
+    selectEl.addEventListener('change', (e) => {
+      const ex = EXERCICES.find((x) => x.id === e.target.value);
+      if (!ex) return;
+      // On reprend le travail en cours de CET exercice, s'il y en a un.
+      charger(ex, sessionStorage.getItem(cle(ex.id)) || ex.code);
+    });
+
+    boutonSolution.addEventListener('click', () => {
+      if (!courant.solution) return;
+      if (!confirm('Charger une solution ? Votre code sera remplacé.')) return;
+      editeur.definir(courant.solution);
+      lancer();
+    });
+
+    document.getElementById('reinit').addEventListener('click', () => {
+      if (!confirm('Revenir au code de départ ? Vos modifications seront perdues.')) return;
+      sessionStorage.removeItem(cle(courant.id));
+      charger(courant, courant.code);
+    });
+
+    charger(courant, sessionStorage.getItem(cle(courant.id)) || courant.code);
+  </script>
+</body>
+</html>

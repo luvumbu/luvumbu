@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>TorusKnotGeometry — Le nœud torique</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div class="hud hud-forme">
+    <h2>TorusKnotGeometry</h2>
+    <p class="famille">Tores et surfaces plates · Le nœud torique</p>
+    <p>La forme mascotte de Three.js, celle de tous les exemples. Derrière la démo,
+            deux entiers qui viennent de la théorie des nœuds.</p>
+
+      <label>radius
+        <input type="range" data-p="radius" min="0.2" max="1.2" step="0.05" value="0.7"></label>
+      <label>tube — épaisseur
+        <input type="range" data-p="tube" min="0.02" max="0.4" step="0.02" value="0.22"></label>
+      <label>tubularSegments
+        <input type="range" data-p="tubularSegments" min="8" max="256" step="4" value="96"></label>
+      <label>radialSegments
+        <input type="range" data-p="radialSegments" min="3" max="24" step="1" value="12"></label>
+      <label>p — tours autour de l’axe
+        <input type="range" data-p="p" min="1" max="8" step="1" value="2"></label>
+      <label>q — tours dans le trou
+        <input type="range" data-p="q" min="1" max="8" step="1" value="3"></label>
+    <label><input type="checkbox" id="fil"> wireframe — voir les triangles</label>
+
+    <p class="appel"><code id="appel"></code></p>
+    <p><code id="tris"></code></p>
+
+    <details open>
+      <summary>Ce qu'il faut savoir (3)</summary>
+      <ul>
+        <li><b>p</b> et <b>q</b> doivent être <b>premiers entre eux</b> pour donner un vrai nœud. Sinon la courbe se referme trop tôt et vous obtenez un enlacement, pas un nœud. Essayez (2, 4) : ce n'est plus un nœud. (2, 3) est le trèfle, le plus simple qui existe.</li>
+        <li>Si <code>p</code> ou <code>q</code> vaut <b>1</b>, il n'y a aucun nœud : c'est un simple tore déformé. Le curseur le montre en un geste.</li>
+        <li>Baissez <code>tubularSegments</code> : la courbe devient un polygone et le tube se casse en morceaux. Cette forme a besoin de beaucoup de segments le long — c'est la plus chère du catalogue à qualité égale.</li>
+      </ul>
+    </details>
+
+    <a href="06-torus.html">← Précédent</a> ·
+    <a href="../debutant/05b-toutes-les-formes.html">Le catalogue</a> ·
+    <a href="08-plane.html">Suivant →</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(1.6, 1.2, 3.4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.5);
+    soleil.position.set(3, 5, 6);
+    scene.add(soleil);
+
+    // DoubleSide : beaucoup de ces formes sont des surfaces ouvertes, elles
+    // disparaîtraient de dos (voir étape 1b).
+    const materiau = new THREE.MeshStandardMaterial({
+      color: 0x58a6ff, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide,
+    });
+
+    // Les paramètres du constructeur de TorusKnotGeometry, dans l'ordre de sa signature.
+    const P = {
+      radius: 0.7,
+      tube: 0.22,
+      tubularSegments: 96,
+      radialSegments: 12,
+      p: 2,
+      q: 3,
+    };
+
+    let maille = null;
+
+    // Pour l'affichage de l'appel : un entier reste entier, un flottant est arrondi.
+    // Sans ça, un angle s'afficherait « 6.283185307179586 ».
+    const fmt = (v) => (typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(2) : v);
+
+    function construire() {
+      // On libère l'ancienne géométrie AVANT de la remplacer : JavaScript ramasse ses
+      // miettes, WebGL non. Sans dispose(), chaque mouvement de curseur fuirait du GPU.
+      if (maille) {
+        maille.geometry.dispose();
+        scene.remove(maille);
+      }
+
+      const geometrie = new THREE.TorusKnotGeometry(P.radius, P.tube, P.tubularSegments, P.radialSegments, P.p, P.q);
+
+      maille = new THREE.Mesh(geometrie, materiau);
+      scene.add(maille);
+
+      // Le compte exact : avec un index, les sommets sont réutilisés entre triangles.
+      const nb = (geometrie.index ? geometrie.index.count : geometrie.attributes.position.count) / 3;
+      document.getElementById('tris').textContent = nb.toLocaleString('fr') + ' triangles';
+      document.getElementById('appel').textContent = `new THREE.TorusKnotGeometry(${fmt(P.radius)}, ${fmt(P.tube)}, ${fmt(P.tubularSegments)}, ${fmt(P.radialSegments)}, ${fmt(P.p)}, ${fmt(P.q)})`;
+    }
+    construire();
+
+    function animer() {
+      requestAnimationFrame(animer);
+      maille.rotation.y += 0.006;
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    // Un seul gestionnaire pour tous les curseurs : chacun porte le nom de son paramètre
+    // dans data-p, donc il suffit de le recopier dans P et de reconstruire.
+    for (const champ of document.querySelectorAll('[data-p]')) {
+      champ.addEventListener('input', () => {
+        if (champ.type === 'checkbox') {
+          P[champ.dataset.p] = champ.checked;
+        } else if (champ.dataset.angle !== undefined) {
+          // Le curseur est en DEGRÉS — aucune fonction de Three.js n'en accepte.
+          const deg = Number(champ.value);
+          P[champ.dataset.p] = THREE.MathUtils.degToRad(deg);
+          document.querySelector(`[data-deg="${champ.dataset.p}"]`).textContent = deg + '°';
+        } else {
+          P[champ.dataset.p] = Math.round(Number(champ.value) * 100) / 100; // sinon 0.30000000000000004
+        }
+        construire();
+      });
+    }
+
+    document.getElementById('fil').addEventListener('change', (e) => {
+      materiau.wireframe = e.target.checked;
+    });
+  </script>
+
+  <script type="module" src="../js/code-panel.js"></script>
+</body>
+</html>
