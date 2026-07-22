@@ -1,0 +1,29 @@
+# Dependencies
+/vendor/
+
+# Environment & secrets
+/config/.env
+*.key
+*.pem
+
+# Uploaded files & generated content
+/storage/media/*
+/storage/thumbnails/*
+/storage/logs/*
+!/storage/media/.gitkeep
+!/storage/thumbnails/.gitkeep
+!/storage/logs/.gitkeep
+
+# Composer
+composer.phar
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build artifacts
+/extension-chrome/dist/
+*.zip

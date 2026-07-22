@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Droit de réponse — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <nav class="nav-links"><a href="../">Accueil</a><a href="carte.html">Carte</a></nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="form-page" id="formWrap">
+            <h1>Droit de réponse / contestation</h1>
+            <p class="sub">Vous représentez un établissement, une marque ou une organisation mentionnée ? Exercez votre droit de réponse ou contestez un témoignage. Aucun compte n'est nécessaire.</p>
+
+            <div class="disclaimer" style="margin-top:18px">
+                <span class="ic">⚖️</span>
+                <p>Votre demande est transmise à l'équipe de modération. Votre adresse email est <strong>chiffrée</strong> et ne sert qu'au traitement de votre demande (voir la <a href="confidentialite.html">politique de confidentialité</a>).</p>
+            </div>
+
+            <div class="form-alert" id="alert"></div>
+
+            <form id="contestForm" class="form-section" novalidate>
+                <div class="field" id="f-claimant_name">
+                    <label>Votre nom et prénom <span class="required-star">*</span></label>
+                    <input type="text" name="claimant_name" required placeholder="Ex : Jean Dupont">
+                    <div class="err"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="field" id="f-claimant_email">
+                        <label>Email professionnel <span class="required-star">*</span></label>
+                        <input type="email" name="claimant_email" required placeholder="contact@etablissement.fr">
+                        <div class="err"></div>
+                    </div>
+                    <div class="field" id="f-claimant_role">
+                        <label>Votre fonction</label>
+                        <input type="text" name="claimant_role" placeholder="Ex : Directeur, service juridique">
+                    </div>
+                </div>
+                <div class="field" id="f-report_uuid">
+                    <label>Référence du témoignage concerné (si connue)</label>
+                    <input type="text" name="report_uuid" id="reportUuid" placeholder="Identifiant du signalement (optionnel)">
+                    <div class="hint">Laissez vide si votre demande est générale.</div>
+                    <div class="err"></div>
+                </div>
+                <div class="field" id="f-message">
+                    <label>Votre message <span class="required-star">*</span></label>
+                    <textarea name="message" rows="7" minlength="20" required placeholder="Exposez votre réponse, votre contestation ou votre demande de rectification (au moins 20 caractères)."></textarea>
+                    <div class="err"></div>
+                </div>
+                <div class="submit-bar">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Envoyer ma demande</button>
+                    <a href="../" class="btn btn-ghost">Annuler</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="form-page" id="successWrap" style="display:none">
+            <div class="success-panel">
+                <div class="big">✅</div>
+                <h2>Demande enregistrée</h2>
+                <p id="successMsg"></p>
+                <p>Référence de suivi : <strong id="refNum"></strong></p>
+                <div class="submit-bar" style="justify-content:center">
+                    <a href="../" class="btn btn-primary">Retour à l'accueil</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/core.js"></script>
+    <script>
+        (function () {
+            const { api } = window.App;
+            const params = new URLSearchParams(location.search);
+            const rep = params.get('report');
+            if (rep) document.getElementById('reportUuid').value = rep;
+
+            const form = document.getElementById('contestForm');
+            const alertBox = document.getElementById('alert');
+            const btn = document.getElementById('submitBtn');
+
+            function clearErrors() {
+                alertBox.classList.remove('error'); alertBox.textContent = '';
+                document.querySelectorAll('.field').forEach(f => f.classList.remove('has-error'));
+            }
+            function fieldError(id, msg) {
+                const f = document.getElementById('f-' + id);
+                if (f) { f.classList.add('has-error'); const e = f.querySelector('.err'); if (e) e.textContent = msg; }
+            }
+
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                clearErrors();
+                btn.disabled = true; btn.textContent = 'Envoi…';
+                const body = {
+                    claimant_name: form.claimant_name.value.trim(),
+                    claimant_email: form.claimant_email.value.trim(),
+                    claimant_role: form.claimant_role.value.trim(),
+                    message: form.message.value.trim(),
+                    report_uuid: form.report_uuid.value.trim()
+                };
+                try {
+                    const res = await api('/contestations', { method: 'POST', body });
+                    document.getElementById('formWrap').style.display = 'none';
+                    document.getElementById('successWrap').style.display = 'block';
+                    document.getElementById('successMsg').textContent = res.message || '';
+                    document.getElementById('refNum').textContent = res.reference || '';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (err) {
+                    if (err.errors) for (const [k, v] of Object.entries(err.errors)) fieldError(k, Array.isArray(v) ? v[0] : v);
+                    else { alertBox.classList.add('error'); alertBox.textContent = err.message || 'Envoi impossible.'; }
+                    btn.disabled = false; btn.textContent = 'Envoyer ma demande';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

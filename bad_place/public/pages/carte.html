@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte des signalements — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <nav class="nav-links">
+                <a href="../">Accueil</a>
+                <a href="carte.html">Carte</a>
+                <a href="../#categories">Catégories</a>
+            </nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="map-shell">
+            <div id="map"></div>
+
+            <!-- Panneau légende + filtres -->
+            <div class="map-panel top-left">
+                <h3>🗺️ Carte des témoignages</h3>
+                <div class="live-badge"><span class="live-dot"></span> Temps réel · <span id="pointCount">0</span> lieu(x)</div>
+                <p style="font-size:.8rem;color:var(--c-text-soft);margin:10px 0 4px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Indice de vigilance</p>
+                <div class="map-legend">
+                    <div><span class="lg" style="background:#22c55e"></span> Faible — peu de témoignages</div>
+                    <div><span class="lg" style="background:#f59e0b"></span> Modéré — plusieurs témoignages</div>
+                    <div><span class="lg" style="background:#ef4444"></span> Élevé — nombreux témoignages</div>
+                </div>
+                <p style="font-size:.74rem;color:var(--c-text-soft);margin-top:8px;line-height:1.4">Témoignages non vérifiés. L'indice ne constitue pas un jugement sur l'établissement.</p>
+                <div class="map-filters" id="levelFilters">
+                    <button data-level="" class="active">Tous</button>
+                    <button data-level="low">🟢</button>
+                    <button data-level="medium">🟠</button>
+                    <button data-level="high">🔴</button>
+                </div>
+                <div class="map-filters" style="margin-top:8px">
+                    <button id="zonesToggle">🎯 Zones</button>
+                    <button id="heatToggle">🔥 Thermique</button>
+                </div>
+            </div>
+
+            <!-- Panneau des zones sous vigilance -->
+            <div class="map-panel bottom-left" id="zonesPanel" style="display:none;max-width:260px">
+                <h3>⚠️ Zones sous vigilance</h3>
+                <div id="zonesList"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/vendor/leaflet/leaflet.js"></script>
+    <script src="../assets/vendor/leaflet/leaflet-heat.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/carte.js"></script>
+</body>
+</html>

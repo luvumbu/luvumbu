@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#111111"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/gallery_title"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/sendAllBtn"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/send_all"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:background="#2E7D32"
+                android:paddingHorizontal="14dp" />
+
+            <Button
+                android:id="@+id/cancelBtn"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cancel_send"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:background="#C62828"
+                android:paddingHorizontal="14dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/selectBtn"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/select_mode"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:background="#455A64"
+                android:paddingHorizontal="14dp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:id="@+id/accountText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#BBBBBB"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <Button
+                android:id="@+id/shareBtn"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/share_public"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:background="#00897B"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/accountBtn"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sign_in_google"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:background="#1565C0"
+                android:paddingHorizontal="14dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Barre d'actions du mode sélection (masquée par défaut) -->
+    <LinearLayout
+        android:id="@+id/selectionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#0D3B34"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/selCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:text="@string/sel_count_zero" />
+
+        <Button
+            android:id="@+id/selectAllBtn"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/select_all"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:background="#455A64"
+            android:paddingHorizontal="12dp"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/shareSelBtn"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/share_sel"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:background="#00897B"
+            android:paddingHorizontal="12dp"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/deleteSelBtn"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/delete_sel"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:background="#C62828"
+            android:paddingHorizontal="12dp"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/cancelSelBtn"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/close"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:background="#37474F"
+            android:paddingHorizontal="12dp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="4dp"
+        android:clipToPadding="false" />
+
+    <TextView
+        android:id="@+id/emptyText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="@string/gallery_empty"
+        android:textColor="#AAAAAA"
+        android:textSize="15sp"
+        android:visibility="gone" />
+</LinearLayout>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Plateforme citoyenne de signalement des discriminations : témoignez, consultez la carte et les statistiques.">
+    <title>Plateforme de Signalements des Discriminations</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <!-- ===== Header ===== -->
+    <header class="site-header">
+        <div class="container nav">
+            <a href="./" class="brand">
+                <span class="logo">🛡️</span>
+                <span>Signalements</span>
+            </a>
+            <nav class="nav-links">
+                <a href="pages/carte.html">Carte</a>
+                <a href="pages/signalements.html">Signalements</a>
+                <a href="#categories">Catégories</a>
+                <a href="#stats">Statistiques</a>
+            </nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ===== Hero ===== -->
+        <section class="hero">
+            <div class="container">
+                <span class="status-pill">
+                    <span class="dot" id="api-dot"></span>
+                    <span id="api-status">Connexion au service…</span>
+                </span>
+                <h1>Documenter les <span class="grad">discriminations</span>, ensemble.</h1>
+                <p class="lead">
+                    Signalez une situation de discrimination ou de traitement inéquitable dans un lieu,
+                    une entreprise ou une marque. Consultez la carte, les tendances et les statistiques anonymisées.
+                </p>
+                <div class="hero-cta">
+                    <a href="pages/signaler.html" class="btn btn-primary btn-lg">＋ Faire un signalement</a>
+                    <a href="pages/carte.html" class="btn btn-ghost btn-lg">🗺️ Explorer la carte</a>
+                </div>
+
+                <div class="disclaimer">
+                    <span class="ic">⚖️</span>
+                    <p>
+                        <strong>Avertissement :</strong> les contenus publiés sont des <strong>témoignages d'utilisateurs</strong>
+                        et ne constituent pas des faits juridiquement établis. Chaque signalement est modéré, et les
+                        organisations concernées disposent d'un droit de réponse et de contestation.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Stats ===== -->
+        <section class="block" id="stats">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">En chiffres</p>
+                    <h2>Une base de données ouverte et transparente</h2>
+                </div>
+                <div class="stats">
+                    <a class="stat" href="pages/signalements.html"><div class="num" id="stat-reports">—</div><div class="lbl">Signalements publiés →</div></a>
+                    <a class="stat" href="#categories"><div class="num" id="stat-categories">—</div><div class="lbl">Catégories →</div></a>
+                    <a class="stat" href="pages/signalements.html"><div class="num" id="stat-motifs">—</div><div class="lbl">Motifs →</div></a>
+                    <a class="stat" href="pages/carte.html"><div class="num" id="stat-types">—</div><div class="lbl">Types de discrimination →</div></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Carte (aperçu) ===== -->
+        <section class="block" id="carte" style="padding-top:0">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Carte interactive</p>
+                    <h2>Un indice de vigilance, pas un jugement</h2>
+                    <p>Chaque lieu affiche un <strong>indice de vigilance</strong> fondé sur le nombre de témoignages reçus — une invitation à la prudence, pas une conclusion sur l'établissement.</p>
+                </div>
+                <div class="legend">
+                    <span><span class="ld" style="background:var(--c-low)"></span> Faible — peu de témoignages</span>
+                    <span><span class="ld" style="background:var(--c-medium)"></span> Modéré — plusieurs témoignages</span>
+                    <span><span class="ld" style="background:var(--c-high)"></span> Élevé — nombreux témoignages</span>
+                </div>
+                <div style="text-align:center;margin-top:22px">
+                    <a href="pages/carte.html" class="btn btn-primary">🗺️ Ouvrir la carte</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Catégories ===== -->
+        <section class="block" id="categories" style="background:var(--c-surface-2)">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Domaines couverts</p>
+                    <h2>Signalez dans tous les secteurs</h2>
+                    <p>Commerces, emploi, santé, services publics, transport, logement, marques… chargés en direct depuis la base.</p>
+                </div>
+                <div class="cat-grid" id="cat-grid">
+                    <!-- Rempli par app.js -->
+                    <div class="cat-card"><h3 class="skeleton">Chargement…</h3><div class="chips"><span class="chip skeleton">····</span><span class="chip skeleton">······</span></div></div>
+                    <div class="cat-card"><h3 class="skeleton">Chargement…</h3><div class="chips"><span class="chip skeleton">····</span><span class="chip skeleton">······</span></div></div>
+                    <div class="cat-card"><h3 class="skeleton">Chargement…</h3><div class="chips"><span class="chip skeleton">····</span><span class="chip skeleton">······</span></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Fonctionnement ===== -->
+        <section class="block" id="fonctionnement">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Comment ça marche</p>
+                    <h2>Simple, anonyme si vous le souhaitez</h2>
+                </div>
+                <div class="features">
+                    <div class="feature"><div class="fi">📝</div><h3>1. Témoignez</h3><p>Décrivez la situation, le lieu, la date et les motifs. Ajoutez des photos ou documents. Anonyme possible.</p></div>
+                    <div class="feature"><div class="fi">🛡️</div><h3>2. Modération</h3><p>Chaque signalement est vérifié avant publication pour éviter les contenus abusifs ou diffamatoires.</p></div>
+                    <div class="feature"><div class="fi">📊</div><h3>3. Transparence</h3><p>Les données alimentent une carte et des statistiques anonymisées pour identifier les tendances.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== CTA ===== -->
+        <section class="block" id="signaler">
+            <div class="container">
+                <div class="cta-band">
+                    <h2>Vous avez vécu une discrimination ?</h2>
+                    <p>Votre témoignage compte. Créez un signalement en quelques minutes — anonyme si vous le souhaitez.</p>
+                    <a href="pages/signaler.html" class="btn btn-lg">＋ Faire un signalement</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <div class="brand" style="margin-bottom:10px"><span class="logo">🛡️</span><span>Signalements</span></div>
+                <p style="color:var(--c-text-soft);font-size:.9rem;max-width:34ch">Plateforme citoyenne pour documenter les discriminations, dans le respect du RGPD et des droits de chacun.</p>
+            </div>
+            <div><h4>Plateforme</h4><a href="#carte">Carte</a><a href="#categories">Catégories</a><a href="#stats">Statistiques</a></div>
+            <div><h4>Ressources</h4><a href="pages/contestation.html">Droit de réponse</a><a href="pages/charte-moderation.html">Charte de modération</a><a href="#fonctionnement">Aide</a></div>
+            <div><h4>Légal</h4><a href="pages/mentions-legales.html">Mentions légales</a><a href="pages/confidentialite.html">Confidentialité (RGPD)</a><a href="pages/cgu.html">Conditions (CGU)</a></div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">© <span id="year">2026</span> Plateforme de Signalements — Les témoignages ne constituent pas des faits établis.</div>
+        </div>
+    </footer>
+
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

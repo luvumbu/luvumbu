@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activation_title"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
+            android:text="@string/activation_intro"
+            android:textColor="#BBBBBB"
+            android:textSize="13sp" />
+
+        <!-- SON -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_sound" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_sound_desc" android:textColor="#999999" android:textSize="12sp" android:layout_marginBottom="6dp" />
+        <Button android:id="@+id/soundButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+        <Button android:id="@+id/sensitivityButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="13sp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
+        <!-- SECOUSSE -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_shake" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_shake_desc" android:textColor="#999999" android:textSize="12sp" android:layout_marginBottom="6dp" />
+        <Button android:id="@+id/shakeButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
+        <!-- CAPTURE D'ÉCRAN -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_screenshot" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_screenshot_desc" android:textColor="#999999" android:textSize="12sp" android:layout_marginBottom="6dp" />
+        <Button android:id="@+id/screenshotButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
+        <!-- BOUTON VOLUME (double-clic) -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_volume" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_volume_desc" android:textColor="#999999" android:textSize="12sp" android:layout_marginBottom="6dp" />
+        <Button android:id="@+id/volCtrlButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+        <Button android:id="@+id/volSchemeButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="13sp" />
+        <TextView android:id="@+id/volSchemeHint" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:textColor="#FFFFFF" android:alpha="0.7" android:textSize="12sp" />
+        <Button android:id="@+id/volButtonButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="13sp" />
+        <Button android:id="@+id/volAccessButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="13sp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
+        <!-- ÉCONOMIE BATTERIE -->
+        <Button android:id="@+id/saveBattButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+        <Button android:id="@+id/lowBattButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="13sp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
+        <!-- TUILE (info) -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_tile" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_tile_desc" android:textColor="#999999" android:textSize="12sp" />
+
+        <Button android:id="@+id/closeActivation" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:text="@string/close" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail du signalement — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <nav class="nav-links"><a href="../">Accueil</a><a href="carte.html">Carte</a></nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="detail-page">
+            <a href="carte.html" class="back-link">← Retour à la carte</a>
+
+            <div id="loading" style="color:var(--c-text-soft);padding:40px 0">Chargement du signalement…</div>
+            <div id="notfound" style="display:none;padding:40px 0">
+                <h1>Signalement introuvable</h1>
+                <p style="color:var(--c-text-soft);margin-top:8px">Ce signalement n'existe pas ou n'est pas public.</p>
+                <a href="carte.html" class="btn btn-primary" style="margin-top:16px">Voir la carte</a>
+            </div>
+
+            <article id="content" style="display:none">
+                <div class="detail-hero">
+                    <div>
+                        <h1 id="orgName"></h1>
+                        <p class="sub" id="orgSub"></p>
+                    </div>
+                    <span class="vigil-badge" id="vigilBadge"></span>
+                </div>
+
+                <div class="disclaimer" style="margin-top:18px">
+                    <span class="ic">⚖️</span>
+                    <p>Ce témoignage n'a pas été vérifié et ne constitue pas un fait établi. L'établissement dispose d'un <a id="contestLink" href="contestation.html">droit de réponse</a>.</p>
+                </div>
+
+                <div class="detail-grid two">
+                    <div class="detail-block">
+                        <h2>📍 Le lieu</h2>
+                        <dl class="kv" id="placeKv"></dl>
+                        <div id="detailMap" style="display:none"></div>
+                    </div>
+                    <div class="detail-block">
+                        <h2>⚠️ La cause</h2>
+                        <p style="font-size:.8rem;color:var(--c-text-soft);margin-bottom:4px">Motif(s)</p>
+                        <div class="chips" id="motifs" style="margin-bottom:14px"></div>
+                        <p style="font-size:.8rem;color:var(--c-text-soft);margin-bottom:4px">Type(s) de discrimination</p>
+                        <div class="chips" id="types"></div>
+                    </div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-block">
+                        <h2>📝 Témoignage</h2>
+                        <p class="detail-desc" id="description"></p>
+                        <p style="color:var(--c-text-soft);font-size:.88rem;margin-top:14px" id="authorLine"></p>
+                    </div>
+
+                    <div class="detail-block" id="mediaBlock" style="display:none">
+                        <h2>📎 Pièces jointes</h2>
+                        <div class="media-grid" id="mediaGrid"></div>
+                    </div>
+
+                    <div class="detail-block">
+                        <h2>📊 En chiffres (neutre)</h2>
+                        <div class="stat-row">
+                            <div class="s"><b id="cSimilar">0</b><span>situations similaires</span></div>
+                            <div class="s"><b id="cNot">0</b><span>non constatées</span></div>
+                            <div class="s"><b id="cOrg">0</b><span>témoignages sur ce lieu</span></div>
+                            <div class="s"><b id="cStatus">—</b><span>statut de modération</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-actions">
+                    <a class="btn btn-ghost" id="contestBtn">⚖️ Droit de réponse</a>
+                    <button class="btn btn-ghost" id="abuseBtn">🚩 Signaler ce contenu</button>
+                </div>
+
+                <!-- Formulaire de signalement d'abus (masqué) -->
+                <div class="detail-block" id="abuseForm" style="display:none;margin-top:16px">
+                    <h2>Signaler ce contenu</h2>
+                    <div class="form-alert" id="abuseAlert"></div>
+                    <div class="field">
+                        <label>Motif</label>
+                        <select id="abuseReason">
+                            <option value="defamation">Diffamation</option>
+                            <option value="false_info">Fausse information</option>
+                            <option value="hate">Contenu haineux</option>
+                            <option value="privacy">Atteinte à la vie privée</option>
+                            <option value="spam">Spam</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Précisions (optionnel)</label>
+                        <textarea id="abuseDetails" rows="3" placeholder="Expliquez brièvement…"></textarea>
+                    </div>
+                    <button class="btn btn-primary" id="abuseSubmit">Envoyer le signalement</button>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <script src="../assets/vendor/leaflet/leaflet.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/signalement.js"></script>
+</body>
+</html>

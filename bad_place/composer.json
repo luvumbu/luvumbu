@@ -1,0 +1,36 @@
+{
+    "name": "badplace/platform",
+    "description": "Plateforme de signalement des discriminations - API REST PHP 8 + MySQL",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-gd": "*",
+        "ext-fileinfo": "*",
+        "firebase/php-jwt": "^7.0",
+        "phpmailer/phpmailer": "^6.9",
+        "vlucas/phpdotenv": "^5.6",
+        "ramsey/uuid": "^4.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        },
+        "files": [
+            "src/Core/helpers.php"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "migrate": "php database/migrate.php",
+        "seed": "php database/migrate.php --seed",
+        "serve": "php -S localhost:8000 -t public"
+    }
+}

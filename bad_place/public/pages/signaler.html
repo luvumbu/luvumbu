@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faire un signalement — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <nav class="nav-links">
+                <a href="../">Accueil</a>
+                <a href="carte.html">Carte</a>
+            </nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="form-page" id="formWrap">
+            <h1>Faire un signalement</h1>
+            <p class="sub">Décrivez une situation de discrimination. Les champs marqués <span class="required-star">*</span> sont obligatoires.</p>
+
+            <div class="disclaimer" style="margin-top:18px">
+                <span class="ic">⚖️</span>
+                <p>Votre témoignage sera <strong>modéré</strong>. Il ne constitue pas un fait juridiquement établi. Restez factuel·le et évitez toute donnée permettant d'identifier des personnes.</p>
+            </div>
+
+            <div class="form-alert" id="alert"></div>
+
+            <form id="reportForm" novalidate>
+                <!-- 1. Le lieu / l'entité -->
+                <section class="form-section">
+                    <h2><span class="step-n">1</span> Le lieu, l'entreprise ou la marque</h2>
+                    <p class="s-desc">Que signalez-vous ?</p>
+
+                    <div class="field" id="f-org_name">
+                        <label>Nom <span class="required-star">*</span></label>
+                        <input type="text" name="org_name" placeholder="Ex : Supermarché Belleville, Marque X, Hôtel Y" required>
+                        <div class="err"></div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="field" id="f-org_type">
+                            <label>Type</label>
+                            <select name="org_type">
+                                <option value="place">Lieu physique</option>
+                                <option value="company">Entreprise</option>
+                                <option value="brand">Marque</option>
+                                <option value="online_service">Service en ligne</option>
+                                <option value="other">Autre</option>
+                            </select>
+                        </div>
+                        <div class="field" id="f-category_id">
+                            <label>Catégorie <span class="required-star">*</span></label>
+                            <select name="category_id" id="categorySelect" required>
+                                <option value="">Chargement…</option>
+                            </select>
+                            <div class="err"></div>
+                        </div>
+                    </div>
+
+                    <div class="field" id="f-address">
+                        <label>Adresse</label>
+                        <div class="autocomplete">
+                            <input type="text" name="address" id="addressInput" autocomplete="off" placeholder="Commencez à taper une adresse…">
+                            <ul class="ac-list" id="acList"></ul>
+                        </div>
+                        <div class="hint">Sélectionnez une adresse dans la liste pour la valider (vraies adresses uniquement).</div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field"><label>Ville</label><input type="text" name="city" id="cityInput" placeholder="Ex : Lyon"></div>
+                        <div class="field"><label>Code postal</label><input type="text" name="postal_code" id="postalInput" placeholder="Ex : 69001" maxlength="20"></div>
+                    </div>
+                    <input type="hidden" name="department" id="deptInput">
+                    <input type="hidden" name="region" id="regionInput">
+
+                    <input type="hidden" name="latitude" id="lat">
+                    <input type="hidden" name="longitude" id="lng">
+                    <button type="button" class="btn btn-ghost geo-btn" id="geoBtn">📍 Utiliser ma position actuelle</button>
+                    <div class="geo-result" id="geoResult">Position enregistrée ✓</div>
+                    <p class="hint" style="margin-top:8px">Sinon, les coordonnées seront déduites automatiquement de l'adresse.</p>
+                </section>
+
+                <!-- 2. La situation -->
+                <section class="form-section">
+                    <h2><span class="step-n">2</span> La situation</h2>
+                    <p class="s-desc">Ce qui s'est passé.</p>
+
+                    <div class="grid-2">
+                        <div class="field"><label>Date des faits</label><input type="date" name="incident_date" id="incidentDate"></div>
+                        <div class="field"><label>Heure (optionnel)</label><input type="time" name="incident_time"></div>
+                    </div>
+
+                    <div class="field" id="f-description">
+                        <label>Description <span class="required-star">*</span></label>
+                        <textarea name="description" rows="6" minlength="20" required
+                                  placeholder="Décrivez précisément et factuellement ce qui s'est passé (au moins 20 caractères)."></textarea>
+                        <div class="hint"><span id="charCount">0</span> caractère(s)</div>
+                        <div class="err"></div>
+                    </div>
+
+                    <div class="field" id="f-motifs">
+                        <label>Motif(s) de discrimination <span class="required-star">*</span></label>
+                        <div class="chip-select" id="motifsBox"><span class="chip skeleton">chargement…</span></div>
+                        <div class="err"></div>
+                    </div>
+
+                    <div class="field" id="f-discrimination_types">
+                        <label>Type(s) de discrimination <span class="required-star">*</span></label>
+                        <div class="chip-select" id="typesBox"><span class="chip skeleton">chargement…</span></div>
+                        <div class="err"></div>
+                    </div>
+                </section>
+
+                <!-- 3. Pièces jointes -->
+                <section class="form-section">
+                    <h2><span class="step-n">3</span> Pièces jointes <span style="font-weight:400;color:var(--c-text-soft);font-size:.9rem">(optionnel)</span></h2>
+                    <p class="s-desc">Photos, vidéos ou documents (max 20 Mo par fichier).</p>
+                    <div class="file-drop" id="fileDrop">
+                        <div>📎 Cliquez ou glissez vos fichiers ici</div>
+                        <input type="file" id="fileInput" name="media[]" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,.pdf" hidden>
+                    </div>
+                    <div class="file-list" id="fileList"></div>
+                </section>
+
+                <!-- 4. Options -->
+                <section class="form-section">
+                    <h2><span class="step-n">4</span> Options de publication</h2>
+                    <div class="field checkbox-row">
+                        <input type="checkbox" id="isAnon" name="is_anonymous" value="1">
+                        <label for="isAnon" style="font-weight:400;margin:0">
+                            <strong>Publier anonymement</strong> — votre nom n'apparaîtra pas. Votre identité reste connue de la plateforme (invisible du public) uniquement pour la modération.
+                        </label>
+                    </div>
+                    <div class="field" id="f-reporter_display" style="margin-top:12px">
+                        <label>Nom affiché sur le signalement</label>
+                        <input type="text" name="reporter_display" id="reporterDisplay" placeholder="Votre nom d'affichage">
+                    </div>
+                </section>
+
+                <div class="submit-bar">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Envoyer le signalement</button>
+                    <a href="../" class="btn btn-ghost">Annuler</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Confirmation -->
+        <div class="form-page" id="successWrap" style="display:none">
+            <div class="success-panel">
+                <div class="big">✅</div>
+                <h2 id="successTitle">Signalement envoyé</h2>
+                <p id="successMsg"></p>
+                <div class="submit-bar" style="justify-content:center">
+                    <a href="carte.html" class="btn btn-primary">🗺️ Voir la carte</a>
+                    <a href="signaler.html" class="btn btn-ghost">Faire un autre signalement</a>
+                    <a href="../" class="btn btn-ghost">Accueil</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/signaler.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# ============================================================
+#  Redirige tout le trafic vers le dossier public/
+#  (la racine web réelle est /public — voir public/.htaccess)
+# ============================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # N'agit pas si on est déjà dans public/
+    RewriteCond %{REQUEST_URI} !^/public/ [NC]
+    RewriteCond %{REQUEST_URI} !/public/ [NC]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Bloque l'accès direct aux dossiers hors public
+<FilesMatch "\.(env|log|sql|lock)$">
+    Require all denied
+</FilesMatch>

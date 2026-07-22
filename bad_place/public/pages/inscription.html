@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un compte — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <div class="nav-actions"><a href="connexion.html" class="btn btn-ghost">Se connecter</a></div>
+        </div>
+    </header>
+
+    <main class="auth-wrap">
+        <div class="auth-card">
+            <h1>Créer un compte</h1>
+            <p class="sub">Un compte est nécessaire pour signaler — vous pourrez publier <strong>anonymement</strong> si vous le souhaitez.</p>
+
+            <div class="form-alert" id="alert"></div>
+
+            <form id="registerForm" novalidate>
+                <div class="field" id="f-display_name">
+                    <label for="display_name">Nom d'affichage</label>
+                    <input type="text" id="display_name" name="display_name" autocomplete="nickname" required placeholder="Ex : Camille D.">
+                    <div class="hint">Visible sur vos signalements non anonymes. Vous pouvez utiliser un pseudonyme.</div>
+                    <div class="err"></div>
+                </div>
+                <div class="field" id="f-email">
+                    <label for="email">Adresse email</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required placeholder="vous@exemple.fr">
+                    <div class="err"></div>
+                </div>
+                <div class="field" id="f-password">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" autocomplete="new-password" required placeholder="Au moins 8 caractères">
+                    <div class="hint">8 caractères minimum.</div>
+                    <div class="err"></div>
+                </div>
+                <div class="field checkbox-row" id="f-terms">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms" style="font-weight:400;margin:0">
+                        J'accepte les <a href="cgu.html" target="_blank">conditions d'utilisation</a> et la
+                        <a href="confidentialite.html" target="_blank">politique de confidentialité</a>, et je comprends que les signalements sont des témoignages.
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">Créer mon compte</button>
+            </form>
+
+            <div class="or-sep" id="orSep" style="display:none">ou</div>
+            <div class="google-box" id="googleBtn"></div>
+
+            <p class="auth-switch">Déjà un compte ? <a href="connexion.html">Se connecter</a></p>
+        </div>
+    </main>
+
+    <script src="../assets/js/core.js"></script>
+    <script>
+        (function () {
+            if (window.App.auth.isLoggedIn()) { location.href = '../'; return; }
+
+            const params = new URLSearchParams(location.search);
+            const next = params.get('next');
+            const form = document.getElementById('registerForm');
+            const alertBox = document.getElementById('alert');
+            const btn = document.getElementById('submitBtn');
+
+            function clearErrors() {
+                alertBox.className = 'form-alert'; alertBox.textContent = '';
+                document.querySelectorAll('.field').forEach(f => f.classList.remove('has-error'));
+            }
+            function fieldError(id, msg) {
+                const f = document.getElementById('f-' + id);
+                if (f) { f.classList.add('has-error'); const e = f.querySelector('.err'); if (e) e.textContent = msg; }
+            }
+
+            function gotoNext() {
+                location.href = next && /^[a-zA-Z0-9_.\-#]+$/.test(next) ? next : '../';
+            }
+
+            // 1) Le formulaire d'inscription (prioritaire)
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearErrors();
+                if (!document.getElementById('terms').checked) {
+                    fieldError('terms', 'Vous devez accepter les conditions.');
+                    return;
+                }
+                btn.disabled = true; btn.textContent = 'Création…';
+                try {
+                    await window.App.auth.register({
+                        display_name: document.getElementById('display_name').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value
+                    });
+                    location.href = next && /^[a-zA-Z0-9_.\-#]+$/.test(next) ? next : '../';
+                } catch (err) {
+                    if (err.errors && Object.keys(err.errors).length) {
+                        for (const [k, v] of Object.entries(err.errors)) fieldError(k, Array.isArray(v) ? v[0] : v);
+                    } else {
+                        alertBox.classList.add('error');
+                        alertBox.textContent = err.message || 'Inscription impossible.';
+                    }
+                    btn.disabled = false; btn.textContent = 'Créer mon compte';
+                }
+            });
+
+            // 2) Bouton Google (facultatif, isolé)
+            try {
+                if (window.App && typeof window.App.mountGoogle === 'function') {
+                    window.App.mountGoogle('googleBtn', gotoNext, (err) => {
+                        alertBox.classList.add('error');
+                        alertBox.textContent = err.message || 'Connexion Google échouée.';
+                    }).then(ok => { if (ok) document.getElementById('orSep').style.display = 'flex'; }).catch(() => {});
+                }
+            } catch (e) { /* Google indisponible : l'inscription email reste fonctionnelle */ }
+        })();
+    </script>
+</body>
+</html>

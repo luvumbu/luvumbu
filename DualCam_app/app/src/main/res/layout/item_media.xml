@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="150dp"
+    android:layout_margin="4dp"
+    android:background="#222222">
+
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/gallery" />
+
+    <ImageView
+        android:id="@+id/playIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_play"
+        android:alpha="0.85"
+        android:visibility="gone"
+        android:contentDescription="@string/gallery" />
+
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#99000000"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="3dp"
+        android:textColor="@color/white"
+        android:textSize="11sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Voile de sélection (masqué par défaut) -->
+    <View
+        android:id="@+id/selectOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#6600897B"
+        android:visibility="gone" />
+
+    <!-- Coche de sélection (coin haut-gauche, visible en mode sélection) -->
+    <TextView
+        android:id="@+id/selectCheck"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="☐"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:background="#99000000"
+        android:visibility="gone"
+        android:contentDescription="@string/select_item" />
+
+    <!-- Bouton d'envoi individuel (coin haut-droit) -->
+    <TextView
+        android:id="@+id/uploadBtn"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="⬆"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:background="#99000000"
+        android:contentDescription="@string/send" />
+
+    <!-- Pastille « déjà envoyé » (masquée par défaut) -->
+    <TextView
+        android:id="@+id/uploadedBadge"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="✓"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:background="#992E7D32"
+        android:visibility="gone"
+        android:contentDescription="@string/sent_ok" />
+</FrameLayout>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <div class="nav-actions"><a href="inscription.html" class="btn btn-ghost">Créer un compte</a></div>
+        </div>
+    </header>
+
+    <main class="auth-wrap">
+        <div class="auth-card">
+            <h1>Connexion</h1>
+            <p class="sub">Connectez-vous pour créer et suivre vos signalements.</p>
+
+            <div class="form-alert" id="alert"></div>
+
+            <form id="loginForm" novalidate>
+                <div class="field" id="f-email">
+                    <label for="email">Adresse email</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required placeholder="vous@exemple.fr">
+                    <div class="err"></div>
+                </div>
+                <div class="field" id="f-password">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+                    <div class="err"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">Se connecter</button>
+            </form>
+
+            <div class="or-sep" id="orSep" style="display:none">ou</div>
+            <div class="google-box" id="googleBtn"></div>
+
+            <p class="auth-switch">Pas encore de compte ? <a href="inscription.html">Créer un compte</a></p>
+        </div>
+    </main>
+
+    <script src="../assets/js/core.js"></script>
+    <script>
+        (function () {
+            // Si déjà connecté, on redirige
+            if (window.App.auth.isLoggedIn()) { location.href = '../'; return; }
+
+            const params = new URLSearchParams(location.search);
+            const next = params.get('next');
+            const form = document.getElementById('loginForm');
+            const alertBox = document.getElementById('alert');
+            const btn = document.getElementById('submitBtn');
+
+            function clearErrors() {
+                alertBox.classList.remove('error'); alertBox.textContent = '';
+                document.querySelectorAll('.field').forEach(f => f.classList.remove('has-error'));
+            }
+            function fieldError(id, msg) {
+                const f = document.getElementById('f-' + id);
+                if (f) { f.classList.add('has-error'); f.querySelector('.err').textContent = msg; }
+            }
+
+            function gotoNext() {
+                location.href = next && /^[a-zA-Z0-9_.\-#]+$/.test(next) ? next : '../';
+            }
+
+            // 1) Le formulaire de connexion (prioritaire, ne doit jamais être bloqué par Google)
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearErrors();
+                btn.disabled = true; btn.textContent = 'Connexion…';
+                try {
+                    await window.App.auth.login({
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value
+                    });
+                    location.href = next && /^[a-zA-Z0-9_.\-#]+$/.test(next) ? next : '../';
+                } catch (err) {
+                    if (err.errors && Object.keys(err.errors).length) {
+                        for (const [k, v] of Object.entries(err.errors)) fieldError(k, Array.isArray(v) ? v[0] : v);
+                    } else {
+                        alertBox.classList.add('error');
+                        alertBox.textContent = err.message || 'Connexion impossible.';
+                    }
+                    btn.disabled = false; btn.textContent = 'Se connecter';
+                }
+            });
+
+            // 2) Bouton Google (facultatif, isolé pour ne pas casser le reste)
+            try {
+                if (window.App && typeof window.App.mountGoogle === 'function') {
+                    window.App.mountGoogle('googleBtn', gotoNext, (err) => {
+                        alertBox.classList.add('error');
+                        alertBox.textContent = err.message || 'Connexion Google échouée.';
+                    }).then(ok => { if (ok) document.getElementById('orSep').style.display = 'flex'; }).catch(() => {});
+                }
+            } catch (e) { /* Google indisponible : le login email reste fonctionnel */ }
+        })();
+    </script>
+</body>
+</html>

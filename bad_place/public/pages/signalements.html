@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tous les signalements — Signalements</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav">
+            <a href="../" class="brand"><span class="logo">🛡️</span><span>Signalements</span></a>
+            <nav class="nav-links"><a href="../">Accueil</a><a href="carte.html">Carte</a></nav>
+            <div class="nav-actions" data-auth-actions></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="list-page">
+            <h1>Signalements publiés</h1>
+            <p class="sub">Témoignages modérés et publiés. <strong>Non vérifiés</strong> — ce ne sont pas des faits établis.</p>
+
+            <div class="list-filters">
+                <input type="search" id="q" placeholder="Rechercher (lieu, mot-clé)…">
+                <select id="categoryFilter"><option value="">Toutes les catégories</option></select>
+                <input type="text" id="cityFilter" placeholder="Ville" style="flex:0 0 auto;min-width:120px">
+            </div>
+
+            <div class="report-list" id="list">
+                <div class="list-empty">Chargement…</div>
+            </div>
+
+            <div class="list-pager" id="pager"></div>
+        </div>
+    </main>
+
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/signalements.js"></script>
+</body>
+</html>

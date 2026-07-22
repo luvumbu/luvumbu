@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Dossier privé externe de l'app (…/Android/data/<pkg>/files/…) où sont les enregistrements -->
+    <external-files-path name="ext_files" path="." />
+    <!-- Dossier interne (fallback si le stockage externe est indisponible) -->
+    <files-path name="int_files" path="." />
+</paths>
