@@ -17,6 +17,8 @@ Three.js arrive du CDN jsDelivr, épinglé en **0.160.0** (import map). Aucun bu
 | `save.php` | reçoit une capture → l'écrit dans `captures/` |
 | `save-canvas.php` | reçoit un canvas 2D → l'écrit dans `canvas2d/` |
 | `list.php` | liste les captures de `captures/` (JSON, avec `url`) |
+| `supprimer.php` | efface une capture **et** son `.json` (deux verrous anti-remontée) |
+| `projet.php` | liste / lit / écrit / supprime un **projet** dans `projets/` |
 
 ## L'outil principal, fichier par fichier
 
@@ -44,6 +46,7 @@ couplage, en moins visible.
 |---|---|---|
 | `captures/` | les captures d'écran : **PNG + JSON** de même nom | `save.php` |
 | `canvas2d/` | les vues 2D reconstruites | `save-canvas.php` |
+| `projets/` | les arrangements enregistrés (JSON de ~20 ko) | `projet.php` |
 
 Rien n'est stocké dans la racine du projet.
 
@@ -144,8 +147,8 @@ le **rouge** (frontière en région, autoroute en ville) — réglées à la mai
 
 Le menu est fait de **sections repliables** (`<details class="bloc">`), dans l'ordre du travail :
 **📷 Capture · 🧱 Relief · 📐 Hauteurs · 🌍 Globe** ouvertes (le trajet normal : choisir une image
-→ régler la grille → régler le relief → plier), puis **🎯 Zones · 🧩 Objets · 🎥 Vue · ☀️ Soleil ·
-✨ Animations · 🎨 Familles · 🖌️ Palette** repliées.
+→ régler la grille → régler le relief → plier), puis **💾 Projet · 🎯 Zones · 🧩 Objets ·
+🎬 Séquence · 📏 Échelle · 🎥 Vue · ☀️ Soleil · ✨ Animations · 🎨 Familles · 🖌️ Palette** repliées.
 
 **🧱 Relief** décrit **la grille** (combien de cases, quelle forme) ; **📐 Hauteurs** décrit **de
 quoi elles se lèvent** (multiplicateur global + répartition). Deux sujets distincts, deux
@@ -289,6 +292,60 @@ le globe c'est le vide.
 Pendant ce mode, `cadrerSelonGlobe()` et `sortirEtatGlobe()` **ne touchent pas à la caméra** :
 elle appartient au porteur, et sa position est devenue *locale*. Le cadrage d'ensemble est
 reconstruit à la sortie par `recadrer()`.
+
+### Projets, annulation, export (section 💾 Projet)
+
+**Un projet retient l'ouvrage, pas l'image.** Il désigne la capture et emporte les réglages,
+les hauteurs, les retouches de cases et les objets posés — une vingtaine de kilo-octets dans
+`projets/<nom>.json`. Dupliquer 7 Mo de PNG à chaque enregistrement n'aurait servi à rien.
+
+Ce qu'un projet ne stocke **pas**, parce que ça se recalcule : la grille (elle se reconstruit)
+et la palette par pixel (`palIdx`). L'ordre de restitution est ce qui compte :
+
+1. **l'image d'abord** — son chargement remet tout à zéro et il est *asynchrone*, d'où le
+   rappel passé à `chargerImage()` ; appliquer les réglages avant les ferait écraser ;
+2. les réglages, les hauteurs, les retouches ;
+3. **une seule** reconstruction ;
+4. les objets, puis **le pliage en dernier** — il repose toute la grille, objets compris.
+
+**↶ Annuler (Ctrl+Z)** garde 25 instantanés. On ne mémorise que **l'ouvrage** — retouches,
+objets, hauteurs — jamais les réglages de vue : annuler doit défaire ce qu'on a *fait*, pas le
+point de vue qu'on a choisi, et une grille de 50 000 cases par instantané rendrait l'historique
+impraticable. Un instantané est une **chaîne JSON** : aucune référence partagée, donc rien qui
+puisse être modifié après coup. Les curseurs mémorisent **une fois par glissement** (premier
+`input`, remis à zéro au `change`), sinon un simple mouvement remplirait l'historique.
+
+**🧊 Exporter en .glb** sort la scène telle qu'elle est à l'écran — pliage compris, puisqu'on
+relit les matrices réellement posées. Les cases étant un `InstancedMesh` (50 000 copies d'un
+cube, un seul objet pour la carte graphique), le glTF ne sait pas les reprendre telles quelles :
+on les **fusionne** en un maillage unique, la couleur passant par les sommets. D'où le plafond
+à **30 000 cases** — au-delà le fichier dépasse la centaine de mégaoctets ; on refuse en disant
+quoi baisser, plutôt que de faire semblant. Vérifié par aller-retour : le fichier se recharge
+dans une visionneuse indépendante, objets et couleurs compris.
+
+### Séquences filmées (section 🎬 Séquence)
+
+Des étapes minutées, jouées à la suite : *plier vers X %*, *faire monter le relief*, *tourner
+d'un tour*, *course du soleil*, *attendre*. Avec « masquer l'interface », la lecture bascule en
+mode cinéma et le rend à la fin — de quoi filmer une démonstration d'un seul geste.
+
+Chaque étape ne fait que **déclencher ce qui existe déjà** puis attendre sa durée : une séquence
+est un chef d'orchestre, pas un second moteur d'animation. Le compte à rebours se fait sur le
+**temps réel** (`dt`), donc la durée annoncée est tenue quel que soit le nombre d'images par
+seconde.
+
+### Échelle et mesures (section 📏 Échelle)
+
+    mètres_par_pixel = 156543,03 × cos(latitude) / 2^zoom
+
+Le **zoom** vient du nom du fichier, la **latitude** du `.json` de la capture — elle compte : à
+l'équateur un pixel couvre le double de ce qu'il couvre à 60°. La section annonce la largeur
+réelle de la carte, ce que vaut **une case** et ce que vaut un pixel d'origine. Sans zoom
+connu, on le dit au lieu d'inventer un chiffre.
+
+**📏 Mesurer une distance** : deux clics donnent la distance à vol d'oiseau, et une ligne relie
+les deux points. La mesure se fait sur les **coordonnées de la carte**, pas dans le monde 3D :
+pliée en globe, la distance entre deux lieux ne change pas.
 
 ### Sélection de zones (section 🎯 Zones)
 

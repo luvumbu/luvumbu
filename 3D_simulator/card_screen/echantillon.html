@@ -45,6 +45,18 @@
           <p class="aide">Un projet retient <b>tout ce que vous avez arrangé</b> : la capture
             utilisée, les hauteurs, les zones retouchées, les objets posés, le pliage et les
             réglages. L'image reste dans <code>captures/</code> — le projet la désigne.</p>
+          <div class="row">
+            <button id="btnAnnuler" class="large"
+                    title="Défaire le dernier geste — zones, objets, hauteurs, retouches (Ctrl+Z)">↶ Annuler (Ctrl+Z)</button>
+          </div>
+          <div class="row">
+            <button id="exportGlb" class="large"
+                    title="Sortir le relief en fichier 3D standard (Blender, visionneuse Windows, impression 3D)">🧊 Exporter en .glb</button>
+          </div>
+          <p class="aide">Le <b>.glb</b> sort la scène telle qu'elle est — relief plié ou à plat,
+            objets posés compris — pour l'ouvrir ailleurs. Les cases y sont <b>fusionnées</b> en
+            un seul maillage coloré : baisser l'échantillonnage avant d'exporter allège beaucoup
+            le fichier.</p>
         </div>
       </details>
 
@@ -209,6 +221,55 @@
           <p class="aide">Mode actif : <b>clic sur une case</b> pose l'objet dessus, <b>clic sur un
             objet</b> le retire. Les objets tiennent à leur <b>endroit sur la carte</b> : ils suivent
             le relief, le pliage du globe et les changements d'échantillonnage.</p>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>🎬 Séquence <span class="etat" id="etatSeq">aucune étape</span></summary>
+        <div class="corps">
+          <div class="row">
+            <select id="seqType" class="large">
+              <option value="globe">plier / déplier vers…</option>
+              <option value="montee">faire monter le relief</option>
+              <option value="tour">tourner d'un tour</option>
+              <option value="soleil">course du soleil</option>
+              <option value="pause">attendre</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="seqVal" class="l">Vers</label>
+            <input type="range" id="seqVal" min="0" max="100" step="5" value="100">
+            <span class="val" id="seqValV">100 %</span>
+          </div>
+          <div class="row">
+            <label for="seqDuree" class="l">en</label>
+            <input type="range" id="seqDuree" min="0.5" max="60" step="0.5" value="4">
+            <span class="val" id="seqDureeV">4,0 s</span>
+          </div>
+          <div class="row">
+            <button id="seqAjouter" class="large">➕ Ajouter l'étape</button>
+            <button id="seqVider" title="Vider la séquence">🗑</button>
+          </div>
+          <div id="seqListe" style="display:grid;gap:4px;"></div>
+          <div class="row">
+            <button id="seqJouer" class="large">▶ Jouer la séquence</button>
+          </div>
+          <label class="switch"><input type="checkbox" id="seqCine" checked> masquer l'interface pendant la lecture</label>
+          <p class="aide">Les étapes s'enchaînent dans l'ordre, chacune sur sa durée. De quoi
+            filmer une démonstration d'un seul geste.</p>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>📏 Échelle <span class="etat" id="etatEchelle">—</span></summary>
+        <div class="corps">
+          <p class="aide" id="echelleTexte">Chargez une capture dont le nom porte son zoom
+            (<code>card-maps-z14-…</code>) pour connaître l'échelle réelle.</p>
+          <div class="row">
+            <button id="btnMesure" class="large">📏 Mesurer une distance</button>
+          </div>
+          <p class="aide">Mode actif : <b>deux clics</b> sur la carte donnent la distance réelle
+            entre les deux points, à vol d'oiseau.</p>
         </div>
       </details>
 

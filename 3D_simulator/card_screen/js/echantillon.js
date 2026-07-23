@@ -255,7 +255,10 @@ function construire() {
     grille.setColorAt(k, couleur);
   }
   grille.instanceMatrix.needsUpdate = true;
-  grille.instanceColor.needsUpdate = true;
+  // `instanceColor` n'existe qu'à partir du premier `setColorAt` : si TOUTES les familles
+  // sont masquées, la grille est vide et l'attribut est nul. Le cas arrive pour de vrai —
+  // masquer la dernière couleur visible, ou faire tomber la seule couleur d'une palette.
+  if (grille.instanceColor) grille.instanceColor.needsUpdate = true;
   scene.add(grille);
 
   if (selCell) majSelection();       // garde la surbrillance calée après reconstruction
@@ -522,12 +525,16 @@ function chargerImage(url, nom, apres) {
     elemNoms = []; bornesNoms = null;
     fetch('captures/' + (nom || '').replace(/\.png$/, '.json'))
       .then((r) => (r.ok ? r.json() : null))
-      .then((meta) => { if (meta) { elemNoms = meta.elements || []; bornesNoms = meta.bornes || null; } if (montrerNoms) construireEtiquettes(); })
+      .then((meta) => {
+        if (meta) { elemNoms = meta.elements || []; bornesNoms = meta.bornes || null; }
+        majEchelle();                   // la latitude vient de ces bornes : sans elles, pas d'échelle
+        if (montrerNoms) construireEtiquettes();
+      })
       .catch(() => {});
     zoomCourant = lireZoom(nom); afficherZoom();
     const ec = document.getElementById('etatCapture');
     if (ec) ec.textContent = (nom || 'image').replace(/^card-maps-/, '').replace(/\.png$/, '');
-    construire(); recadrer(); majEtats();
+    construire(); recadrer(); majEtats(); majEchelle();
     if (apres) apres();               // un projet en cours de chargement reprend la main ici
   };
   im.src = url;
@@ -554,6 +561,7 @@ FAM.forEach((f, idx) => {
 conteneur.addEventListener('input', (e) => {
   const t = e.target;
   if (t.dataset.h !== undefined) {
+    memoriserGeste("hauteur d'une famille");
     const i = +t.dataset.h; FAM[i].h = parseFloat(t.value);
     conteneur.querySelector(`[data-hv="${i}"]`).textContent = FAM[i].h.toFixed(2);
     construire();
@@ -561,7 +569,7 @@ conteneur.addEventListener('input', (e) => {
 });
 conteneur.addEventListener('change', (e) => {
   const t = e.target;
-  if (t.dataset.vis !== undefined) { FAM[+t.dataset.vis].vis = t.checked; construire(); }
+  if (t.dataset.vis !== undefined) { memoriser("visibilité d'une famille"); FAM[+t.dataset.vis].vis = t.checked; construire(); }
 });
 conteneur.addEventListener('click', (e) => {
   if (e.target.dataset.drop !== undefined) fallColor(+e.target.dataset.drop);
@@ -760,7 +768,7 @@ selCapture.addEventListener('change', () => {
 $('finesse').addEventListener('input', (e) => {
   finesse = parseInt(e.target.value, 10); $('finesse-val').textContent = finesse;
   overrides.clear(); deselect(); deselectZone(false); viderChutes();   // modifs, zone et chutes liées à la grille courante
-  construire(); recadrer(); majEtats();
+  construire(); recadrer(); majEtats(); majEchelle();
 });
 $('relief').addEventListener('input', (e) => {
   relief = parseFloat(e.target.value); $('relief-val').textContent = relief; construire(); majEtats();
@@ -822,6 +830,7 @@ function rafraichirHauteursUI() {
 }
 
 function calculerHauteurs() {
+  memoriser('répartition des hauteurs');
   const crit = $('calcCrit').value;
   const g = groupeHauteurs();
   const borne = (h) => Math.min(4, Math.max(0.01, Math.round(h * 100) / 100));
@@ -950,11 +959,13 @@ $('btnEdit').addEventListener('click', () => {
 });
 $('editH').addEventListener('input', (e) => {
   if (!selCell) return;
+  memoriserGeste("hauteur d'un cube");
   const ov = overrides.get(ovKey()) || {}; ov.h = parseFloat(e.target.value); overrides.set(ovKey(), ov);
   construire();
 });
 $('editC').addEventListener('input', (e) => {
   if (!selCell) return;
+  memoriserGeste("couleur d'un cube");
   const s = e.target.value;
   const ov = overrides.get(ovKey()) || {};
   ov.r = parseInt(s.substr(1, 2), 16); ov.g = parseInt(s.substr(3, 2), 16); ov.b = parseInt(s.substr(5, 2), 16);
@@ -962,6 +973,7 @@ $('editC').addEventListener('input', (e) => {
 });
 $('editDel').addEventListener('click', () => {
   if (!selCell) return;
+  memoriser('cube supprimé');
   const ov = overrides.get(ovKey()) || {}; ov.del = true; overrides.set(ovKey(), ov);
   selCell = null; surbrillance.visible = false; $('panelEdit').hidden = true; construire();
 });
@@ -1121,6 +1133,10 @@ function deselectZone(refaire = true) {
 // boutons l'appellent, aucun ne connaît les autres.
 function modeExclusif(garde) {
   if (garde !== 'cube' && editMode) { editMode = false; $('btnEdit').classList.remove('actif'); deselect(); }
+  if (garde !== 'mesure' && modeMesure) {
+    modeMesure = false; mesureDepart = null; ligneMesure.visible = false;
+    $('btnMesure').classList.remove('actif'); $('btnMesure').textContent = '📏 Mesurer une distance';
+  }
   if (garde !== 'zone' && modeZone) { modeZone = false; majZoneUI(); }
   if (garde !== 'objet' && modeObjet) { modeObjet = false; majObjetsUI(); }
 }
@@ -1139,20 +1155,23 @@ $('zoneTol').addEventListener('input', (e) => {
   zoneTol = parseInt(e.target.value, 10); $('zoneTolV').textContent = e.target.value;
 });
 $('zoneH').addEventListener('input', (e) => {
+  memoriserGeste('hauteur de la zone');
   const h = parseFloat(e.target.value); $('zoneHV').textContent = h.toFixed(2);
   appliquerZone((ov) => { ov.h = h; });
 });
 // ▲/▼ multiplient : le relief INTERNE de la zone est conservé (une valeur unique l'aplatirait).
 const etager = (k) => appliquerZone((ov, c) => { ov.h = Math.min(4, Math.max(0.01, (ov.h ?? c.h) * k)); });
-$('zoneMonter').addEventListener('click', () => { etager(1.25); majZoneUI(); });
-$('zoneDescendre').addEventListener('click', () => { etager(1 / 1.25); majZoneUI(); });
+$('zoneMonter').addEventListener('click', () => { memoriser('zone montée'); etager(1.25); majZoneUI(); });
+$('zoneDescendre').addEventListener('click', () => { memoriser('zone descendue'); etager(1 / 1.25); majZoneUI(); });
 $('zoneCoul').addEventListener('input', (e) => {
+  memoriserGeste('couleur de la zone');
   const s = e.target.value;
   const r = parseInt(s.substr(1, 2), 16), g = parseInt(s.substr(3, 2), 16), b = parseInt(s.substr(5, 2), 16);
   appliquerZone((ov) => { ov.r = r; ov.g = g; ov.b = b; });
 });
 $('zoneAssoc').addEventListener('click', () => {
   const f = FAM[parseInt($('zoneFam').value, 10)]; if (!f) return;
+  memoriser('zone associée à ' + f.nom);
   const c = new THREE.Color(f.sw);                 // la pastille de la famille = sa couleur
   appliquerZone((ov) => {
     ov.r = Math.round(c.r * 255); ov.g = Math.round(c.g * 255); ov.b = Math.round(c.b * 255);
@@ -1163,6 +1182,7 @@ $('zoneAssoc').addEventListener('click', () => {
 // Vider les CASES : la zone devient un trou. On garde la sélection — c'est elle qui permet
 // de revenir en arrière avec « Rétablir » ; la lâcher rendrait l'effacement définitif.
 $('zoneEffacer').addEventListener('click', () => {
+  memoriser('zone vidée');
   deplanterZone(true);                             // sinon les arbres flottent au-dessus du trou
   appliquerZone((ov) => { ov.del = true; });
   majZoneUI();
@@ -1172,6 +1192,7 @@ $('zoneEffacer').addEventListener('click', () => {
 // reprennent ce que l'image dit d'elles. On travaille sur les CLÉS, pas sur les cases : une
 // case effacée n'existe plus dans la grille, mais sa clé est toujours dans la sélection.
 $('zoneReset').addEventListener('click', () => {
+  memoriser('zone rétablie');
   for (const k of zoneSel) overrides.delete(k);
   construire(); majZoneUI();
   toast('↺ Zone rétablie telle que l’image la donne');
@@ -1193,6 +1214,7 @@ function objetsDansZone() {
 // Retire les objets de la zone — le pendant de « planter », sans quoi on ne peut
 // qu'empiler : une zone se gère dans les deux sens ou elle ne se gère pas.
 function deplanterZone(silencieux) {
+  if (!silencieux) memoriser('objets retirés');   // en mode silencieux, l'appelant a déjà mémorisé
   const cibles = objetsDansZone();
   for (const o of cibles) {
     groupeObjets.remove(o.mesh);        // pas de dispose : tout est partagé avec le modèle
@@ -1205,6 +1227,7 @@ function deplanterZone(silencieux) {
 
 function planterDansZone() {
   if (!zoneSel.size || !dernierGrid) return;
+  memoriser('plantation');
   const { C, R } = dernierGrid;
   const type = $('zonePlantType').value;
   const densite = parseInt($('zoneDens').value, 10) / 100;
@@ -1429,7 +1452,7 @@ $('objTaille').addEventListener('input', (e) => {
   $('objTailleV').textContent = e.target.value;
   if (objets.length) { for (const o of objets) o.taille *= rapport; poserObjets(); }
 });
-$('objVider').addEventListener('click', viderObjets);
+$('objVider').addEventListener('click', () => { memoriser('tous les objets effacés'); viderObjets(); });
 
 // Clic dans la scène en mode pose : sur un objet → on le retire, sur une case → on pose.
 renderer.domElement.addEventListener('pointerup', (e) => {
@@ -1444,6 +1467,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     while (racine.parent && racine.parent !== groupeObjets) racine = racine.parent;
     const k = objets.findIndex((o) => o.mesh === racine);
     if (k >= 0) {
+      memoriser('objet retiré');
       groupeObjets.remove(racine);      // idem : les géométries appartiennent au modèle
       objets.splice(k, 1); majObjetsUI();
       return;
@@ -1454,6 +1478,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   if (!hit || hit.instanceId == null || !dernierGrid) return;
   const c = dernierGrid.cellules[hit.instanceId];
   if (!c) return;
+  memoriser('objet posé');
   const mesh = faireObjet(typeObjet);
   groupeObjets.add(mesh);
   objets.push({
@@ -1817,6 +1842,321 @@ addEventListener('keyup', (e) => {
 });
 
 // ============================================================
+//  ANNULATION (Ctrl+Z) — un instantané avant chaque geste qui modifie le travail.
+//
+//  On ne mémorise QUE l'ouvrage : retouches de cases, objets posés, hauteurs. Pas les
+//  réglages de vue (échantillonnage, pliage, netteté) — annuler devrait défaire ce qu'on a
+//  FAIT, pas le point de vue qu'on a choisi ; et une grille de 50 000 cases dans chaque
+//  instantané rendrait l'historique impraticable.
+//
+//  Un instantané est une chaîne JSON : ni référence partagée, ni objet Three.js dedans,
+//  donc rien qui puisse être modifié par accident après coup.
+// ============================================================
+const historique = [];
+const MAX_HISTOIRE = 25;        // au-delà, on oublie les plus anciens
+let gesteEnCours = false;       // pour ne mémoriser qu'UNE fois par glissement de curseur
+
+function instantane() {
+  return JSON.stringify({
+    ov: [...overrides.entries()],
+    obj: objets.map((o) => [o.type || 'arbre', o.u, o.v, o.taille, o.rot]),
+    fam: FAM.map((f) => [f.h, f.vis]),
+    pal: PAL.map((p) => [p.h, p.vis]),
+  });
+}
+function memoriser(nom) {
+  historique.push({ nom, etat: instantane() });
+  if (historique.length > MAX_HISTOIRE) historique.shift();
+}
+// Pour les curseurs : le premier `input` d'un glissement mémorise, les suivants non.
+function memoriserGeste(nom) { if (!gesteEnCours) { memoriser(nom); gesteEnCours = true; } }
+addEventListener('change', () => { gesteEnCours = false; }, true);
+
+function annuler() {
+  const e = historique.pop();
+  if (!e) { toast('Rien à annuler'); return; }
+  const p = JSON.parse(e.etat);
+  overrides.clear();
+  for (const [cle, ov] of p.ov) overrides.set(cle, ov);
+  p.fam.forEach(([h, vis], i) => { if (FAM[i]) { FAM[i].h = h; FAM[i].vis = vis; } });
+  p.pal.forEach(([h, vis], i) => { if (PAL[i]) { PAL[i].h = h; PAL[i].vis = vis; } });
+  viderObjets();
+  for (const [type, u, v, taille, rot] of p.obj) {
+    const mesh = faireObjet(type);
+    groupeObjets.add(mesh);
+    objets.push({ type, u, v, taille, rot, mesh });
+  }
+  rafraichirHauteursUI();
+  // Les cases à cocher des familles suivent aussi : elles font partie de l'ouvrage.
+  FAM.forEach((f, i) => { const c = conteneur.querySelector(`[data-vis="${i}"]`); if (c) c.checked = f.vis; });
+  construire(); poserObjets(); majObjetsUI(); majEtats();
+  toast(`↶ annulé : ${e.nom}${historique.length ? ` (${historique.length} en réserve)` : ''}`);
+}
+
+addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey) || e.code !== 'KeyZ') return;
+  const a = document.activeElement;
+  if (a && ['INPUT', 'SELECT', 'TEXTAREA'].includes(a.tagName)) return;   // pas pendant une saisie
+  e.preventDefault();
+  annuler();
+});
+$('btnAnnuler').addEventListener('click', annuler);
+
+// ============================================================
+//  SÉQUENCE — enchaîner des étapes minutées, pour filmer une démonstration d'un geste.
+//
+//  Chaque étape ne fait que DÉCLENCHER ce qui existe déjà (pliage animé, montée, rotation
+//  auto, course du soleil) puis attendre sa durée. Rien n'est réimplémenté : une séquence
+//  est un chef d'orchestre, pas un second moteur d'animation.
+// ============================================================
+const sequence = [];
+let seqEnCours = null;          // { i, reste } — étape courante et temps restant
+
+const NOM_ETAPE = {
+  globe: (v) => `plier vers ${v} %`,
+  montee: () => 'faire monter le relief',
+  tour: () => "tourner d'un tour",
+  soleil: () => 'course du soleil',
+  pause: () => 'attendre',
+};
+
+function majSeqUI() {
+  const l = $('seqListe');
+  l.innerHTML = '';
+  sequence.forEach((e, i) => {
+    const d = document.createElement('div');
+    d.className = 'row';
+    d.innerHTML = `<span style="opacity:.55;font-size:11px;min-width:1.4em;">${i + 1}.</span>` +
+      `<span style="flex:1;font-size:12px;">${NOM_ETAPE[e.type](e.val)} <b>· ${nSec(e.duree)}</b></span>`;
+    const b = document.createElement('button');
+    b.textContent = '✕'; b.title = 'retirer cette étape';
+    b.addEventListener('click', () => { sequence.splice(i, 1); majSeqUI(); });
+    d.appendChild(b);
+    l.appendChild(d);
+  });
+  const total = sequence.reduce((s, e) => s + e.duree, 0);
+  $('etatSeq').textContent = sequence.length
+    ? `${sequence.length} étape${sequence.length > 1 ? 's' : ''} · ${nSec(total)}`
+    : 'aucune étape';
+  $('seqJouer').textContent = seqEnCours ? '⏹ Arrêter' : '▶ Jouer la séquence';
+}
+
+function lancerEtape(e) {
+  if (e.type === 'globe') animerGlobe(e.val / 100, e.duree);
+  else if (e.type === 'montee') { animVitesse = Math.max(0.1, 1 / Math.max(0.5, e.duree * 0.8)); demarrerMontee(); }
+  else if (e.type === 'tour') {
+    // Un tour complet en `duree` : OrbitControls compte en tours-par-minute déguisés
+    // (60 / autoRotateSpeed secondes par tour), d'où le rapport.
+    controls.autoRotateSpeed = 60 / e.duree;
+    controls.autoRotate = true; $('autorot').checked = true;
+  } else if (e.type === 'soleil') {
+    solPilote = true; $('solPilote').checked = true; $('solCtrls').hidden = false;
+    solVit = 360 / Math.max(0.5, e.duree); $('solVit').value = Math.min(60, solVit);
+    solAuto = true; $('solAuto').checked = true; majSoleil();
+  }
+}
+function finirEtape(e) {
+  if (e.type === 'tour') { controls.autoRotate = false; $('autorot').checked = false; }
+  if (e.type === 'soleil') { solAuto = false; $('solAuto').checked = false; }
+}
+
+function jouerSequence() {
+  if (seqEnCours) { arreterSequence(); return; }
+  if (!sequence.length) { toast('Ajoutez au moins une étape'); return; }
+  if ($('seqCine').checked && !cinema) basculerCinema();
+  seqEnCours = { i: 0, reste: sequence[0].duree };
+  lancerEtape(sequence[0]);
+  majSeqUI();
+}
+function arreterSequence() {
+  if (!seqEnCours) return;
+  finirEtape(sequence[seqEnCours.i] || {});
+  seqEnCours = null;
+  if (cinema) basculerCinema();
+  majSeqUI();
+  toast('⏹ Séquence arrêtée');
+}
+// Avance la séquence, appelée à chaque image : le temps réel, pas un compte d'images.
+function avancerSequence(dt) {
+  if (!seqEnCours) return;
+  seqEnCours.reste -= dt;
+  if (seqEnCours.reste > 0) return;
+  finirEtape(sequence[seqEnCours.i]);
+  seqEnCours.i++;
+  if (seqEnCours.i >= sequence.length) {
+    seqEnCours = null;
+    if (cinema) basculerCinema();
+    majSeqUI(); toast('✔ Séquence terminée');
+    return;
+  }
+  const e = sequence[seqEnCours.i];
+  seqEnCours.reste = e.duree;
+  lancerEtape(e);
+  majSeqUI();
+}
+
+$('seqType').addEventListener('change', () => {
+  // « Vers » n'a de sens que pour le pliage : on le grise pour les autres.
+  const pliage = $('seqType').value === 'globe';
+  $('seqVal').disabled = !pliage;
+  $('seqVal').style.opacity = pliage ? '' : '.4';
+});
+$('seqVal').addEventListener('input', (e) => { $('seqValV').textContent = e.target.value + ' %'; });
+$('seqDuree').addEventListener('input', (e) => { $('seqDureeV').textContent = nSec(parseFloat(e.target.value)); });
+$('seqAjouter').addEventListener('click', () => {
+  sequence.push({
+    type: $('seqType').value,
+    val: parseInt($('seqVal').value, 10),
+    duree: parseFloat($('seqDuree').value),
+  });
+  majSeqUI();
+});
+$('seqVider').addEventListener('click', () => { arreterSequence(); sequence.length = 0; majSeqUI(); });
+$('seqJouer').addEventListener('click', jouerSequence);
+majSeqUI();
+
+// ============================================================
+//  ÉCHELLE RÉELLE — le zoom et la latitude donnent les mètres par pixel.
+//
+//    mètres_par_pixel = 156543,03 × cos(latitude) / 2^zoom
+//
+//  La latitude compte : à l'équateur un pixel couvre le double de ce qu'il couvre à 60°.
+//  On la lit dans le .json de la capture ; sans lui, on prévient au lieu d'inventer.
+// ============================================================
+let metresParPixel = null;      // pour l'image d'origine, avant échantillonnage
+let modeMesure = false, mesureDepart = null;
+const ligneMesure = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+  new THREE.LineBasicMaterial({ color: 0xf78166, depthTest: false })
+);
+ligneMesure.visible = false; ligneMesure.renderOrder = 999; scene.add(ligneMesure);
+
+function majEchelle() {
+  const t = $('echelleTexte');
+  if (zoomCourant === null || !NW) {
+    metresParPixel = null;
+    t.innerHTML = 'Zoom inconnu : sans lui, aucune échelle réelle (le nom du fichier le porte).';
+    $('etatEchelle').textContent = '—';
+    return;
+  }
+  const lat = (bornesNoms && (bornesNoms.nord + bornesNoms.sud) / 2) ?? 0;
+  metresParPixel = 156543.03 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoomCourant);
+  const largeurM = metresParPixel * NW;               // largeur réelle de la carte
+  const caseM = largeurM / finesse;                    // une case de la grille
+  const fmt = (m) => (m >= 1000 ? (m / 1000).toFixed(m >= 10000 ? 0 : 1) + ' km' : m.toFixed(m < 10 ? 1 : 0) + ' m');
+  t.innerHTML = `À z${zoomCourant} et ${lat.toFixed(1)}° de latitude : <b>${fmt(largeurM)}</b> de large, ` +
+    `soit <b>${fmt(caseM)}</b> par case et <b>${fmt(metresParPixel)}</b> par pixel d'origine.`;
+  $('etatEchelle').textContent = fmt(largeurM);
+}
+
+// Une distance sur la dalle → des mètres. On mesure sur la CARTE (repère de la dalle), pas
+// dans le monde : plié en globe, la distance à vol d'oiseau reste celle de la carte.
+function distanceReelle(a, b) {
+  if (!metresParPixel || !dernierGrid) return null;
+  const cell = LARGEUR / dernierGrid.C;
+  const uniteM = (metresParPixel * NW) / LARGEUR;      // mètres par unité de scène
+  return Math.hypot(a.x - b.x, a.z - b.z) * uniteM;
+}
+
+$('btnMesure').addEventListener('click', () => {
+  modeMesure = !modeMesure;
+  if (modeMesure) modeExclusif('mesure');
+  mesureDepart = null; ligneMesure.visible = false;
+  $('btnMesure').classList.toggle('actif', modeMesure);
+  $('btnMesure').textContent = modeMesure ? '✓ Mode mesure — cliquer deux points' : '📏 Mesurer une distance';
+  if (modeMesure && !metresParPixel) toast("Zoom inconnu : la mesure ne peut pas être convertie en mètres", 4000);
+});
+
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (modeFP || !modeMesure || !grille) return;
+  if (Math.hypot(e.clientX - downEX, e.clientY - downEY) > 5) return;
+  sou.x = (e.clientX / innerWidth) * 2 - 1; sou.y = -(e.clientY / innerHeight) * 2 + 1;
+  rayEdit.setFromCamera(sou, camera);
+  const hit = rayEdit.intersectObject(grille)[0];
+  if (!hit || hit.instanceId == null || !dernierGrid) return;
+  const c = dernierGrid.cellules[hit.instanceId];
+  const cell = LARGEUR / dernierGrid.C;
+  const pt = { x: (c.i + 0.5 - dernierGrid.C / 2) * cell, z: (c.j + 0.5 - dernierGrid.R / 2) * cell, monde: hit.point.clone() };
+  if (!mesureDepart) { mesureDepart = pt; toast('Point de départ posé — cliquez l\'arrivée'); return; }
+  const d = distanceReelle(mesureDepart, pt);
+  ligneMesure.geometry.setFromPoints([mesureDepart.monde, pt.monde]);
+  ligneMesure.visible = true;
+  toast(d === null ? 'Distance inconnue (zoom absent)' :
+    `📏 ${d >= 1000 ? (d / 1000).toFixed(2) + ' km' : d.toFixed(0) + ' m'} à vol d'oiseau`, 6000);
+  mesureDepart = null;
+});
+
+// ============================================================
+//  EXPORT .glb — sortir le relief pour Blender, une visionneuse, une imprimante 3D.
+//
+//  Les cases sont un InstancedMesh : 50 000 copies d'un même cube, un objet pour la carte
+//  graphique. Le format glTF ne connaît pas cette astuce telle quelle — on FUSIONNE donc
+//  les cases en un seul maillage, la couleur de chacune passant par les sommets.
+//
+//  D'où le plafond : chaque case coûte 24 sommets une fois fusionnée. Au-delà de ~30 000
+//  cases, le fichier dépasse la centaine de mégaoctets et le navigateur cale pendant la
+//  fusion. On refuse alors plutôt que de faire semblant, en disant quoi baisser.
+// ============================================================
+const MAX_CASES_EXPORT = 30000;
+
+async function exporterGLB() {
+  if (!dernierGrid || !grille) { toast('Rien à exporter'); return; }
+  const n = dernierGrid.cellules.length;
+  if (n > MAX_CASES_EXPORT) {
+    toast(`${n} cases : trop pour un .glb. Baissez l'échantillonnage (~${Math.floor(Math.sqrt(MAX_CASES_EXPORT * aspect))} max)`, 6000);
+    return;
+  }
+  toast('🧊 Fusion des cases…', 60000);
+  const [{ GLTFExporter }, BGU] = await Promise.all([
+    import('three/addons/exporters/GLTFExporter.js'),
+    import('three/addons/utils/BufferGeometryUtils.js'),
+  ]);
+
+  // On relit les matrices RÉELLEMENT posées : ainsi l'export sort la scène telle qu'elle
+  // est à l'écran, pliage du globe compris, sans recalculer quoi que ce soit.
+  const base = grille.geometry;
+  const m = new THREE.Matrix4(), c = new THREE.Color();
+  const morceaux = [];
+  for (let k = 0; k < n; k++) {
+    grille.getMatrixAt(k, m);
+    const g = base.clone().applyMatrix4(m);
+    grille.getColorAt(k, c);
+    const nbSommets = g.attributes.position.count;
+    const couleurs = new Float32Array(nbSommets * 3);
+    for (let i = 0; i < nbSommets; i++) { couleurs[i * 3] = c.r; couleurs[i * 3 + 1] = c.g; couleurs[i * 3 + 2] = c.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(couleurs, 3));
+    g.deleteAttribute('uv');            // inutile ici, et il empêche la fusion s'il manque ailleurs
+    morceaux.push(g);
+  }
+  const fusion = BGU.mergeGeometries(morceaux, false);
+  morceaux.forEach((g) => g.dispose());
+  if (!fusion) { toast('Fusion impossible', 4000); return; }
+
+  const scenePropre = new THREE.Scene();
+  scenePropre.add(new THREE.Mesh(fusion, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 })));
+  for (const o of objets) scenePropre.add(o.mesh.clone());   // les objets sont déjà à leur place monde
+
+  toast('🧊 Écriture du fichier…', 60000);
+  new GLTFExporter().parse(
+    scenePropre,
+    (glb) => {
+      const nom = (projetCourant || (selCapture.selectedOptions[0] || {}).textContent || 'relief')
+        .replace(/\.png$/, '').replace(/[^\w\- ]+/g, '') || 'relief';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' }));
+      a.download = nom + '.glb';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      fusion.dispose();
+      toast(`🧊 ${nom}.glb — ${n} cases, ${objets.length} objets, ${(glb.byteLength / 1048576).toFixed(1)} Mo`, 5000);
+    },
+    (err) => { console.error(err); toast('Export échoué', 4000); },
+    { binary: true, onlyVisible: true }
+  );
+}
+$('exportGlb').addEventListener('click', exporterGLB);
+
+// ============================================================
 //  PROJETS — enregistrer et retrouver un arrangement complet.
 //
 //  Un projet ne contient QUE ce qu'on ne peut pas recalculer : le nom de la capture, les
@@ -1988,6 +2328,7 @@ function animer() {
   // travers le sol au lieu de les faire tomber.
   const dt = Math.min(horloge.getDelta(), 0.05);
 
+  avancerSequence(dt);                   // enchaînement des étapes filmées, s'il y en a
   if (modeFP) deplacerFP(dt);            // balade première personne (OrbitControls désactivé)
   else controls.update();
 
