@@ -486,6 +486,9 @@ document.getElementById("capture-btn").addEventListener("click", async () => {
   // Éclair IMMÉDIAT, dès l'appui — comme le déclencheur d'un appareil photo.
   flashAppareilPhoto();
 
+  const ancienLien = document.getElementById("traiter");
+  if (ancienLien) ancienLien.hidden = true;      // il désignerait la capture précédente
+
   setStatus("Chargement des tuiles…");
 
   // On s'assure que la carte remplit bien son conteneur, puis on attend les tuiles.
@@ -547,6 +550,14 @@ document.getElementById("capture-btn").addEventListener("click", async () => {
       const detail = zoom > zEcran ? ` · détail ×${Math.pow(2, zoom - zEcran)}` : "";
       setStatus(`Image enregistrée : ${result.filename} ✔ · ${canvas.width}×${canvas.height} px · z${zoom}${detail}${suffixe}`);
       playCaptureAnimation();
+      // Le lien vers la reconstruction, avec le nom de CETTE capture : sans lui, il faudrait
+      // aller la retrouver dans la liste de l'autre page — et se tromper de voisine.
+      const lien = document.getElementById("traiter");
+      if (lien) {
+        lien.href = "echantillon.html?capture=" + encodeURIComponent(result.filename);
+        lien.hidden = false;
+        lien.title = "Ouvrir « " + result.filename + " » dans l'outil de relief 3D";
+      }
     } else {
       setStatus(`Erreur d'enregistrement : ${result.error}`, true);
     }

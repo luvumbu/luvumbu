@@ -190,6 +190,17 @@ body {
 
 .credit { color: var(--muted); white-space: nowrap; }
 
+/* Lien « Traiter cette capture », affiché seulement après un 📸 réussi. */
+.traiter {
+  margin-left: auto; white-space: nowrap; text-decoration: none;
+  background: #7c3aed; color: #fff; border-radius: 8px; padding: 5px 11px;
+  font-size: .8rem; font-weight: 600;
+  animation: traiter-apparait .35s ease-out;
+}
+.traiter:hover { background: #6d28d9; }
+.traiter[hidden] { display: none; }
+@keyframes traiter-apparait { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
 @media (max-width: 600px) {
   .card { height: 100%; border-radius: 0; }
   body { padding: 0; }

@@ -734,7 +734,17 @@ function listerCaptures(charger = true) {
         o.textContent = im.filename.replace('card-maps-', '');
         selCapture.appendChild(o);
       }
-      if (charger) chargerImage(data.images[0].url, data.images[0].filename);
+      if (charger) {
+        // `?capture=` : on arrive du bouton « Traiter cette capture » de l'app de prise de
+        // vue. Sans ça on ouvrirait la PLUS RÉCENTE — presque toujours la bonne, mais
+        // « presque » suffit à traiter la voisine sans s'en apercevoir.
+        const demandee = new URLSearchParams(location.search).get('capture');
+        const voulue = demandee && data.images.find((i) => i.filename === demandee);
+        if (demandee && !voulue) toast(`Capture « ${demandee} » introuvable — la plus récente est ouverte`, 5000);
+        const im = voulue || data.images[0];
+        selCapture.value = im.url;
+        chargerImage(im.url, im.filename);
+      }
       return data.images.length;
     })
     .catch(() => { selCapture.innerHTML = '<option value="">(liste indisponible)</option>'; return 0; });

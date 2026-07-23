@@ -75,7 +75,12 @@ Rien n'est stocké dans la racine du projet.
   canvas est refusée.
 
 - **📸 Capturer** : compose l'image des tuiles chargées, l'envoie à `save.php`.
-  Effet **flash appareil photo** instantané au clic + bandeau « Capturé ✔ ».
+  Effet **flash appareil photo** instantané au clic + bandeau « Capturé ✔ », puis un lien
+  **🏔️ Traiter cette capture →** apparaît en pied de page. Il porte le **nom du fichier**
+  (`echantillon.html?capture=…`) : sans lui on ouvrirait la plus récente — presque toujours la
+  bonne, mais « presque » suffit à traiter la voisine sans s'en apercevoir. Le lien disparaît
+  dès qu'une nouvelle capture démarre, pour ne jamais désigner la précédente ; et si le nom
+  demandé n'existe plus, l'outil le dit et ouvre la plus récente.
   La capture reprend **le style affiché** — capturer autre chose que ce qu'on voit n'aurait
   pas de sens.
 - **Niveau de détail** (liste à côté du 📸) : *détail écran* · *×2* · *×4*.
