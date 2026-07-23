@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Card Maps — la carte en 3D</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    /* Le HUD reprend le style .hud du projet ; on ajoute juste les commandes propres à cette page. */
+    .hud .controls { display: grid; gap: 10px; margin: 10px 0; }
+    .hud .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .hud label { font-size: 13px; opacity: .9; }
+    .hud select, .hud input[type=file] { max-width: 100%; }
+    .hud input[type=range] { flex: 1; min-width: 120px; }
+    .hud button {
+      background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
+      border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
+    }
+    .hud button:hover { border-color: #58a6ff; }
+    .hud .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    #erreur { color: #f78166; font-size: 13px; min-height: 1em; }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <h2>Card Maps — la même carte, en 3D</h2>
+    <p>
+      La capture 2D devient une <b>dalle physique</b> posée dans une scène 3D : elle a une
+      épaisseur, elle est éclairée et elle projette une ombre.
+      <kbd>clic gauche</kbd> tourner · <kbd>molette</kbd> zoomer · <kbd>clic droit</kbd> déplacer.
+      <kbd>clic</kbd> sur la carte : y planter un marqueur 3D.
+    </p>
+
+    <div class="controls">
+      <div class="row">
+        <label for="pick">Capture&nbsp;:</label>
+        <select id="pick"><option>chargement…</option></select>
+      </div>
+      <div class="row">
+        <label for="file">ou une image&nbsp;:</label>
+        <input type="file" id="file" accept="image/*">
+      </div>
+      <div class="row">
+        <label for="epaisseur">Épaisseur du socle</label>
+        <input type="range" id="epaisseur" min="0.05" max="1.5" step="0.05" value="0.4">
+      </div>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="rotation"> rotation automatique</label>
+        <button id="reset">Recadrer la vue</button>
+        <button id="clear-pin">Retirer le marqueur</button>
+      </div>
+      <div id="erreur"></div>
+    </div>
+
+    <p style="font-size:12px;opacity:.75;margin-top:0;">
+      Note honnête : une capture plate n'a aucun relief réel — on ne peut pas deviner la hauteur
+      des bâtiments depuis une image. Ceci est la carte <i>en tant qu'objet</i> dans l'espace,
+      pas une ville reconstruite.
+    </p>
+
+    <a href="index.html">← Retour à la carte 2D</a>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- Scène, caméra, renderer ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1116);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Ombres portées : c'est l'ombre de la dalle sur le sol qui « vend » la 3D.
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    // --- Lumières ---
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const soleil = new THREE.DirectionalLight(0xffffff, 2.2);
+    soleil.position.set(6, 12, 5);
+    soleil.castShadow = true;
+    soleil.shadow.mapSize.set(2048, 2048);
+    // Le cadrage de l'ombre : trop serré, l'ombre est coupée ; trop large, elle est floue/pixelisée.
+    const d = 12;
+    soleil.shadow.camera.left = -d; soleil.shadow.camera.right = d;
+    soleil.shadow.camera.top = d;   soleil.shadow.camera.bottom = -d;
+    soleil.shadow.camera.near = 0.5; soleil.shadow.camera.far = 50;
+    scene.add(soleil);
+
+    // --- Le sol qui reçoit l'ombre ---
+    const sol = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 1 })
+    );
+    sol.rotation.x = -Math.PI / 2;
+    sol.position.y = -0.001;
+    sol.receiveShadow = true;
+    scene.add(sol);
+    scene.add(new THREE.GridHelper(60, 60, 0x2d333b, 0x21262d));
+
+    // --- La dalle-carte (reconstruite à chaque nouvelle image) ---
+    // socle = le corps épais et sombre ; carte = le plan texturé posé sur le dessus.
+    let socle = null, carte = null;
+    const MAX = 12;                 // le plus grand côté de la dalle, en unités
+    let epaisseur = 0.4;
+    let ratio = 1;                  // largeur / hauteur de l'image courante
+
+    const materiauSocle = new THREE.MeshStandardMaterial({ color: 0x30363d, roughness: 0.8 });
+    const materiauCarte = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0 });
+
+    function dimensions() {
+      // On garde le plus grand côté à MAX et on déduit l'autre du ratio de l'image.
+      const w = ratio >= 1 ? MAX : MAX * ratio;
+      const h = ratio >= 1 ? MAX / ratio : MAX;
+      return { w, h };
+    }
+
+    function construireDalle() {
+      const { w, h } = dimensions();
+
+      if (socle) { socle.geometry.dispose(); scene.remove(socle); }
+      socle = new THREE.Mesh(new THREE.BoxGeometry(w, epaisseur, h), materiauSocle);
+      socle.position.y = -epaisseur / 2;   // le dessus du socle affleure y = 0
+      socle.castShadow = true;
+      socle.receiveShadow = true;
+      scene.add(socle);
+
+      if (carte) { carte.geometry.dispose(); scene.remove(carte); }
+      carte = new THREE.Mesh(new THREE.PlaneGeometry(w, h), materiauCarte);
+      carte.rotation.x = -Math.PI / 2;     // le plan se couche, face vers le haut
+      carte.position.y = 0.002;            // juste au-dessus du socle, sinon z-fighting
+      carte.receiveShadow = true;
+      scene.add(carte);
+    }
+
+    // --- Charger une image comme texture de la carte ---
+    const loader = new THREE.TextureLoader();
+    const erreurEl = document.getElementById('erreur');
+
+    function chargerImage(url, label) {
+      erreurEl.textContent = '';
+      loader.load(
+        url,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          ratio = texture.image.naturalWidth / texture.image.naturalHeight || 1;
+          if (materiauCarte.map) materiauCarte.map.dispose();
+          materiauCarte.map = texture;
+          materiauCarte.needsUpdate = true;
+          construireDalle();
+          recadrer();
+          retirerMarqueur();
+        },
+        undefined,
+        () => { erreurEl.textContent = `Impossible de charger « ${label || url} ».`; }
+      );
+    }
+
+    // --- OrbitControls ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02;   // on ne passe pas sous le sol
+    controls.autoRotateSpeed = 1.2;
+
+    function recadrer() {
+      const { w } = dimensions();
+      controls.target.set(0, 0, 0);
+      camera.position.set(0, MAX * 0.75, w * 0.85 + 3);
+      camera.updateProjectionMatrix();
+    }
+    recadrer();
+
+    // --- Le marqueur 3D : cône (pointe en bas) + tête sphérique, façon épingle ---
+    let marqueur = null;
+    let animPin = 0;   // 0 → 1 : petite animation de « plantage »
+
+    function retirerMarqueur() {
+      if (!marqueur) return;
+      marqueur.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+      scene.remove(marqueur);
+      marqueur = null;
+    }
+
+    function planterMarqueur(point) {
+      retirerMarqueur();
+      const g = new THREE.Group();
+
+      const hauteur = 1.1, tete = 0.32;
+      const corps = new THREE.Mesh(
+        new THREE.ConeGeometry(0.28, hauteur, 24),
+        new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.4 })
+      );
+      corps.rotation.x = Math.PI;                 // pointe vers le bas
+      corps.position.y = hauteur / 2;
+      corps.castShadow = true;
+      g.add(corps);
+
+      const boule = new THREE.Mesh(
+        new THREE.SphereGeometry(tete, 24, 16),
+        new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.3 })
+      );
+      boule.position.y = hauteur + tete * 0.4;
+      boule.castShadow = true;
+      g.add(boule);
+
+      const point_blanc = new THREE.Mesh(
+        new THREE.SphereGeometry(tete * 0.4, 16, 12),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x330000 })
+      );
+      point_blanc.position.y = hauteur + tete * 0.4;
+      point_blanc.position.z = tete * 0.75;
+      g.add(point_blanc);
+
+      g.position.copy(point);
+      g.position.y = 0.002;   // planté sur la surface de la carte
+      scene.add(g);
+      marqueur = g;
+      animPin = 0;            // relance l'animation de descente
+    }
+
+    // --- Cliquer sur la carte pour planter le marqueur (sans gêner l'orbite) ---
+    const raycaster = new THREE.Raycaster();
+    const souris = new THREE.Vector2();
+    let downX = 0, downY = 0;
+
+    renderer.domElement.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      // On distingue un vrai clic d'un glisser d'orbite : si la souris a bougé, on ignore.
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 5) return;
+      if (!carte) return;
+      souris.x = (e.clientX / window.innerWidth) * 2 - 1;
+      souris.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(souris, camera);
+      const hit = raycaster.intersectObject(carte)[0];
+      if (hit) planterMarqueur(hit.point);
+    });
+
+    // --- Commandes du HUD ---
+    const pick = document.getElementById('pick');
+    pick.addEventListener('change', () => {
+      if (pick.value) chargerImage(pick.value + '?t=' + pick.selectedIndex, pick.value);
+    });
+
+    document.getElementById('file').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (f) chargerImage(URL.createObjectURL(f), f.name);
+    });
+
+    document.getElementById('epaisseur').addEventListener('input', (e) => {
+      epaisseur = parseFloat(e.target.value);
+      construireDalle();
+    });
+
+    document.getElementById('rotation').addEventListener('change', (e) => {
+      controls.autoRotate = e.target.checked;
+    });
+
+    document.getElementById('reset').addEventListener('click', recadrer);
+    document.getElementById('clear-pin').addEventListener('click', retirerMarqueur);
+
+    // --- Peupler le menu avec les captures déjà enregistrées ---
+    fetch('list.php')
+      .then((r) => r.json())
+      .then((data) => {
+        pick.innerHTML = '';
+        if (!data.ok || !data.images.length) {
+          pick.innerHTML = '<option value="">(aucune capture)</option>';
+          return;
+        }
+        for (const img of data.images) {
+          const o = document.createElement('option');
+          o.value = img.url;               // chemin captures/xxx.png
+          o.textContent = img.filename.replace('card-maps-', '').replace('.png', '');
+          pick.appendChild(o);
+        }
+        // On charge d'office la plus récente (première de la liste).
+        chargerImage(data.images[0].url, data.images[0].filename);
+      })
+      .catch(() => { pick.innerHTML = '<option value="">(liste indisponible)</option>'; });
+
+    // --- Boucle de rendu ---
+    function animer() {
+      requestAnimationFrame(animer);
+      controls.update();
+
+      // Petit rebond du marqueur qu'on vient de planter.
+      if (marqueur && animPin < 1) {
+        animPin = Math.min(1, animPin + 0.08);
+        const t = 1 - Math.pow(1 - animPin, 3);        // easing « ease-out »
+        marqueur.scale.setScalar(0.4 + 0.6 * t);
+        marqueur.position.y = 0.002 + (1 - t) * 2.5;   // il retombe du ciel
+      }
+
+      renderer.render(scene, camera);
+    }
+    animer();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

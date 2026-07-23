@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Échantillon → image 3D</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="echantillon.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- ============================================================
+       Menu : une SECTION REPLIABLE par sujet. Les trois premières sont ouvertes
+       (c'est le trajet normal : choisir une capture → régler le relief → plier).
+       Chaque titre porte l'état courant de sa section, lisible même repliée.
+       ============================================================ -->
+  <div class="hud">
+    <h2>Échantillon → image en 3D</h2>
+    <p>
+      Chaque case garde sa <b>vraie couleur</b> et se lève selon sa <b>famille</b>, reconnue par
+      sa <b>teinte</b>. <kbd>clic</kbd> tourner · <kbd>molette</kbd> zoom.
+    </p>
+
+    <div class="controls">
+
+      <details class="bloc" open>
+        <summary>📷 Capture <span class="etat" id="etatCapture">—</span></summary>
+        <div class="corps">
+          <div class="row">
+            <select id="capture" class="large"><option>chargement…</option></select>
+          </div>
+          <!-- Le champ fichier est rendu par le navigateur (« Choisir un fichier · Aucun
+               fichier choisi ») : il lui faut toute la largeur, sinon il tronque lui-même. -->
+          <label for="file">ou une image de votre ordinateur</label>
+          <div class="row">
+            <input type="file" id="file" accept="image/*" class="large">
+          </div>
+          <p class="zoom" id="zoom">—</p>
+        </div>
+      </details>
+
+      <!-- 🧱 Relief = LA GRILLE (combien de cases, quelle forme).
+           📐 Hauteurs = DE QUOI ELLES SE LÈVENT. Deux sujets distincts, deux onglets. -->
+      <details class="bloc" open>
+        <summary>🧱 Relief <span class="etat" id="etatRelief">220 · carrés</span></summary>
+        <div class="corps">
+          <div class="row">
+            <label for="finesse" class="l">Échantillonnage</label>
+            <input type="range" id="finesse" min="16" max="500" step="2" value="220">
+            <span class="val" id="finesse-val">220</span>
+          </div>
+          <div class="row">
+            <label for="forme" class="l">Forme des cases</label>
+            <select id="forme" class="large"
+                    title="Les cases restent aux mêmes places et gardent leur taille : seule leur enveloppe change">
+              <option value="cube">carrés (net)</option>
+              <option value="arrondi">arrondis</option>
+              <option value="lisse">très lisses</option>
+              <option value="boule">boules</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <details class="bloc" open>
+        <summary>📐 Hauteurs <span class="etat" id="etatHauteurs">×1 · d'origine</span></summary>
+        <div class="corps">
+          <div class="row">
+            <label for="relief" class="l">Relief global</label>
+            <input type="range" id="relief" min="0" max="3" step="0.05" value="1">
+            <span class="val" id="relief-val">1</span>
+          </div>
+          <div class="row">
+            <label for="calcCrit" class="l">Répartition</label>
+            <select id="calcCrit" class="large">
+              <option value="nature">d'origine (par nature)</option>
+              <option value="inverse">inversées : le bas devient le haut</option>
+              <option value="lumD">sombre = haut</option>
+              <option value="lumC">clair = haut</option>
+              <option value="plat">toutes au même niveau</option>
+              <option value="hasard">au hasard</option>
+              <option value="escalier">en escalier (une par famille)</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="calcH" class="large"
+                    title="Applique la répartition choisie aux familles — ou aux couleurs détectées si la palette est active">⚙️ Appliquer</button>
+          </div>
+          <p class="aide">La hauteur d'une case vient de <b>sa famille</b>, pas de l'image :
+            régler le relief, c'est régler une table de 9 valeurs. <b>Relief global</b> les
+            multiplie toutes ; la <b>répartition</b> les recalcule ; les curseurs de la section
+            🎨 <b>Familles</b> en règlent une seule.</p>
+        </div>
+      </details>
+
+      <details class="bloc" open>
+        <summary>🌍 Globe <span class="etat" id="etatGlobe">0 %</span></summary>
+        <div class="corps">
+          <div class="row">
+            <label for="globePct" class="l">Courbure</label>
+            <input type="range" id="globePct" min="0" max="100" step="1" value="0"
+                   title="0 % = la dalle à plat · 100 % = la sphère. Le réglage suit le doigt.">
+            <span class="val" id="globePctV">0 %</span>
+          </div>
+          <div class="row">
+            <label for="globeVers" class="l">Animer vers</label>
+            <input type="range" id="globeVers" min="0" max="100" step="1" value="100">
+            <span class="val" id="globeVersV">100 %</span>
+          </div>
+          <div class="row">
+            <label for="globeDuree" class="l">en</label>
+            <input type="range" id="globeDuree" min="0.2" max="90" step="0.1" value="2"
+                   title="Durée du pliage, de 0,2 s (instantané) à 90 s (très lent)">
+            <span class="val" id="globeDureeV">2,0 s</span>
+          </div>
+          <div class="row">
+            <button id="btnGlobeGo" class="large">▶ Plier à 100 % en 2,0 s</button>
+          </div>
+          <p class="aide">La carte se <b>courbe</b>, elle n'est pas comprimée : une case garde sa
+            taille à 1 % comme à 100 %.</p>
+        </div>
+      </details>
+
+      <details class="bloc" id="blocZone">
+        <summary>🎯 Zones <span class="etat" id="etatZone">aucune</span></summary>
+        <div class="corps">
+          <div class="row">
+            <button id="btnZone" class="large">🎯 Sélectionner une zone</button>
+          </div>
+          <div class="row">
+            <label for="zoneCrit" class="l">Reconnaître</label>
+            <select id="zoneCrit" class="large">
+              <option value="famille">la même famille (eau, végétation…)</option>
+              <option value="couleur">la même couleur (± tolérance)</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="zoneTol" class="l">Tolérance</label>
+            <input type="range" id="zoneTol" min="0" max="120" step="2" value="30">
+            <span class="val" id="zoneTolV">30</span>
+          </div>
+          <div class="row">
+            <label for="zonePortee" class="l">Étendue</label>
+            <select id="zonePortee" class="large">
+              <option value="contigue">la tache touchée (de proche en proche)</option>
+              <option value="globale">tout ce qui correspond sur la carte</option>
+            </select>
+          </div>
+          <p class="aide">Mode actif : <b>clic sur une case</b> et la zone entière se sélectionne.
+            Le panneau de droite permet ensuite de la monter, la recolorer, la fondre dans une
+            autre famille ou l'effacer.</p>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>🧩 Objets <span class="etat" id="etatObjets">aucun</span></summary>
+        <div class="corps">
+          <div class="row">
+            <button id="btnPoser" class="large">➕ Poser des objets</button>
+          </div>
+          <div class="row">
+            <label for="objType" class="l">Objet</label>
+            <select id="objType" class="large">
+              <option value="arbre">🌳 Arbre</option>
+              <option value="sapin">🌲 Sapin</option>
+              <option value="maison">🏠 Maison</option>
+              <option value="tour">🗼 Tour</option>
+              <option value="rocher">🪨 Rocher</option>
+              <option value="personne">🧍 Personne</option>
+              <option value="chien">🐕 Chien</option>
+              <option value="chat">🐈 Chat</option>
+              <option value="repere">📍 Repère</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="objTaille" class="l">Taille</label>
+            <input type="range" id="objTaille" min="0.2" max="4" step="0.1" value="1">
+            <span class="val" id="objTailleV">1</span>
+          </div>
+          <div class="row">
+            <button id="objVider" class="large">🗑 Tout effacer</button>
+          </div>
+          <p class="aide">Mode actif : <b>clic sur une case</b> pose l'objet dessus, <b>clic sur un
+            objet</b> le retire. Les objets tiennent à leur <b>endroit sur la carte</b> : ils suivent
+            le relief, le pliage du globe et les changements d'échantillonnage.</p>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>🎥 Vue <span class="etat" id="etatVue">netteté 1×</span></summary>
+        <div class="corps">
+          <div class="row">
+            <label for="nettete" class="l">Netteté</label>
+            <select id="nettete" class="large"
+                    title="Super-échantillonnage : l'image est calculée plus grande, puis réduite. Le coût monte au carré.">
+              <option value="0.75">économique (0,75×)</option>
+              <option value="1" selected>normale (1×)</option>
+              <option value="1.5">nette (1,5×)</option>
+              <option value="2">très nette (2×)</option>
+            </select>
+          </div>
+          <p class="aide">Adoucit les <b>bords crénelés</b> des cases. Pour des carrés plus
+            <b>petits</b>, c'est l'<b>Échantillonnage</b> (section Relief) qu'il faut monter.</p>
+          <div class="row">
+            <label class="switch"><input type="checkbox" id="autorot"> rotation auto</label>
+            <label for="rotvit">vitesse</label>
+            <input type="range" id="rotvit" min="0.2" max="8" step="0.1" value="1.5">
+            <span class="val" id="rotvitV">1.5</span>
+          </div>
+          <div class="row">
+            <label class="switch"><input type="checkbox" id="montrerNoms"> afficher les noms</label>
+            <button id="reset">Recadrer</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>☀️ Soleil <span class="etat" id="etatSoleil">éclairage par défaut</span></summary>
+        <div class="corps">
+          <label class="switch"><input type="checkbox" id="solPilote"> piloter le soleil</label>
+          <div id="solCtrls" hidden style="display:grid; gap:8px;">
+            <div class="row">
+              <label for="solAz" class="l">Direction</label>
+              <input type="range" id="solAz" min="0" max="360" step="1" value="315">
+              <span class="val" id="solAzV">NO</span>
+            </div>
+            <div class="row">
+              <label for="solEl" class="l">Hauteur</label>
+              <input type="range" id="solEl" min="3" max="90" step="1" value="45">
+              <span class="val" id="solElV">45°</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="solOmbre" checked> ombres portées</label>
+            <div class="row">
+              <label class="switch"><input type="checkbox" id="solAuto"> tourner tout seul</label>
+              <label for="solVit">vitesse</label>
+              <input type="range" id="solVit" min="1" max="60" step="1" value="15">
+              <span class="val" id="solVitV">15</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>✨ Animations</summary>
+        <div class="corps">
+          <div class="row">
+            <button id="btnMontee">▲ Monter</button>
+            <label for="montVit">vitesse</label>
+            <input type="range" id="montVit" min="0.1" max="3" step="0.05" value="0.7">
+            <span class="val" id="montVitV">0.7</span>
+          </div>
+          <div class="row">
+            <label for="typeAnim" class="l">Chute ⬇</label>
+            <select id="typeAnim" class="large">
+              <option value="effondrement">Effondrement sur place</option>
+              <option value="chute">Chute libre</option>
+              <option value="explosion">Explosion</option>
+              <option value="enfoncement">Enfoncement (couler)</option>
+              <option value="envol">Envol</option>
+              <option value="tourbillon">Tourbillon</option>
+              <option value="aspiration">Aspiration (vers le centre)</option>
+              <option value="dislocation">Dislocation (éparpille)</option>
+              <option value="rebond">Rebond (saut)</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="remettre" class="large">↺ Remettre les chutes en place</button>
+          </div>
+          <p class="aide">Le ⬇ de chaque couleur (section suivante) lance l'animation choisie.
+            Les chutes supposent un « bas » unique : elles restent <b>à plat</b>.</p>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>🎨 Familles de couleurs</summary>
+        <div class="corps">
+          <p class="aide">Hauteur et visibilité par famille de teinte. Le ⬇ fait tomber la couleur.</p>
+          <div id="familles"></div>
+        </div>
+      </details>
+
+      <details class="bloc">
+        <summary>🖌️ Couleurs de l'image (palette)</summary>
+        <div class="corps">
+          <div class="row">
+            <button id="detecter">🎨 Détecter</button>
+            <button id="relier" title="Fusionner les couleurs trop proches en une seule">🔗 Relier les proches</button>
+          </div>
+          <div class="row">
+            <label class="switch"><input type="checkbox" id="palMode"> utiliser la palette</label>
+          </div>
+          <div class="row">
+            <label for="palTol" class="l">Regrouper</label>
+            <input type="range" id="palTol" min="0" max="140" step="2" value="40">
+            <span class="val" id="palTolV">40</span>
+          </div>
+          <div id="palette"></div>
+        </div>
+      </details>
+
+    </div>
+
+    <a href="index.html">← Retour à la carte 2D</a>
+  </div>
+
+  <!-- Barre flottante : TOUS les modes qui se pilotent au clic dans la scène, plus les
+       actions plein écran. Les réglages fins de chaque mode restent dans le menu. -->
+  <div id="topbtns">
+    <button id="btn2d" title="Générer une vue 2D à plat de la reconstruction">🖼️ 2D</button>
+    <button id="btnEdit" title="Modifier un cube : cliquer un cube après avoir activé">✏️ Cube</button>
+    <button id="btnZoneBar" title="Sélectionner une zone entière de même couleur, puis la manipuler">🎯 Zones</button>
+    <button id="btnObjBar" title="Poser des arbres, maisons, repères… sur la carte">🧩 Objets</button>
+    <button id="btnGlobe" title="Enrouler la carte sur une sphère — recliquer remet tout à plat">🌍 Globe</button>
+    <button id="btnFP" title="Se balader dans le relief — à plat comme sur le globe">🚶 Marcher</button>
+    <button id="btnCine" title="Masquer menu et boutons pour filmer l'écran — touche C pour revenir">🎬 Cinéma</button>
+  </div>
+
+  <!-- Message furtif (mode cinéma) -->
+  <div id="toast"></div>
+
+  <!-- Panneau d'édition d'un cube -->
+  <div id="panelEdit" hidden>
+    <div style="font-weight:600;">Cube <span id="selInfo"></span></div>
+    <div class="r"><label for="editH">Hauteur</label><input type="range" id="editH" min="0" max="4" step="0.05"><span class="val" id="editHV"></span></div>
+    <div class="r"><label for="editC">Couleur</label><input type="color" id="editC"></div>
+    <div class="r"><button id="editDel" class="del">🗑 Supprimer</button><button id="editClose">Désélectionner</button></div>
+    <div class="hint">glisser = tourner · clic = choisir un cube</div>
+  </div>
+
+  <!-- Manipulation de la zone sélectionnée -->
+  <div id="panelZone" hidden>
+    <div style="font-weight:600;">Zone <span id="zoneInfo"></span></div>
+    <div class="r"><label for="zoneH">Hauteur</label><input type="range" id="zoneH" min="0" max="4" step="0.05"><span class="val" id="zoneHV"></span></div>
+    <div class="r"><button id="zoneMonter">▲ Monter</button><button id="zoneDescendre">▼ Descendre</button></div>
+    <div class="r"><label for="zoneCoul">Couleur</label><input type="color" id="zoneCoul"></div>
+    <div class="r"><label for="zoneFam">Fondre en</label><select id="zoneFam" style="flex:1;"></select></div>
+    <div class="r"><button id="zoneAssoc" style="flex:1;">🔗 Associer à cette famille</button></div>
+    <div class="r"><label for="zonePlantType">Planter</label><select id="zonePlantType" style="flex:1;">
+      <option value="arbre">🌳 Arbres</option>
+      <option value="sapin">🌲 Sapins</option>
+      <option value="rocher">🪨 Rochers</option>
+      <option value="personne">🧍 Personnes</option>
+      <option value="chien">🐕 Chiens</option>
+      <option value="chat">🐈 Chats</option>
+      <option value="maison">🏠 Maisons</option>
+      <option value="tour">🗼 Tours</option>
+      <option value="repere">📍 Repères</option>
+    </select></div>
+    <div class="r"><label for="zoneDens">Densité</label><input type="range" id="zoneDens" min="2" max="100" step="2" value="20"><span class="val" id="zoneDensV">20 %</span></div>
+    <div class="r">
+      <button id="zonePlanter" style="flex:1;">🌳 Planter dans la zone</button>
+      <button id="zonePlus" title="Agrandir les objets de cette zone">＋</button>
+      <button id="zoneMoins" title="Rétrécir les objets de cette zone">－</button>
+    </div>
+    <div class="r" style="gap:6px;">
+      <input type="checkbox" id="zoneRemplacer" checked style="width:auto;min-width:0;">
+      <label for="zoneRemplacer" style="min-width:0;cursor:pointer;">remplacer</label>
+      <button id="zoneDeplanter" style="margin-left:auto;">🗑 Retirer</button>
+    </div>
+    <div class="r"><button id="zoneEffacer" class="del">🗑 Vider les cases</button><button id="zoneReset">↺ Rétablir</button></div>
+    <div class="r"><button id="zoneFermer" style="flex:1;">Désélectionner</button></div>
+    <div class="r" style="gap:6px;">
+      <input type="checkbox" id="zoneVoir" checked style="width:auto;min-width:0;">
+      <label for="zoneVoir" style="min-width:0;cursor:pointer;">souligner le contour</label>
+    </div>
+    <div class="hint">▲/▼ gardent le relief interne (×1,25 · ÷1,25). Seul le CONTOUR est souligné :
+      la couleur affichée dans la zone est déjà la couleur finale.</div>
+  </div>
+
+  <!-- Aperçu du canvas 2D reconstruit (vue du dessus) -->
+  <div id="apercu2d" hidden>
+    <div class="bar">
+      <span id="etat2d">Canvas 2D — vue du dessus</span>
+      <a id="dl2d" download="carte-2d.png">↓ Télécharger</a>
+      <button id="close2d" title="Fermer">✕</button>
+    </div>
+    <div class="body" id="apercu2d-body"></div>
+  </div>
+
+  <!-- Voile d'entrée du mode première personne (capture de la souris) -->
+  <div id="fpOverlay" hidden>
+    <div class="carte">
+      <h3>🚶 Mode première personne</h3>
+      <p><kbd>Z</kbd> <kbd>Q</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>flèches</kbd> se déplacer ·
+         <kbd>souris</kbd> regarder · <kbd>Maj</kbd> courir</p>
+      <p style="opacity:.6">« Entrer » capture la souris. <kbd>Échap</kbd> la relâche (met en pause).</p>
+      <p style="opacity:.6">Marche aussi <b>sur le globe</b> : on suit la courbure, le haut reste
+        le ciel local. Le pliage peut même se poursuivre pendant qu'on marche.</p>
+      <div class="fprow">
+        <label for="fpTaille">Taille</label>
+        <input type="range" id="fpTaille" min="0.08" max="2" step="0.02" value="0.25">
+        <span class="val" id="fpTailleV">0.25</span>
+      </div>
+      <div class="fprow">
+        <label for="fpVitesse">Vitesse</label>
+        <input type="range" id="fpVitesse" min="1" max="20" step="0.5" value="6">
+        <span class="val" id="fpVitesseV">6</span>
+      </div>
+      <div class="fpbtns">
+        <button id="fpEntrer">Entrer ▶</button>
+        <button id="fpSortir">Quitter le mode</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/echantillon.js"></script>
+</body>
+</html>

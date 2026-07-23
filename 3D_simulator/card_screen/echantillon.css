@@ -1,0 +1,183 @@
+/* ============================================================
+   Échantillon → image 3D — toute la mise en page de l'outil.
+   Le menu de gauche est fait de SECTIONS REPLIABLES (<details class="bloc">) :
+   une quinzaine de réglages à plat devenaient illisibles, et le panneau
+   dépassait de l'écran. Chaque section affiche son état dans son titre,
+   pour rester lisible même repliée.
+   ============================================================ */
+
+/* ---------- Le menu ---------- */
+/* 380 px au lieu de 340 : les intitulés du projet sont longs (« Échantillonnage »,
+   « hauteurs par nature ») et débordaient. */
+.hud { max-width: 380px; max-height: 92vh; overflow-y: auto; padding-bottom: 4px; }
+/* Titre collant : on garde le repère en tête même quand le menu défile. Les marges
+   négatives lui font traverser le rembourrage du panneau, sinon le contenu défile
+   dans les 16 px de gouttière, à côté du titre. */
+.hud h2 {
+  position: sticky; top: 0; z-index: 2;
+  margin: -14px -16px 8px; padding: 12px 16px 8px;
+  background: rgba(22, 27, 34, .97); border-bottom: 1px solid #30363d;
+}
+.hud .controls { display: grid; gap: 7px; margin: 10px 0; }
+.hud .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hud label { font-size: 13px; opacity: .9; }
+.hud .l { min-width: 96px; }                  /* colonne des intitulés : tout s'aligne */
+/* `css/style.css` donne width:100% aux curseurs : dans une ligne flex, le curseur
+   prend alors toute la largeur et pousse sa valeur à la ligne suivante. On lui rend
+   une largeur souple. Idem pour la marge haute des <label>, qui décale les lignes. */
+.hud input[type=range] { flex: 1 1 60px; width: auto; min-width: 54px; }
+.hud .row label { margin-top: 0; }
+.hud .val { flex: 0 0 auto; font-variant-numeric: tabular-nums; opacity: .8; min-width: 2.7em; font-size: 12px; }
+.hud select, .hud button {
+  background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
+  border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
+  /* Un élément de ligne flex refuse par défaut de descendre sous la largeur de son
+     contenu (`min-width: auto`) : une liste à longue option débordait alors du panneau,
+     hors de l'écran. `min-width: 0` l'autorise à rétrécir, `max-width` le borne, et le
+     texte trop long se coupe proprement — la liste déroulée, elle, l'affiche en entier. */
+  min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hud button:hover, .hud select:hover { border-color: #58a6ff; }
+.hud button.actif { background: #1f6feb; border-color: #388bfd; color: #fff; }
+.hud .large { flex: 1 1 0; min-width: 0; }   /* même raison : une liste large doit pouvoir rétrécir */
+.hud .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.hud .zoom { font-size: 12px; opacity: .85; margin: 2px 0 0; }
+.hud .zoom b { color: #7ee787; }
+.hud .aide { font-size: 11.5px; opacity: .55; line-height: 1.45; margin: 0; }
+
+/* ---------- Sections repliables ---------- */
+.hud .bloc { border: 1px solid #30363d; border-radius: 8px; background: rgba(255, 255, 255, .02); }
+.hud .bloc > summary {
+  cursor: pointer; padding: 7px 10px; font-size: 12px; text-transform: uppercase;
+  letter-spacing: .04em; opacity: .85; display: flex; align-items: center; gap: 8px;
+  list-style: none; user-select: none;
+}
+.hud .bloc > summary::-webkit-details-marker { display: none; }
+.hud .bloc > summary::before { content: '▸'; opacity: .55; font-size: 10px; }
+.hud .bloc[open] > summary::before { content: '▾'; }
+.hud .bloc > summary:hover { color: #58a6ff; opacity: 1; }
+/* L'état de la section, affiché dans son titre : lisible même repliée. */
+.hud .bloc > summary .etat {
+  margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 11.5px;
+  color: #7ee787; opacity: .9; font-variant-numeric: tabular-nums;
+}
+.hud .bloc .corps { display: grid; gap: 8px; padding: 2px 10px 10px; }
+
+/* ---------- Tableau des familles de couleurs ---------- */
+.fam-row { display: grid; grid-template-columns: 16px 15px 1fr 66px 2.3em 22px; align-items: center; gap: 6px; margin: 4px 0; }
+.fam-sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,.25); }
+.fam-row label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fam-row input[type=range] { min-width: 50px; }
+.fam-row input[type=checkbox] { cursor: pointer; }
+.fam-drop { background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 5px;
+  cursor: pointer; font-size: 11px; padding: 2px 0; line-height: 1; }
+.fam-drop:hover { border-color: #58a6ff; }
+
+/* ---------- Barre de boutons flottante sur le rendu 3D ---------- */
+#topbtns { position: fixed; top: 16px; right: 16px; z-index: 15; display: flex; gap: 10px; }
+#topbtns button {
+  color: #fff; border-radius: 8px; padding: 9px 14px; font: inherit; font-size: 14px;
+  cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
+#btn2d { background: #238636; border: 1px solid #2ea043; }
+#btn2d:hover { background: #2ea043; }
+#btnEdit { background: #8957e5; border: 1px solid #a371f7; }
+#btnEdit:hover { background: #9a6ef0; }
+#btnEdit.actif { background: #6e40c9; box-shadow: inset 0 0 0 2px #d2a8ff; }
+#btnGlobe { background: #1a7f8c; border: 1px solid #22a5b5; }
+#btnGlobe:hover { background: #22a5b5; }
+#btnGlobe.actif { background: #0e5f6b; box-shadow: inset 0 0 0 2px #7ee7f7; }
+#btnFP { background: #1f6feb; border: 1px solid #388bfd; }
+#btnFP:hover { background: #388bfd; }
+#btnFP.actif { background: #0d419d; box-shadow: inset 0 0 0 2px #79c0ff; }
+#btnZoneBar { background: #bc4c00; border: 1px solid #db6d28; }
+#btnZoneBar:hover { background: #db6d28; }
+#btnZoneBar.actif { background: #8c3800; box-shadow: inset 0 0 0 2px #ffa657; }
+#btnObjBar { background: #1a7f37; border: 1px solid #2da44e; }
+#btnObjBar:hover { background: #2da44e; }
+#btnObjBar.actif { background: #116329; box-shadow: inset 0 0 0 2px #7ee787; }
+
+/* ---------- Mode cinéma ----------
+   Pour filmer l'écran : tout ce qui n'est pas la scène disparaît. On masque par une
+   classe sur <body> plutôt qu'en touchant chaque panneau, pour que les réglages
+   restent dans le DOM — la démo continue de lire leurs valeurs pendant le tournage.
+   Le voile de la 1ʳᵉ personne reste visible : sans lui, impossible d'entrer. */
+body.cinema .hud,
+body.cinema #topbtns,
+body.cinema #panelEdit,
+body.cinema #panelZone,
+body.cinema #apercu2d { display: none; }
+
+/* Message furtif : dit comment revenir, puis s'efface (2 s) pour ne pas polluer la vidéo. */
+#toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 40;
+  background: rgba(13, 17, 23, .88); border: 1px solid #30363d; color: #e6edf3;
+  border-radius: 999px; padding: 8px 16px; font-size: 13px;
+  pointer-events: none; opacity: 0; transition: opacity .35s;
+}
+#toast.on { opacity: 1; }
+#btnCine { background: #57606a; border: 1px solid #6e7681; }
+#btnCine:hover { background: #6e7681; }
+
+/* ---------- Panneaux flottants : édition d'un cube · manipulation d'une zone ---------- */
+/* 264 px : « Fondre en [Rouge (autoroute/front.)] » et « 🗑 Vider les cases » ne tenaient
+   pas dans 232 et débordaient du panneau. */
+#panelEdit, #panelZone {
+  position: fixed; top: 62px; right: 16px; z-index: 16; width: 264px;
+  background: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 12px;
+  color: #e6edf3; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-size: 13px;
+}
+#panelEdit[hidden], #panelZone[hidden] { display: none; }
+#panelEdit .r, #panelZone .r { display: flex; align-items: center; gap: 8px; margin: 9px 0; min-width: 0; }
+#panelEdit label, #panelZone label { min-width: 58px; opacity: .85; }
+#panelEdit input[type=range], #panelZone input[type=range] { flex: 1; }
+#panelEdit input[type=color], #panelZone input[type=color] { width: 42px; height: 26px; padding: 0; border: none; background: none; cursor: pointer; }
+#panelEdit button, #panelZone button, #panelZone select {
+  background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 6px;
+  padding: 5px 9px; cursor: pointer; font: inherit; font-size: 12px;
+  min-width: 0; max-width: 100%;                /* idem : rien ne sort du panneau */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#panelEdit button:hover, #panelZone button:hover, #panelZone select:hover { border-color: #58a6ff; }
+#panelEdit .del, #panelZone .del { background: #7f1d1d; border-color: #b91c1c; }
+#panelEdit .hint, #panelZone .hint { opacity: .55; font-size: 11px; margin-top: 4px; }
+
+/* ---------- Aperçu du canvas 2D généré ---------- */
+#apercu2d {
+  position: fixed; right: 16px; bottom: 16px; z-index: 20;
+  background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5); max-width: 46vw; max-height: 80vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#apercu2d[hidden] { display: none; }
+#apercu2d .bar { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #30363d; }
+#apercu2d .bar span { font-size: 13px; color: #e6edf3; margin-right: auto; }
+#apercu2d a, #apercu2d button {
+  background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 6px;
+  padding: 4px 9px; cursor: pointer; font: inherit; font-size: 12px; text-decoration: none;
+}
+#apercu2d a:hover, #apercu2d button:hover { border-color: #58a6ff; }
+#apercu2d .body { overflow: auto; padding: 8px; }
+#apercu2d canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+
+/* ---------- Voile du mode première personne ---------- */
+#fpOverlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center;
+  justify-content: center; background: rgba(5,8,12,.74); backdrop-filter: blur(2px); }
+#fpOverlay[hidden] { display: none; }
+#fpOverlay .carte { background: #0d1117; border: 1px solid #30363d; border-radius: 14px;
+  padding: 22px 26px; color: #e6edf3; text-align: center; max-width: 470px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+#fpOverlay h3 { margin: 0 0 10px; }
+#fpOverlay p { margin: 8px 0; opacity: .9; line-height: 1.6; }
+#fpOverlay .fprow { display: flex; align-items: center; gap: 10px; margin: 10px 0; text-align: left; }
+#fpOverlay .fprow label { min-width: 60px; opacity: .85; }
+#fpOverlay .fprow input[type=range] { flex: 1; }
+#fpOverlay .fprow .val { min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; opacity: .8; }
+#fpOverlay kbd { background: #21262d; border: 1px solid #3d444d; border-radius: 5px;
+  padding: 2px 7px; font-size: 12px; }
+#fpOverlay .fpbtns { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+#fpOverlay button { background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
+  border-radius: 7px; padding: 8px 16px; cursor: pointer; font: inherit; }
+#fpOverlay #fpEntrer { background: #1f6feb; border-color: #388bfd; color: #fff; }
+#fpOverlay button:hover { border-color: #58a6ff; }

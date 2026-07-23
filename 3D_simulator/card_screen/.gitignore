@@ -1,0 +1,6 @@
+# Contenu PRODUIT par l'outil, jamais du code : il se régénère d'un clic et pèse lourd
+# (une capture « détail ×4 » fait à elle seule 7 Mo). On garde les dossiers, pas leur contenu.
+captures/*
+canvas2d/*
+!captures/.gitkeep
+!canvas2d/.gitkeep

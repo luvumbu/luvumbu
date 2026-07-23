@@ -1,0 +1,192 @@
+:root {
+  --bg: #0f172a;
+  --card-bg: #ffffff;
+  --accent: #2563eb;
+  --text: #1e293b;
+  --muted: #64748b;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  color: var(--text);
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* La "card" qui contient la carte */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  height: min(640px, 100%);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.card__header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card__title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+
+/* La barre porte le champ de recherche, deux listes et cinq icônes. Sans `wrap`, les
+   dernières icônes (🧊 🏷️ 🏝️) sortaient de la carte et devenaient inatteignables : une
+   ligne flex ne déborde pas « un peu », elle pousse tout ce qui suit hors du cadre.
+   Avec `wrap`, la barre passe simplement sur deux lignes quand la fenêtre est étroite. */
+.search {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search__input {
+  flex: 1 1 200px;      /* peut rétrécir jusqu'à 200 px, puis c'est lui qui passe à la ligne */
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+/* Les icônes ne rétrécissent jamais : on doit toujours pouvoir les cliquer en entier. */
+.search__btn { flex: 0 0 auto; min-height: 38px; }
+.search__select { flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 38px; }
+
+.search__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.search__btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search__btn:hover { background: #1d4ed8; }
+
+/* Niveau de détail de la capture — à côté du 📸, puisque c'est lui qu'il règle */
+.search__select {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1f2937;
+  padding: 0 8px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.search__select:hover { border-color: var(--accent); }
+
+/* Bouton "Retirer les noms" — rouge, à côté du cube 3D */
+.btn-noms { background: #dc2626; }
+.btn-noms:hover { background: #b91c1c; }
+/* État actif (noms retirés) : plus foncé + liseré clair pour montrer qu'il est enfoncé */
+.btn-noms.actif {
+  background: #7f1d1d;
+  box-shadow: inset 0 0 0 2px #fca5a5;
+}
+
+.card__map-wrap {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.card__map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Flash "appareil photo" au moment du 📸 : un éclair blanc bref sur la carte. */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+.flash--show {
+  animation: flash-cam 0.45s ease-out;
+}
+@keyframes flash-cam {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.95; }   /* éclair quasi instantané */
+  100% { opacity: 0; }      /* puis fondu rapide */
+}
+
+/* Toast de confirmation */
+.toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -16px);
+  background: rgba(22, 163, 74, 0.95);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+.toast--show {
+  animation: toast-pop 1.8s ease;
+}
+
+@keyframes toast-pop {
+  0%   { opacity: 0; transform: translate(-50%, -16px) scale(0.85); }
+  12%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  80%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -16px) scale(0.95); }
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.status { color: var(--text); }
+.status--error { color: #dc2626; }
+
+.credit { color: var(--muted); white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .card { height: 100%; border-radius: 0; }
+  body { padding: 0; }
+}
