@@ -6,6 +6,30 @@ Chaîne complète : **capturer une carte** (OSM/CARTO via Leaflet) → **la reco
 
 Three.js arrive du CDN jsDelivr, épinglé en **0.160.0** (import map). Aucun build, aucun npm.
 
+## Ce que l'outil sait faire
+
+Le parcours normal, de bout en bout :
+
+```
+1. index.html      choisir un lieu · un style de fond · un niveau de détail · 📸
+2. « Traiter cette capture → »
+3. echantillon.html  régler la grille → le relief → plier en globe → arranger → filmer
+4. sortir           .glb (3D) · canvas 2D (PNG) · projet (JSON, réouvrable)
+```
+
+| Sujet | Ce qui est possible |
+|---|---|
+| **Capturer** | 6 styles de fond (Voyager, OSM, épuré, sombre, topographique, satellite) · détail ×1/×2/×4 (tuiles d'un zoom plus fin) · relevé des lieux par Overpass |
+| **Reconstruire** | classification par teinte en 9 familles · échantillonnage 16→500 · 4 formes de case · 7 répartitions de hauteurs |
+| **Plier** | globe de 0 à 100 % (une **courbure**, pas un mélange) · pliage animé de 0,2 à 90 s |
+| **Arranger** | zones sélectionnées par couleur (monter, recolorer, fondre, vider, rétablir) · 9 objets posables · retouche cube par cube · ↶ Ctrl+Z |
+| **Visiter** | 1ʳᵉ personne à plat **et sur le globe** · soleil pilotable · netteté ×0,75→×2 |
+| **Montrer** | mode cinéma (touche **C**) · séquences filmées minutées · échelle réelle et mesure de distances |
+| **Sortir** | export **.glb** · canvas 2D · projets enregistrés dans `projets/` |
+
+Chaque point a sa section plus bas, avec **le piège qu'il évite** — c'est la convention de ce
+document : on n'y explique pas seulement ce que fait le code, mais pourquoi il le fait ainsi.
+
 ## Les pages
 
 | Page | Rôle |
@@ -507,7 +531,30 @@ n'entrent dans aucun calcul.)
 - Les **couleurs** (teinte) donnent la nature de chaque zone.
 - Les **noms** (Overpass → `.json`) sont mis de côté, pour un repérage 3D ultérieur.
 
+## État du projet
+
+**Versionné** depuis le 23/07/2026 sur la branche **`card-screen-3d`** (rien n'est poussé).
+Sont hors du dépôt, via `.gitignore` : `captures/`, `canvas2d/`, `projets/` — du contenu
+produit par l'outil, régénérable, et lourd (une capture ×4 pèse 7 Mo à elle seule).
+
+**Vérification.** Chaque fonction a été essayée dans un navigateur réel (Chromium piloté),
+pas seulement relue : parcours complets, mesures dans la page (dimensions, débordements,
+compteurs), et aller-retour pour l'export `.glb` — le fichier est rechargé dans une
+visionneuse indépendante pour prouver qu'il s'ouvre ailleurs.
+
+**Points connus, à traiter un jour :**
+
+| Point | Détail |
+|---|---|
+| `.json` orphelins | quelques métadonnées dans `captures/` n'ont plus leur PNG (supprimé à la main). Sans effet, mais elles traînent — le 🗑 de l'outil, lui, efface bien les deux |
+| `exemples/`, `simboles/` | dossiers hérités, référencés nulle part (1,6 Mo) |
+| `3d.html`, `zones.html` | deux pistes antérieures, autonomes : elles n'ont ni les styles de fond, ni le niveau de détail |
+| `js/echantillon.js` | ~2 100 lignes — il assume de tenir l'état ; les trois modules sans état sont déjà sortis |
+| matériau de la grille | recréé à chaque reconstruction. Ce n'est **pas** une fuite (Three range ses propriétés en `WeakMap`), juste une allocation évitable |
+
 ## Pistes ouvertes
 - Afficher les **noms du `.json`** en étiquettes 3D au bon endroit.
 - **Pinceau** multi-cubes, **ajouter** un cube sur un trou, changer la **famille** d'un cube.
 - Teinte de lumière selon la hauteur du soleil (aube/midi/crépuscule).
+- **Refaire** (Ctrl+Y) : l'annulation empile déjà des instantanés, le retour serait symétrique.
+- Rejouer une **séquence enregistrée dans un projet** (elle n'y est pas encore).
