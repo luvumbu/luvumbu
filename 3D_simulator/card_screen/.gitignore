@@ -4,3 +4,7 @@ captures/*
 canvas2d/*
 !captures/.gitkeep
 !canvas2d/.gitkeep
+
+# Les projets sont des données de travail, pas du code — comme les captures.
+projets/*
+!projets/.gitkeep
