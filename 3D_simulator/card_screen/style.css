@@ -68,6 +68,10 @@ body {
   outline: none;
 }
 
+/* Le lien vers l'outil principal se distingue des deux pistes antérieures. */
+.search__btn--fort { background: #7c3aed; }
+.search__btn--fort:hover { background: #6d28d9; }
+
 /* Les icônes ne rétrécissent jamais : on doit toujours pouvoir les cliquer en entier. */
 .search__btn { flex: 0 0 auto; min-height: 38px; }
 .search__select { flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 38px; }

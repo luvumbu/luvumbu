@@ -29,11 +29,31 @@
 
     <div class="controls">
 
+      <details class="bloc" id="blocProjet">
+        <summary>💾 Projet <span class="etat" id="etatProjet">non enregistré</span></summary>
+        <div class="corps">
+          <div class="row">
+            <input type="text" id="projNom" placeholder="nom du projet" class="large"
+                   style="background:#0d1117;color:#e6edf3;border:1px solid #3d444d;border-radius:6px;padding:5px 10px;font:inherit;">
+            <button id="projSave" title="Enregistrer l'arrangement courant sous ce nom">💾</button>
+          </div>
+          <div class="row">
+            <select id="projListe" class="large"><option value="">(aucun projet)</option></select>
+            <button id="projOuvrir" title="Ouvrir le projet choisi">📂</button>
+            <button id="projSuppr" title="Supprimer le projet choisi">🗑</button>
+          </div>
+          <p class="aide">Un projet retient <b>tout ce que vous avez arrangé</b> : la capture
+            utilisée, les hauteurs, les zones retouchées, les objets posés, le pliage et les
+            réglages. L'image reste dans <code>captures/</code> — le projet la désigne.</p>
+        </div>
+      </details>
+
       <details class="bloc" open>
         <summary>📷 Capture <span class="etat" id="etatCapture">—</span></summary>
         <div class="corps">
           <div class="row">
             <select id="capture" class="large"><option>chargement…</option></select>
+            <button id="capSuppr" title="Supprimer cette capture du serveur (image + métadonnées)">🗑</button>
           </div>
           <!-- Le champ fichier est rendu par le navigateur (« Choisir un fichier · Aucun
                fichier choisi ») : il lui faut toute la largeur, sinon il tronque lui-même. -->

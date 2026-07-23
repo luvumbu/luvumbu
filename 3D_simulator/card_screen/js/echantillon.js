@@ -482,16 +482,18 @@ const NOM_FORME = { cube: 'carrés', arrondi: 'arrondis', lisse: 'très lisses',
 // Dernière répartition appliquée : elle n'est déductible d'aucune valeur (deux répartitions
 // peuvent donner des hauteurs proches), on la retient donc pour l'afficher.
 let repartitionCourante = "d'origine";
+let projetCourant = null;                   // nom du projet ouvert/enregistré, pour l'afficher
 function majEtats() {
   const e = (id, texte) => { const n = document.getElementById(id); if (n) n.textContent = texte; };
   e('etatRelief', `${finesse} · ${NOM_FORME[forme] || forme}`);
   e('etatHauteurs', `×${String(relief).replace('.', ',')} · ${repartitionCourante}`);
+  e('etatProjet', projetCourant || 'non enregistré');
   e('etatGlobe', Math.round(globeT * 100) + ' %');
   e('etatVue', `netteté ${String(nettete).replace('.', ',')}×`);
   e('etatSoleil', solPilote ? `${boussole(solAz)} · ${solEl}°${solAuto ? ' · tourne' : ''}` : 'éclairage par défaut');
 }
 
-function chargerImage(url, nom) {
+function chargerImage(url, nom, apres) {
   const im = new Image();
   im.crossOrigin = 'anonymous';
   im.onload = () => {
@@ -526,6 +528,7 @@ function chargerImage(url, nom) {
     const ec = document.getElementById('etatCapture');
     if (ec) ec.textContent = (nom || 'image').replace(/^card-maps-/, '').replace(/\.png$/, '');
     construire(); recadrer(); majEtats();
+    if (apres) apres();               // un projet en cours de chargement reprend la main ici
   };
   im.src = url;
 }
@@ -704,21 +707,51 @@ $('palette').addEventListener('click', (e) => {
 });
 
 const selCapture = $('capture');
-fetch('list.php')
-  .then((r) => r.json())
-  .then((data) => {
-    selCapture.innerHTML = '';
-    if (!data.ok || !data.images.length) { selCapture.innerHTML = '<option value="">(aucune capture)</option>'; return; }
-    for (const im of data.images) {
-      const o = document.createElement('option');
-      o.value = im.url;                 // chemin captures/xxx.png
-      o.dataset.nom = im.filename;      // nom (pour lire le zoom)
-      o.textContent = im.filename.replace('card-maps-', '');
-      selCapture.appendChild(o);
-    }
-    chargerImage(data.images[0].url, data.images[0].filename);
-  })
-  .catch(() => { selCapture.innerHTML = '<option value="">(liste indisponible)</option>'; });
+// La liste des captures est relue à chaque fois qu'elle change (chargement, suppression).
+// `charger` : faut-il ouvrir la première de la liste ? Non après une suppression si une
+// autre capture est déjà à l'écran — on ne rejette pas le travail en cours.
+function listerCaptures(charger = true) {
+  return fetch('list.php')
+    .then((r) => r.json())
+    .then((data) => {
+      selCapture.innerHTML = '';
+      if (!data.ok || !data.images.length) {
+        selCapture.innerHTML = '<option value="">(aucune capture)</option>';
+        return 0;
+      }
+      for (const im of data.images) {
+        const o = document.createElement('option');
+        o.value = im.url;                 // chemin captures/xxx.png
+        o.dataset.nom = im.filename;      // nom (pour lire le zoom)
+        o.textContent = im.filename.replace('card-maps-', '');
+        selCapture.appendChild(o);
+      }
+      if (charger) chargerImage(data.images[0].url, data.images[0].filename);
+      return data.images.length;
+    })
+    .catch(() => { selCapture.innerHTML = '<option value="">(liste indisponible)</option>'; return 0; });
+}
+listerCaptures();
+
+// Supprimer la capture choisie — image ET métadonnées, côté serveur. Irréversible : on
+// demande confirmation, en nommant le fichier pour qu'on sache ce qu'on efface.
+$('capSuppr').addEventListener('click', () => {
+  const opt = selCapture.selectedOptions[0];
+  const nom = opt && opt.dataset.nom;
+  if (!nom) return;
+  if (!confirm(`Supprimer définitivement « ${nom} » du serveur ?
+(l'image et son fichier de lieux)`)) return;
+  const body = new URLSearchParams(); body.set('fichier', nom);
+  fetch('supprimer.php', { method: 'POST', body })
+    .then((r) => r.json())
+    .then((res) => {
+      if (!res.ok) { toast('Suppression refusée : ' + res.error, 3500); return; }
+      toast(`🗑 ${nom} supprimée`);
+      // On ne recharge une autre image que s'il n'y a plus rien à l'écran.
+      return listerCaptures(!px);
+    })
+    .catch(() => toast('Serveur injoignable', 3000));
+});
 
 selCapture.addEventListener('change', () => {
   const opt = selCapture.selectedOptions[0];
@@ -1185,6 +1218,7 @@ function planterDansZone() {
     const mesh = faireObjet(type);
     groupeObjets.add(mesh);
     objets.push({
+      type,                                        // retenu : c'est lui qu'un projet rechargera
       u: (c.i + 0.5 + (Math.random() - 0.5) * 0.85) / C,
       v: (c.j + 0.5 + (Math.random() - 0.5) * 0.85) / R,
       taille: tailleObjet * (0.75 + Math.random() * 0.5),
@@ -1423,6 +1457,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const mesh = faireObjet(typeObjet);
   groupeObjets.add(mesh);
   objets.push({
+    type: typeObjet,                              // retenu : c'est lui qu'un projet rechargera
     u: (c.i + 0.5) / dernierGrid.C,               // place RELATIVE : survit aux redécoupages
     v: (c.j + 0.5) / dernierGrid.R,
     taille: tailleObjet,
@@ -1780,6 +1815,168 @@ addEventListener('keyup', (e) => {
     case 'ShiftLeft': case 'ShiftRight': marche.courir = false; break;
   }
 });
+
+// ============================================================
+//  PROJETS — enregistrer et retrouver un arrangement complet.
+//
+//  Un projet ne contient QUE ce qu'on ne peut pas recalculer : le nom de la capture, les
+//  réglages, les hauteurs, les retouches de cases et les objets posés. Ni l'image (elle
+//  reste dans captures/), ni la grille (elle se reconstruit), ni la palette par pixel
+//  (`palIdx` se recalcule). Un projet pèse quelques kilo-octets, pas quelques mégas.
+//
+//  L'ordre de restitution est ce qui compte : l'image d'abord (tout en dépend et son
+//  chargement est asynchrone), puis les réglages, puis une seule reconstruction. Appliquer
+//  les réglages avant l'image les ferait écraser par la remise à zéro du chargement.
+// ============================================================
+function etatProjet() {
+  return {
+    version: 1,
+    capture: selCapture.selectedOptions[0] ? selCapture.selectedOptions[0].dataset.nom : null,
+    reglages: {
+      finesse, relief, forme, nettete, globeT, montrerNoms,
+      paletteMode, palTol, repartition: repartitionCourante,
+      soleil: { solPilote, solAz, solEl, solOmbre, solAuto, solVit },
+    },
+    familles: FAM.map((f) => ({ h: f.h, vis: f.vis })),
+    palette: PAL.map((p) => ({ r: p.r, g: p.g, b: p.b, h: p.h, vis: p.vis, frac: p.frac })),
+    // Les retouches de cases : la Map devient un tableau, un JSON ne sait pas faire mieux.
+    retouches: [...overrides.entries()].map(([cle, ov]) => ({ cle, ...ov })),
+    objets: objets.map((o) => ({ type: o.type || 'arbre', u: o.u, v: o.v, taille: o.taille, rot: o.rot })),
+  };
+}
+
+function appliquerReglagesProjet(p) {
+  const r = p.reglages || {};
+  // `$` prend un identifiant NU ; on accepte quand même la forme « #id » pour éviter
+  // l'erreur silencieuse : `getElementById('#forme')` renvoie null, et le contrôle garde
+  // alors l'ancienne valeur pendant que la scène, elle, a changé.
+  const met = (id, val) => { const n = $(String(id).replace('#', '')); if (n) n.value = val; };
+
+  if (Array.isArray(p.familles)) p.familles.forEach((f, i) => { if (FAM[i]) { FAM[i].h = f.h; FAM[i].vis = f.vis; } });
+  if (Array.isArray(p.palette) && p.palette.length) {
+    PAL = p.palette.map((c) => ({ ...c }));
+    recalculerPalIdx();                    // se recalcule depuis les pixels : jamais stocké
+    afficherPalette();
+  }
+  paletteMode = !!r.paletteMode; $('palMode').checked = paletteMode;
+  if (r.palTol != null) { palTol = r.palTol; met('#palTol', palTol); $('palTolV').textContent = palTol; }
+
+  // Les hauteurs viennent d'être remplacées dans FAM/PAL : les curseurs du menu montrent
+  // encore les précédentes. On les recale, sinon le menu ment sur ce qu'on voit.
+  rafraichirHauteursUI();
+  repartitionCourante = r.repartition || "d'origine";
+
+  overrides.clear();
+  for (const o of p.retouches || []) { const { cle, ...reste } = o; overrides.set(cle, reste); }
+
+  relief = r.relief ?? 1; met('#relief', relief); $('relief-val').textContent = relief;
+  forme = r.forme || 'cube'; met('#forme', forme);
+  montrerNoms = !!r.montrerNoms; $('montrerNoms').checked = montrerNoms; etiquettes.visible = montrerNoms;
+  if (r.nettete && r.nettete !== nettete) { nettete = r.nettete; met('#nettete', String(nettete)); majNettete(); }
+
+  const s = r.soleil || {};
+  solPilote = !!s.solPilote; $('solPilote').checked = solPilote; $('solCtrls').hidden = !solPilote;
+  if (s.solAz != null) { solAz = s.solAz; met('#solAz', solAz); $('solAzV').textContent = boussole(solAz); }
+  if (s.solEl != null) { solEl = s.solEl; met('#solEl', solEl); $('solElV').textContent = solEl + '°'; }
+  solOmbre = s.solOmbre !== false; $('solOmbre').checked = solOmbre;
+  solAuto = !!s.solAuto; $('solAuto').checked = solAuto;
+  if (s.solVit != null) { solVit = s.solVit; met('#solVit', solVit); $('solVitV').textContent = solVit; }
+  majSoleil();
+
+  // La finesse en dernier : c'est elle qui déclenche la reconstruction, une seule fois.
+  finesse = r.finesse || 220; met('#finesse', finesse); $('finesse-val').textContent = finesse;
+  construire();
+
+  // Les objets se reposent sur la grille reconstruite.
+  viderObjets();
+  for (const o of p.objets || []) {
+    const mesh = faireObjet(o.type);
+    groupeObjets.add(mesh);
+    objets.push({ type: o.type, u: o.u, v: o.v, taille: o.taille, rot: o.rot, mesh });
+  }
+  poserObjets(); majObjetsUI();
+
+  // Le pliage à la fin : il repose toute la grille, objets compris.
+  reglerGlobe(r.globeT || 0);
+  recadrer(); majEtats();
+}
+
+function ouvrirProjet(nom) {
+  fetch(`projet.php?action=lire&nom=${encodeURIComponent(nom)}`)
+    .then((r) => r.json())
+    .then((res) => {
+      if (!res.ok) { toast('Projet illisible : ' + res.error, 3500); return; }
+      const p = res.projet;
+      const opt = [...selCapture.options].find((o) => o.dataset.nom === p.capture);
+      $('projNom').value = nom;
+      if (opt) {
+        selCapture.value = opt.value;
+        // L'image d'abord : son chargement remet tout à zéro, donc les réglages ensuite.
+        chargerImage(opt.value + '?p=' + Date.now(), p.capture, () => appliquerReglagesProjet(p));
+      } else {
+        toast(`Capture « ${p.capture} » absente — réglages appliqués sur l'image courante`, 4000);
+        appliquerReglagesProjet(p);
+      }
+      projetCourant = nom; majEtats();
+    })
+    .catch(() => toast('Serveur injoignable', 3000));
+}
+
+function listerProjets(selectionner) {
+  return fetch('projet.php?action=liste')
+    .then((r) => r.json())
+    .then((res) => {
+      const sel = $('projListe');
+      sel.innerHTML = '';
+      if (!res.ok || !res.projets.length) { sel.innerHTML = '<option value="">(aucun projet)</option>'; return; }
+      for (const p of res.projets) {
+        const o = document.createElement('option');
+        o.value = p.nom;
+        o.textContent = `${p.nom} — ${(p.capture || '?').replace('card-maps-', '')}`;
+        sel.appendChild(o);
+      }
+      if (selectionner) sel.value = selectionner;
+    })
+    .catch(() => {});
+}
+
+$('projSave').addEventListener('click', () => {
+  const nom = ($('projNom').value || '').trim() || `projet ${new Date().toLocaleString('fr-FR')}`;
+  const body = new URLSearchParams();
+  body.set('action', 'enregistrer'); body.set('nom', nom);
+  body.set('data', JSON.stringify(etatProjet()));
+  fetch('projet.php', { method: 'POST', body })
+    .then((r) => r.json())
+    .then((res) => {
+      if (!res.ok) { toast('Enregistrement refusé : ' + res.error, 3500); return; }
+      projetCourant = res.nom; $('projNom').value = res.nom;
+      toast(`💾 « ${res.nom} » enregistré (${(res.poids / 1024).toFixed(1)} ko)`);
+      majEtats();
+      return listerProjets(res.nom);
+    })
+    .catch(() => toast('Serveur injoignable', 3000));
+});
+
+$('projOuvrir').addEventListener('click', () => {
+  const nom = $('projListe').value;
+  if (nom) ouvrirProjet(nom);
+});
+
+$('projSuppr').addEventListener('click', () => {
+  const nom = $('projListe').value;
+  if (!nom || !confirm(`Supprimer le projet « ${nom} » ?`)) return;
+  const body = new URLSearchParams(); body.set('action', 'supprimer'); body.set('nom', nom);
+  fetch('projet.php', { method: 'POST', body })
+    .then((r) => r.json())
+    .then((res) => {
+      toast(res.ok ? `🗑 projet « ${nom} » supprimé` : 'Suppression impossible');
+      if (projetCourant === nom) { projetCourant = null; majEtats(); }
+      return listerProjets();
+    })
+    .catch(() => toast('Serveur injoignable', 3000));
+});
+
+listerProjets();
 
 const horloge = new THREE.Clock();
 
