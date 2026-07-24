@@ -1,0 +1,251 @@
+:root {
+  --bg: #0f172a;
+  --card-bg: #ffffff;
+  --accent: #2563eb;
+  --text: #1e293b;
+  --muted: #64748b;
+  --radius: 16px;
+
+  /* ui.css dessine l'anneau de focus clavier et teinte curseurs et cases avec cette
+     variable. Elle vaut le bleu clair des pages 3D par défaut : illisible sur le fond
+     blanc de cette carte, d'où ce rappel du bleu profond de la page. */
+  --ui-focus: var(--accent);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  color: var(--text);
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* La "card" qui contient la carte */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  height: min(640px, 100%);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.card__header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card__title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+
+/* La barre porte le champ de recherche, deux listes et sept commandes. Sans `wrap`, les
+   dernières icônes sortaient de la carte et devenaient inatteignables : une ligne flex
+   ne déborde pas « un peu », elle pousse tout ce qui suit hors du cadre.
+
+   Les commandes sont réunies en TROIS GROUPES — où l'on est · ce qu'on emporte · où
+   l'on va — et c'est le GROUPE qui passe à la ligne, jamais un bouton isolé. C'est
+   aussi pourquoi la séparation se fait par l'espace (`gap` de 20 px entre groupes,
+   8 px dedans) et non par un filet : un trait vertical se retrouverait tout seul en
+   bout de ligne dès que la barre se replie, à séparer le vide du vide. */
+.search {
+  display: flex;
+  gap: 10px 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search__grp {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;                    /* sinon le groupe refuse de rétrécir et déborde */
+}
+/* Seul le groupe de recherche s'étire : c'est le champ de texte qui absorbe la place
+   restante, les boutons des deux autres groupes gardent leur taille. */
+.search__grp--ou { flex: 1 1 300px; }
+
+.search__input {
+  flex: 1 1 160px;      /* peut rétrécir jusqu'à 160 px, puis c'est lui qui passe à la ligne */
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.search__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* ---------- Les boutons de la barre ----------
+   Neuf commandes du même bleu plein : chercher un lieu, capturer, aller vers une autre
+   page pesaient exactement pareil, et la barre lisait comme un mur. Une seule règle a
+   changé le fond de l'affaire — le bouton par défaut est SECONDAIRE (blanc bordé), et
+   seules les deux commandes qui font avancer le travail restent pleines : 📸 (produire
+   une capture) et 🏔️ (aller la reconstruire). */
+.search__btn {
+  flex: 0 0 auto;              /* une icône ne rétrécit jamais : on doit pouvoir la viser */
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 1rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;       /* les trois liens de destination sont des <a> */
+}
+.search__btn:hover { background: #f1f5f9; border-color: var(--accent); color: var(--accent); }
+
+/* Le mot qui accompagne l'emoji sur les deux actions principales. */
+.search__mot { font-size: .84rem; font-weight: 600; letter-spacing: .01em; }
+
+/* Les deux actions pleines. */
+.search__btn--capture { background: var(--accent); border-color: var(--accent); color: #fff; }
+.search__btn--capture:hover { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.search__btn--fort { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.search__btn--fort:hover { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+
+/* Les deux pistes antérieures (dalle texturée, terrain de zones) : accessibles, mais
+   elles ne sont plus le chemin normal — elles s'effacent jusqu'au survol. */
+.search__btn--pale { opacity: .6; }
+.search__btn--pale:hover { opacity: 1; }
+
+/* Style de fond et niveau de détail — à côté du 📸, puisque c'est lui qu'ils règlent */
+.search__select {
+  flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 38px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1f2937;
+  padding: 0 8px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.search__select:hover { border-color: var(--accent); }
+
+/* Bouton « Retirer les noms » : c'est un MODE, pas une action — il reste enclenché.
+   Au repos il est donc discret (rouge en contour seulement) et ne devient plein qu'une
+   fois les noms retirés. Plein en permanence, il criait l'alerte sans qu'il se passe
+   quoi que ce soit. */
+.btn-noms { border-color: #fca5a5; color: #dc2626; }
+.btn-noms:hover { background: #fef2f2; border-color: #dc2626; color: #b91c1c; }
+.btn-noms.actif {
+  background: #dc2626; border-color: #dc2626; color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+}
+.btn-noms.actif:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+
+.card__map-wrap {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.card__map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Flash "appareil photo" au moment du 📸 : un éclair blanc bref sur la carte. */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+.flash--show {
+  animation: flash-cam 0.45s ease-out;
+}
+@keyframes flash-cam {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.95; }   /* éclair quasi instantané */
+  100% { opacity: 0; }      /* puis fondu rapide */
+}
+
+/* Toast de confirmation */
+.toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -16px);
+  background: rgba(22, 163, 74, 0.95);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+.toast--show {
+  animation: toast-pop 1.8s ease;
+}
+
+@keyframes toast-pop {
+  0%   { opacity: 0; transform: translate(-50%, -16px) scale(0.85); }
+  12%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  80%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -16px) scale(0.95); }
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.status { color: var(--text); }
+.status--error { color: #dc2626; }
+
+.credit { color: var(--muted); white-space: nowrap; }
+
+/* Lien « Traiter cette capture », affiché seulement après un 📸 réussi. */
+.traiter {
+  margin-left: auto; white-space: nowrap; text-decoration: none;
+  background: #7c3aed; color: #fff; border-radius: 8px; padding: 5px 11px;
+  font-size: .8rem; font-weight: 600;
+  animation: traiter-apparait .35s ease-out;
+}
+.traiter:hover { background: #6d28d9; }
+.traiter[hidden] { display: none; }
+@keyframes traiter-apparait { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+/* Sur une carte étroite, les deux mots ne servent plus qu'à forcer une troisième ligne :
+   on revient aux emoji seuls, qui gardent leur `title`. */
+@media (max-width: 700px) {
+  .search__mot { display: none; }
+  .search__grp--ou { flex: 1 1 100%; }   /* la recherche prend sa ligne, entière */
+}
+
+@media (max-width: 600px) {
+  .card { height: 100%; border-radius: 0; }
+  body { padding: 0; }
+}

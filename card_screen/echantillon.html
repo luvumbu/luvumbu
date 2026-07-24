@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>Échantillon → image 3D</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="hud.css">
   <link rel="stylesheet" href="echantillon.css">
   <script type="importmap">
   {
@@ -392,13 +393,23 @@
 
   <!-- Barre flottante : TOUS les modes qui se pilotent au clic dans la scène, plus les
        actions plein écran. Les réglages fins de chaque mode restent dans le menu. -->
+  <!-- La barre du haut, en TROIS GROUPES accolés. Les sept boutons étaient alignés à
+       la file, tous de couleur différente et tous du même poids : rien ne disait que
+       « 2D » produit un fichier là où « Cube » enclenche un mode qui reste allumé.
+       Maintenant : l'action est pleine (verte), les cinq modes sont sobres et ne
+       prennent leur couleur qu'une fois ENCLENCHÉS, et les groupes accolés disent
+       lesquels s'excluent (on retouche OU on visite). -->
   <div id="topbtns">
-    <button id="btn2d" title="Générer une vue 2D à plat de la reconstruction">🖼️ 2D</button>
-    <button id="btnEdit" title="Modifier un cube : cliquer un cube après avoir activé">✏️ Cube</button>
-    <button id="btnZoneBar" title="Sélectionner une zone entière de même couleur, puis la manipuler">🎯 Zones</button>
-    <button id="btnObjBar" title="Poser des arbres, maisons, repères… sur la carte">🧩 Objets</button>
-    <button id="btnGlobe" title="Enrouler la carte sur une sphère — recliquer remet tout à plat">🌍 Globe</button>
-    <button id="btnFP" title="Se balader dans le relief — à plat comme sur le globe">🚶 Marcher</button>
+    <button id="btn2d" class="action" title="Générer une vue 2D à plat de la reconstruction">🖼️ 2D</button>
+    <span class="grp">
+      <button id="btnEdit" title="Modifier un cube : cliquer un cube après avoir activé">✏️ Cube</button>
+      <button id="btnZoneBar" title="Sélectionner une zone entière de même couleur, puis la manipuler">🎯 Zones</button>
+      <button id="btnObjBar" title="Poser des arbres, maisons, repères… sur la carte">🧩 Objets</button>
+    </span>
+    <span class="grp">
+      <button id="btnGlobe" title="Enrouler la carte sur une sphère — recliquer remet tout à plat">🌍 Globe</button>
+      <button id="btnFP" title="Se balader dans le relief — à plat comme sur le globe">🚶 Marcher</button>
+    </span>
     <button id="btnCine" title="Masquer menu et boutons pour filmer l'écran — touche C pour revenir">🎬 Cinéma</button>
   </div>
 
@@ -407,7 +418,7 @@
 
   <!-- Panneau d'édition d'un cube -->
   <div id="panelEdit" hidden>
-    <div style="font-weight:600;">Cube <span id="selInfo"></span></div>
+    <div class="titre">Cube <span id="selInfo"></span></div>
     <div class="r"><label for="editH">Hauteur</label><input type="range" id="editH" min="0" max="4" step="0.05"><span class="val" id="editHV"></span></div>
     <div class="r"><label for="editC">Couleur</label><input type="color" id="editC"></div>
     <div class="r"><button id="editDel" class="del">🗑 Supprimer</button><button id="editClose">Désélectionner</button></div>
@@ -416,7 +427,7 @@
 
   <!-- Manipulation de la zone sélectionnée -->
   <div id="panelZone" hidden>
-    <div style="font-weight:600;">Zone <span id="zoneInfo"></span></div>
+    <div class="titre">Zone <span id="zoneInfo"></span></div>
     <div class="r"><label for="zoneH">Hauteur</label><input type="range" id="zoneH" min="0" max="4" step="0.05"><span class="val" id="zoneHV"></span></div>
     <div class="r"><button id="zoneMonter">▲ Monter</button><button id="zoneDescendre">▼ Descendre</button></div>
     <div class="r"><label for="zoneCoul">Couleur</label><input type="color" id="zoneCoul"></div>

@@ -1,0 +1,117 @@
+/* ============================================================
+   Le socle des COMMANDES : boutons, listes, curseurs, cases, champs de fichier.
+
+   Pourquoi un fichier de plus. Les quatre pages redéfinissaient chacune ses boutons —
+   le même `background:#21262d; border:1px solid #3d444d; border-radius:6px` recopié
+   quatre fois, donc quatre occasions de diverger, et c'est ce qui était arrivé : la
+   taille de police n'était déjà plus la même entre le menu d'echantillon.html et
+   celui de 3d.html. Ce qui n'a AUCUNE raison de différer d'une page à l'autre vit ici :
+   la forme, la réaction au survol, l'enfoncement au clic, l'anneau de focus clavier,
+   l'état désactivé.
+
+   Il se charge AVANT le CSS de la page. Chaque page garde donc la main sur les
+   COULEURS — fond clair pour index.html, fond sombre pour les pages 3D — sans avoir
+   à redire la forme. Ne rien mettre de coloré ici : ce serait le rendre illisible
+   sur l'un des deux fonds.
+   ============================================================ */
+
+:root {
+  --ui-r: 7px;              /* le rayon commun ; les grandes barres prennent --ui-r-lg */
+  --ui-r-lg: 9px;
+  --ui-t: .14s ease;        /* une transition perceptible mais qui ne traîne pas */
+  --ui-focus: #58a6ff;      /* pages sombres — index.html le redéfinit en bleu profond */
+}
+
+/* ---------- La forme commune ---------- */
+/* `font: inherit` d'abord : sans lui, un <button> et un <select> repartent sur la
+   police du système (Arial 13,3 px), et une ligne de menu mélange deux typographies. */
+button,
+select,
+.search__btn,
+.fam-drop {
+  font: inherit;
+  border-radius: var(--ui-r);
+  cursor: pointer;
+  transition: background var(--ui-t), border-color var(--ui-t), color var(--ui-t),
+              box-shadow var(--ui-t), opacity var(--ui-t), transform .07s ease;
+}
+
+/* Un emoji et son mot doivent tenir sur la même ligne de base : en `display:block`,
+   « 🖼️ 2D » se décale de deux pixels vers le bas et le bouton paraît de travers. */
+button,
+a.search__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+/* Contrepartie obligatoire du `display` ci-dessus : l'attribut `hidden` ne vaut que
+   `display:none` par la feuille du navigateur, de spécificité nulle. Sans ce rattrapage,
+   TOUT bouton masqué par `hidden` réapparaîtrait. */
+button[hidden],
+a.search__btn[hidden] { display: none; }
+
+/* ---------- Les trois états qui manquaient partout ---------- */
+
+/* 1. L'enfoncement. Un bouton qui ne bouge pas au clic laisse douter qu'il a été pris —
+      surtout ici, où l'effet est dans la scène 3D et pas dans le bouton. */
+button:not(:disabled):active,
+a.search__btn:active { transform: translateY(1px); }
+
+/* 2. Le focus clavier. `border: none` sur les boutons de index.html effaçait aussi
+      l'anneau par défaut de certains navigateurs : on ne voyait plus où on était en
+      naviguant au Tab. `:focus-visible` ne l'affiche qu'au clavier, jamais au clic. */
+button:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* 3. Le désactivé. Sans ces règles, un bouton grisé par le script gardait sa main
+      de curseur et son survol : il paraissait cliquable et ne répondait pas. */
+button:disabled,
+select:disabled,
+input:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: grayscale(.5);
+}
+button:disabled:hover { border-color: inherit; }
+
+/* ---------- Curseurs et cases ---------- */
+/* Une ligne pour teinter la piste, le pouce et la coche aux couleurs du projet.
+   C'est le seul moyen de le faire sans réécrire le curseur entier (piste + pouce +
+   préfixes -webkit/-moz), ce qui casserait sa taille native selon le navigateur. */
+input[type=range],
+input[type=checkbox],
+input[type=radio] { accent-color: var(--ui-focus); cursor: pointer; }
+
+/* ---------- Le champ de fichier ---------- */
+/* Son bouton natif est gris clair : sur le fond sombre du menu, il éclate comme une
+   tache. On l'aligne sur les autres boutons du HUD. */
+.hud input[type=file] { font: inherit; font-size: .78rem; max-width: 100%; }
+.hud input[type=file]::file-selector-button {
+  font: inherit; font-size: .78rem;
+  margin-right: 8px; padding: 5px 10px;
+  background: #21262d; color: #e6edf3;
+  border: 1px solid #3d444d; border-radius: var(--ui-r);
+  cursor: pointer;
+  transition: background var(--ui-t), border-color var(--ui-t);
+}
+.hud input[type=file]::file-selector-button:hover { background: #30363d; border-color: var(--ui-focus); }
+
+/* ---------- L'ascenseur des menus ---------- */
+/* Le menu d'echantillon.html défile sur 92 vh : l'ascenseur natif de Windows y trace
+   une bande blanche de 17 px le long d'un panneau translucide. */
+.hud { scrollbar-width: thin; scrollbar-color: #30363d transparent; }
+.hud::-webkit-scrollbar { width: 10px; }
+.hud::-webkit-scrollbar-track { background: transparent; }
+.hud::-webkit-scrollbar-thumb {
+  background-color: #30363d; border-radius: 99px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+.hud::-webkit-scrollbar-thumb:hover { background-color: #4c545e; background-clip: content-box; }

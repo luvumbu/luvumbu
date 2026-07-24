@@ -1,0 +1,121 @@
+/* ============================================================
+   Le socle visuel des pages 3D (3d.html, zones.html, echantillon.html).
+
+   Ce fichier existe pour que card_screen NE DÉPENDE DE RIEN au-dessus de lui :
+   ces règles venaient de ../css/style.css (le tutoriel 3D_simulator), et tant qu'on
+   pointait dessus, déplacer le dossier cassait toute l'apparence — HUD sans fond,
+   texte noir sur blanc, curseurs nus. Ne sont recopiées ici que les règles que ces
+   trois pages utilisent réellement (variables, corps de page, canvas, HUD) ;
+   le reste de style.css (sommaire, cartes, panneau de code) ne les concerne pas.
+
+   Chaque page ajoute ensuite SES commandes dans son propre <style> ou son .css.
+   ============================================================ */
+
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --border: #2a313c;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+
+  /* Les commandes. Un ton de gris par état, nommé par son rôle et non par sa valeur :
+     changer le gris des boutons se fait ici, une fois, pour les trois pages. */
+  --btn: #21262d;              /* repos */
+  --btn-surv: #30363d;         /* survol */
+  --btn-bord: #3d444d;
+  --btn-actif: #1f6feb;        /* mode enclenché */
+  --btn-actif-bord: #388bfd;
+  --danger: #7f1d1d;           /* ce qui détruit : supprimer, vider */
+  --danger-surv: #b62324;
+  --danger-bord: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+/* Sans ce display:block, le canvas garde la ligne de base d'un inline et laisse
+   quelques pixels blancs en bas de page. */
+canvas { display: block; }
+
+/* ---- Le HUD : le panneau de réglages posé par-dessus la scène ---- */
+.hud {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  max-width: 340px;
+  background: rgba(22, 27, 34, .92);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: .85rem;
+  line-height: 1.5;
+  backdrop-filter: blur(6px);
+}
+.hud h2 { margin: 0 0 6px; font-size: 1rem; }
+.hud p { margin: 0 0 8px; color: var(--muted); }
+.hud a { color: var(--accent); }
+.hud label { display: block; margin-top: 8px; color: var(--muted); }
+.hud input[type="range"] { width: 100%; }
+.hud kbd {
+  background: #0e1116; border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px; font-size: .8em;
+}
+/* ---- Boutons et listes du menu ----
+   Ces règles étaient recopiées à l'identique dans le <style> de 3d.html, celui de
+   zones.html et dans echantillon.css. Elles ne vivent plus qu'ici : les trois pages
+   sombres partagent le même bouton, au pixel près.
+
+   `min-width: 0` : un élément de ligne flex refuse par défaut de descendre sous la
+   largeur de son contenu, si bien qu'une liste à longue option (« Rouge (autoroute,
+   toitures) ») débordait du panneau, hors de l'écran. Bornée par `max-width` et coupée
+   proprement, la liste DÉROULÉE l'affiche de toute façon en entier. */
+.hud button,
+.hud select {
+  background: var(--btn); color: var(--text);
+  border: 1px solid var(--btn-bord); border-radius: var(--ui-r);
+  padding: 5px 10px; font-size: .8rem;
+  min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hud select { width: 100%; margin-top: 3px; padding-inline: 7px; }
+.hud button { margin: 2px 2px 0 0; }
+/* Dans une ligne (.row), les marges hautes décalent verticalement l'élément par
+   rapport à son intitulé : sur une ligne, tout s'aligne sur la même base. */
+.hud .row > select,
+.hud .row > button,
+.hud .row > label { margin-top: 0; }
+/* Le survol change aussi le FOND : la seule bordure qui s'allume était invisible sur
+   les petits boutons carrés (＋ ／ －) où elle ne fait que 22 px de côté. */
+.hud button:hover,
+.hud select:hover { background: var(--btn-surv); border-color: var(--accent); color: #fff; }
+/* Un bouton actif est un ÉTAT, pas un survol : il reste bleu plein tant que le mode
+   dure, alors que le survol n'est qu'un gris plus clair. Les confondre — c'était le cas,
+   les deux ne changeaient que la bordure — rendait impossible de savoir, en passant la
+   souris, si le mode était déjà enclenché. */
+.hud button.actif {
+  background: var(--btn-actif); border-color: var(--btn-actif-bord); color: #fff;
+  box-shadow: 0 0 0 1px rgba(88, 166, 255, .25);
+}
+.hud button.actif:hover { background: var(--btn-actif-bord); }
+.hud input[type="color"] {
+  width: 100%; height: 26px; margin-top: 3px; padding: 0;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--ui-r);
+  cursor: pointer;
+}
+
+/* Un compteur sur plusieurs lignes. */
+.hud code.multi { white-space: pre-line; display: block; }
+
+/* Les sections repliables du menu d'echantillon.html. */
+.hud details { margin: 12px 0; border-top: 1px solid var(--border); padding-top: 10px; }
+.hud summary { cursor: pointer; font-size: .8rem; font-weight: 600; color: var(--text); }
+.hud summary:hover { color: var(--accent); }
+.hud details ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
+.hud details li { margin-bottom: 8px; }

@@ -2,7 +2,11 @@
 
 Chaîne complète : **capturer une carte** (OSM/CARTO via Leaflet) → **la reconstruire en 3D**
 à partir de ses couleurs, sans rien inventer. Servi par XAMPP, ouvrir via
-`http://localhost/luvumbu/3D_simulator/card_screen/`.
+`http://localhost/luvumbu/card_screen/`.
+
+Le dossier est **autonome** : il ne lit rien au-dessus de lui. Son socle visuel vit dans
+`ui.css` + `hud.css` (recopiés du tutoriel `3D_simulator/` quand l'outil en est sorti) et
+tous les PHP travaillent en `__DIR__` — on peut donc le déplacer ou le recopier tel quel.
 
 Three.js arrive du CDN jsDelivr, épinglé en **0.160.0** (import map). Aucun build, aucun npm.
 
@@ -43,6 +47,35 @@ document : on n'y explique pas seulement ce que fait le code, mais pourquoi il l
 | `list.php` | liste les captures de `captures/` (JSON, avec `url`) |
 | `supprimer.php` | efface une capture **et** son `.json` (deux verrous anti-remontée) |
 | `projet.php` | liste / lit / écrit / supprime un **projet** dans `projets/` |
+
+### Les feuilles de style, et qui charge quoi
+
+Deux couches partagées, plus une feuille par page. L'ordre de chargement est l'ordre du
+tableau : chacune ne fait que préciser la précédente.
+
+| Feuille | Portée | Ce qu'elle décide |
+|---|---|---|
+| `ui.css` | les 4 pages | la **forme** des commandes, sans une seule couleur : rayon, enfoncement au clic, anneau de focus clavier, état désactivé, teinte des curseurs et des cases |
+| `hud.css` | les 3 pages 3D | le **thème sombre** : variables de couleur, le panneau `.hud`, ses boutons et ses listes |
+| `style.css` | `index.html` | la carte blanche de l'app de capture — thème clair, donc rien en commun avec `hud.css` |
+| `echantillon.css` | `echantillon.html` | la mise en page de l'outil : menu repliable, barre du haut, panneaux flottants |
+
+Le partage n'est pas un luxe de rangement : le même bouton était recopié dans quatre
+fichiers, et il avait déjà divergé — la taille de police n'était plus la même entre le menu
+d'`echantillon.html` et celui de `3d.html`. **Un bouton se règle maintenant à un seul
+endroit** : sa forme dans `ui.css`, sa couleur dans `hud.css` (variables `--btn*`).
+
+Trois principes tiennent l'ensemble, et valent pour tout bouton ajouté ensuite :
+
+- **Ce qui produit est plein, ce qui bascule est sobre.** `📸 Capturer`, `🏔️ Reconstruire`
+  et `🖼️ 2D` sont pleins de couleur dès le repos. Les modes (`Cube`, `Zones`, `Objets`,
+  `Globe`, `Marcher`, `🏷️`) restent gris tant qu'ils dorment et **ne prennent leur couleur
+  qu'une fois enclenchés** — l'écran dit alors, sans qu'on cherche, ce qui tourne.
+- **Ce qui détruit se survole en rouge.** `🗑 Vider les cases` héritait du survol bleu
+  commun : au moment précis où l'on hésite, le bouton perdait son seul signal d'alerte.
+- **Les commandes se groupent, et c'est le groupe qui passe à la ligne.** Séparés par
+  l'espace, jamais par un filet : un trait vertical se retrouve tout seul en bout de ligne
+  dès que la barre se replie.
 
 ## L'outil principal, fichier par fichier
 

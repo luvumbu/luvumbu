@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>Card Maps — la carte en 3D</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="hud.css">
   <script type="importmap">
   {
     "imports": {
@@ -13,17 +14,15 @@
   }
   </script>
   <style>
-    /* Le HUD reprend le style .hud du projet ; on ajoute juste les commandes propres à cette page. */
+    /* Boutons, listes et champ de fichier viennent de ui.css + hud.css : il ne reste
+       ici que la mise en page propre à cette page. */
     .hud .controls { display: grid; gap: 10px; margin: 10px 0; }
     .hud .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .hud label { font-size: 13px; opacity: .9; }
-    .hud select, .hud input[type=file] { max-width: 100%; }
-    .hud input[type=range] { flex: 1; min-width: 120px; }
-    .hud button {
-      background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
-      border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
-    }
-    .hud button:hover { border-color: #58a6ff; }
+    /* Dans une ligne flex, le `width:100%` que hud.css donne aux curseurs les pousse
+       seuls sur leur ligne : on leur rend une largeur souple. */
+    .hud input[type=range] { flex: 1; width: auto; min-width: 120px; }
+    .hud .row label { margin-top: 0; }
     .hud .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     #erreur { color: #f78166; font-size: 13px; min-height: 1em; }
   </style>

@@ -437,9 +437,9 @@ function appliquerNoms() {
 function majBoutonNoms() {
   if (!releverBtn) return;
   const possible = !!STYLES[styleCourant].noms;
+  // L'apparence du désactivé (voile + curseur barré) est dans ui.css, pour tous les
+  // boutons du projet : ici on ne dit plus QUE l'état.
   releverBtn.disabled = !possible;
-  releverBtn.style.opacity = possible ? "" : ".45";
-  releverBtn.style.cursor = possible ? "" : "not-allowed";
   releverBtn.title = possible
     ? "Masquer les noms — le paysage reste identique (les noms sont relevés à part au 📸)"
     : "Ce style dessine les noms dans la tuile : impossible de les retirer sans changer le paysage";

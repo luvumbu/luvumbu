@@ -28,19 +28,8 @@
 .hud input[type=range] { flex: 1 1 60px; width: auto; min-width: 54px; }
 .hud .row label { margin-top: 0; }
 .hud .val { flex: 0 0 auto; font-variant-numeric: tabular-nums; opacity: .8; min-width: 2.7em; font-size: 12px; }
-.hud select, .hud button {
-  background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
-  border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
-  /* Un élément de ligne flex refuse par défaut de descendre sous la largeur de son
-     contenu (`min-width: auto`) : une liste à longue option débordait alors du panneau,
-     hors de l'écran. `min-width: 0` l'autorise à rétrécir, `max-width` le borne, et le
-     texte trop long se coupe proprement — la liste déroulée, elle, l'affiche en entier. */
-  min-width: 0; max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.hud button:hover, .hud select:hover { border-color: #58a6ff; }
-.hud button.actif { background: #1f6feb; border-color: #388bfd; color: #fff; }
-.hud .large { flex: 1 1 0; min-width: 0; }   /* même raison : une liste large doit pouvoir rétrécir */
+/* Boutons et listes : forme dans ui.css, couleurs dans hud.css — plus rien ici. */
+.hud .large { flex: 1 1 0; min-width: 0; }   /* une liste large doit pouvoir rétrécir */
 .hud .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .hud .zoom { font-size: 12px; opacity: .85; margin: 2px 0 0; }
 .hud .zoom b { color: #7ee787; }
@@ -70,33 +59,68 @@
 .fam-row label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fam-row input[type=range] { min-width: 50px; }
 .fam-row input[type=checkbox] { cursor: pointer; }
-.fam-drop { background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 5px;
-  cursor: pointer; font-size: 11px; padding: 2px 0; line-height: 1; }
-.fam-drop:hover { border-color: #58a6ff; }
+.fam-drop { background: var(--btn); color: var(--text); border: 1px solid var(--btn-bord);
+  border-radius: 5px; cursor: pointer; font-size: 11px; padding: 2px 0; line-height: 1; }
+.fam-drop:hover { background: var(--btn-surv); border-color: var(--accent); }
 
-/* ---------- Barre de boutons flottante sur le rendu 3D ---------- */
-#topbtns { position: fixed; top: 16px; right: 16px; z-index: 15; display: flex; gap: 10px; }
-#topbtns button {
-  color: #fff; border-radius: 8px; padding: 9px 14px; font: inherit; font-size: 14px;
-  cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.4);
+/* ---------- Barre de boutons flottante sur le rendu 3D ----------
+   Sept boutons pleins de sept couleurs différentes, posés sur une scène 3D déjà très
+   colorée : la barre criait plus fort que la carte, et surtout elle mentait sur les
+   rôles — « 2D » (qui produit un fichier) avait exactement le même poids que « Cube »
+   (un mode qui reste allumé jusqu'à ce qu'on le coupe).
+
+   Le principe retenu : UNE seule couleur pleine au repos, celle de l'action ; les cinq
+   modes restent sombres et translucides tant qu'ils dorment, et ne s'allument de LEUR
+   couleur qu'une fois enclenchés. On lit d'un coup d'œil ce qui tourne.
+
+   `--c` porte la couleur d'identité de chaque bouton : la règle de survol et celle de
+   l'état actif sont écrites UNE fois, chaque bouton ne redéclare que sa teinte. */
+#topbtns {
+  position: fixed; top: 16px; right: 16px; z-index: 15;
+  display: flex; align-items: center; gap: 10px;
 }
-#btn2d { background: #238636; border: 1px solid #2ea043; }
-#btn2d:hover { background: #2ea043; }
-#btnEdit { background: #8957e5; border: 1px solid #a371f7; }
-#btnEdit:hover { background: #9a6ef0; }
-#btnEdit.actif { background: #6e40c9; box-shadow: inset 0 0 0 2px #d2a8ff; }
-#btnGlobe { background: #1a7f8c; border: 1px solid #22a5b5; }
-#btnGlobe:hover { background: #22a5b5; }
-#btnGlobe.actif { background: #0e5f6b; box-shadow: inset 0 0 0 2px #7ee7f7; }
-#btnFP { background: #1f6feb; border: 1px solid #388bfd; }
-#btnFP:hover { background: #388bfd; }
-#btnFP.actif { background: #0d419d; box-shadow: inset 0 0 0 2px #79c0ff; }
-#btnZoneBar { background: #bc4c00; border: 1px solid #db6d28; }
-#btnZoneBar:hover { background: #db6d28; }
-#btnZoneBar.actif { background: #8c3800; box-shadow: inset 0 0 0 2px #ffa657; }
-#btnObjBar { background: #1a7f37; border: 1px solid #2da44e; }
-#btnObjBar:hover { background: #2da44e; }
-#btnObjBar.actif { background: #116329; box-shadow: inset 0 0 0 2px #7ee787; }
+#topbtns button {
+  --c: #8b949e;
+  height: 36px; padding: 0 13px;
+  font-size: 13.5px; font-weight: 500; letter-spacing: .01em;
+  color: #e6edf3;
+  background: rgba(22, 27, 34, .86);
+  border: 1px solid #30363d;
+  border-radius: var(--ui-r-lg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .4);
+}
+#topbtns button:hover { background: rgba(45, 51, 59, .95); border-color: var(--c); color: #fff; }
+/* Enclenché : couleur pleine + un liseré clair à l'intérieur. Le liseré compte —
+   sur une scène qui contient déjà du vert et de l'orange, le fond seul ne suffit pas
+   toujours à trancher. */
+#topbtns button.actif {
+  background: var(--c); border-color: var(--c); color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 6px 20px rgba(0, 0, 0, .45);
+}
+#topbtns button.actif:hover { filter: brightness(1.12); }
+
+/* L'action, elle, est pleine dès le repos : c'est la seule de la barre qui PRODUIT
+   quelque chose au lieu de basculer un mode. */
+#topbtns button.action {
+  background: #238636; border-color: #2ea043; color: #fff;
+}
+#topbtns button.action:hover { background: #2ea043; border-color: #3fb950; }
+
+/* Groupes accolés : les trois façons de retoucher d'un côté, les deux façons de
+   regarder de l'autre. Le chevauchement d'1 px évite la double bordure à la jointure. */
+#topbtns .grp { display: flex; }
+#topbtns .grp button { border-radius: 0; margin-left: -1px; }
+#topbtns .grp button:first-child { border-radius: var(--ui-r-lg) 0 0 var(--ui-r-lg); margin-left: 0; }
+#topbtns .grp button:last-child { border-radius: 0 var(--ui-r-lg) var(--ui-r-lg) 0; }
+/* Sans ce z-index, le voisin de droite recouvre le liseré du bouton allumé. */
+#topbtns .grp button.actif { position: relative; z-index: 1; }
+
+#btnEdit    { --c: #8957e5; }   /* retoucher un cube */
+#btnZoneBar { --c: #bc4c00; }   /* retoucher une zone */
+#btnObjBar  { --c: #1a7f37; }   /* poser des objets */
+#btnGlobe   { --c: #1a7f8c; }   /* plier le monde */
+#btnFP      { --c: #1f6feb; }   /* y marcher */
 
 /* ---------- Mode cinéma ----------
    Pour filmer l'écran : tout ce qui n'est pas la scène disparaît. On masque par une
@@ -117,8 +141,9 @@ body.cinema #apercu2d { display: none; }
   pointer-events: none; opacity: 0; transition: opacity .35s;
 }
 #toast.on { opacity: 1; }
-#btnCine { background: #57606a; border: 1px solid #6e7681; }
-#btnCine:hover { background: #6e7681; }
+/* Le cinéma reste sobre : il ne produit rien et ne bascule aucun mode de travail,
+   il ne fait que retirer l'interface. Rien ne justifie qu'il attire l'œil. */
+#btnCine { --c: #8b949e; }
 
 /* ---------- Panneaux flottants : édition d'un cube · manipulation d'une zone ---------- */
 /* 264 px : « Fondre en [Rouge (autoroute/front.)] » et « 🗑 Vider les cases » ne tenaient
@@ -129,19 +154,39 @@ body.cinema #apercu2d { display: none; }
   color: #e6edf3; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-size: 13px;
 }
 #panelEdit[hidden], #panelZone[hidden] { display: none; }
+/* Le titre du panneau, séparé du reste par un filet : on sait toujours SUR QUOI on agit. */
+#panelEdit .titre, #panelZone .titre {
+  font-weight: 600; display: flex; align-items: center; gap: 7px;
+  margin: -2px -4px 10px; padding-bottom: 9px; border-bottom: 1px solid #21262d;
+}
+#panelEdit .titre::before, #panelZone .titre::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto;
+}
+#panelEdit .titre::before { background: #a371f7; }   /* le violet de « Cube » */
+#panelZone .titre::before { background: #db6d28; }   /* l'orange de « Zones » */
+
 #panelEdit .r, #panelZone .r { display: flex; align-items: center; gap: 8px; margin: 9px 0; min-width: 0; }
 #panelEdit label, #panelZone label { min-width: 58px; opacity: .85; }
 #panelEdit input[type=range], #panelZone input[type=range] { flex: 1; }
 #panelEdit input[type=color], #panelZone input[type=color] { width: 42px; height: 26px; padding: 0; border: none; background: none; cursor: pointer; }
+/* `min-height` plutôt qu'un simple rembourrage : deux boutons côte à côte dont l'un
+   porte un emoji et l'autre non n'avaient pas la même hauteur. */
 #panelEdit button, #panelZone button, #panelZone select {
-  background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 6px;
-  padding: 5px 9px; cursor: pointer; font: inherit; font-size: 12px;
+  background: var(--btn); color: var(--text); border: 1px solid var(--btn-bord);
+  border-radius: var(--ui-r);
+  padding: 5px 9px; font-size: 12px; min-height: 28px;
   min-width: 0; max-width: 100%;                /* idem : rien ne sort du panneau */
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-#panelEdit button:hover, #panelZone button:hover, #panelZone select:hover { border-color: #58a6ff; }
-#panelEdit .del, #panelZone .del { background: #7f1d1d; border-color: #b91c1c; }
-#panelEdit .hint, #panelZone .hint { opacity: .55; font-size: 11px; margin-top: 4px; }
+#panelEdit button:hover, #panelZone button:hover, #panelZone select:hover {
+  background: var(--btn-surv); border-color: var(--accent); color: #fff;
+}
+/* Ce qui détruit se voit et se survole en ROUGE. Avant, `🗑 Vider les cases` héritait
+   du survol bleu commun : au moment précis où l'on hésite, le bouton perdait le seul
+   signal qui disait « attention ». */
+#panelEdit .del, #panelZone .del { background: var(--danger); border-color: var(--danger-bord); }
+#panelEdit .del:hover, #panelZone .del:hover { background: var(--danger-surv); border-color: #f85149; }
+#panelEdit .hint, #panelZone .hint { opacity: .55; font-size: 11px; margin-top: 4px; line-height: 1.45; }
 
 /* ---------- Aperçu du canvas 2D généré ---------- */
 #apercu2d {
@@ -154,10 +199,19 @@ body.cinema #apercu2d { display: none; }
 #apercu2d .bar { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #30363d; }
 #apercu2d .bar span { font-size: 13px; color: #e6edf3; margin-right: auto; }
 #apercu2d a, #apercu2d button {
-  background: #21262d; color: #e6edf3; border: 1px solid #3d444d; border-radius: 6px;
-  padding: 4px 9px; cursor: pointer; font: inherit; font-size: 12px; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--btn); color: var(--text); border: 1px solid var(--btn-bord);
+  border-radius: var(--ui-r);
+  padding: 4px 10px; min-height: 26px;
+  cursor: pointer; font: inherit; font-size: 12px; text-decoration: none;
+  transition: background var(--ui-t), border-color var(--ui-t);
 }
-#apercu2d a:hover, #apercu2d button:hover { border-color: #58a6ff; }
+#apercu2d a:hover, #apercu2d button:hover { background: var(--btn-surv); border-color: var(--accent); color: #fff; }
+/* Télécharger est ce pour quoi on a ouvert l'aperçu : c'est la seule action pleine. */
+#apercu2d #dl2d { background: #1f6feb; border-color: #388bfd; color: #fff; }
+#apercu2d #dl2d:hover { background: #388bfd; border-color: #58a6ff; }
+/* La croix de fermeture est carrée, pas un bouton à texte : on lui retire le rembourrage. */
+#apercu2d #close2d { padding: 4px; width: 26px; justify-content: center; }
 #apercu2d .body { overflow: auto; padding: 8px; }
 #apercu2d canvas { display: block; image-rendering: pixelated; max-width: 100%; }
 
@@ -177,7 +231,18 @@ body.cinema #apercu2d { display: none; }
 #fpOverlay kbd { background: #21262d; border: 1px solid #3d444d; border-radius: 5px;
   padding: 2px 7px; font-size: 12px; }
 #fpOverlay .fpbtns { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
-#fpOverlay button { background: #21262d; color: #e6edf3; border: 1px solid #3d444d;
-  border-radius: 7px; padding: 8px 16px; cursor: pointer; font: inherit; }
-#fpOverlay #fpEntrer { background: #1f6feb; border-color: #388bfd; color: #fff; }
-#fpOverlay button:hover { border-color: #58a6ff; }
+/* Le voile est plein écran et ne propose que deux issues : les boutons y sont larges,
+   et « Entrer » se distingue franchement de « Annuler » — on n'entre pas par erreur en
+   mode capture de souris, dont on ne ressort qu'avec Échap. */
+#fpOverlay button {
+  background: var(--btn); color: var(--text); border: 1px solid var(--btn-bord);
+  border-radius: 8px; padding: 9px 20px; min-width: 120px;
+  cursor: pointer; font: inherit; font-weight: 500;
+  transition: background var(--ui-t), border-color var(--ui-t);
+}
+#fpOverlay button:hover { background: var(--btn-surv); border-color: var(--accent); color: #fff; }
+#fpOverlay #fpEntrer {
+  background: #1f6feb; border-color: #388bfd; color: #fff;
+  box-shadow: 0 6px 18px rgba(31, 111, 235, .35);
+}
+#fpOverlay #fpEntrer:hover { background: #388bfd; border-color: #58a6ff; }
