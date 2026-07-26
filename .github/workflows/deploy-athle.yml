@@ -1,0 +1,44 @@
+name: Deploy ATHLE_COMPETITION
+
+# Ne se déclenche que si le dossier a réellement changé : les autres projets du
+# dépôt ne doivent pas provoquer un transfert inutile.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'ATHLE_COMPETITION/**'
+      - '.github/workflows/deploy-athle.yml'
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    name: Envoi FTPS vers luvumbu.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v4
+
+      - name: Transfert de ATHLE_COMPETITION/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:      ${{ secrets.FTP_HOST }}
+          username:    ${{ secrets.FTP_USER }}
+          password:    ${{ secrets.FTP_PASSWORD }}
+          port:        ${{ secrets.FTP_PORT }}
+          protocol:    ${{ secrets.FTP_PROTOCOL }}
+          local-dir:   ./ATHLE_COMPETITION/
+          server-dir:  /public_html/ATHLE_COMPETITION/
+          # dangerous-clean-slate reste absent volontairement : il effacerait
+          # config/config.local.php, qui n'existe que sur le serveur et porte les
+          # identifiants de la base.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.browser-profile/**
+            scraper/**
+            data/**
+            sql/**
+            update.cmd
+            DEPLOIEMENT.md
+            README.md

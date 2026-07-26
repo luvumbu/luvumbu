@@ -1,0 +1,29 @@
+<?php
+/**
+ * Modèle de configuration serveur.
+ *
+ * Copiez ce fichier en `config.local.php` SUR LE SERVEUR et renseignez les
+ * identifiants de la base. Il est ignoré par Git : les mots de passe ne
+ * remontent jamais dans le dépôt, et le déploiement ne l'écrase pas.
+ *
+ * Les valeurs indiquées ici surchargent config/config.php, section par section.
+ */
+
+return [
+    'db' => [
+        'host'     => 'localhost',
+        'port'     => 3306,
+        // Chez Hostinger, base et utilisateur portent un préfixe de compte :
+        // u123456789_athle, u123456789_athle_user.
+        'name'     => 'REMPLACER_nom_de_la_base',
+        'user'     => 'REMPLACER_utilisateur',
+        'password' => 'REMPLACER_mot_de_passe',
+        'charset'  => 'utf8mb4',
+    ],
+
+    // Nominatim exige un contact réel et joignable. Utilisé uniquement par
+    // bin/geocode.php et api/locate.php (recherche d'adresse de rue).
+    'geocoder' => [
+        'user_agent' => 'ATHLE_COMPETITION/1.0 (votre.adresse@exemple.com)',
+    ],
+];

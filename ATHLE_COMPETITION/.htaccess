@@ -1,0 +1,34 @@
+# Exposition publique : tout ce qui n'est pas l'interface ou l'API est fermé.
+#
+# En local ça ne change rien — Apache sert les mêmes fichiers. En ligne, sans
+# ces règles, n'importe qui téléchargerait data/details.json, sql/dump.sql.gz ou
+# le schéma de la base par simple URL.
+#
+# Les scripts de bin/ refusent déjà d'eux-mêmes le contexte web (403 si
+# PHP_SAPI n'est pas « cli ») : c'est une deuxième barrière, pas la seule.
+
+<IfModule mod_authz_core.c>
+    # Apache 2.4
+    <FilesMatch "\.(json|sql|gz|zip|md|cmd|lock)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    # Apache 2.2
+    <FilesMatch "\.(json|sql|gz|zip|md|cmd|lock)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# Dossiers entiers hors de portée du web.
+RedirectMatch 404 ^/.*/(bin|sql|data|scraper|config)(/|$)
+
+# Pas de listing de répertoire.
+Options -Indexes
+
+# Les messages d'erreur PHP ne doivent jamais atteindre le visiteur : ils
+# révèlent les chemins du serveur et les requêtes SQL.
+<IfModule mod_php.c>
+    php_flag display_errors Off
+</IfModule>

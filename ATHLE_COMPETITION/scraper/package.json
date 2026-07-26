@@ -1,0 +1,15 @@
+{
+  "name": "athle-competition-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Récupère les compétitions d'athletisme.app via un vrai navigateur (contourne le challenge Cloudflare Turnstile en le laissant se résoudre normalement).",
+  "scripts": {
+    "scrape": "node scrape.js",
+    "scrape:headless": "node scrape.js --headless",
+    "inspect": "node scrape.js --inspect"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -1,0 +1,13 @@
+/scraper/node_modules/
+/scraper/.browser-profile/
+/data/raw/
+/data/competitions.json
+/data/details.json
+/data/address-cache.json
+/config/config.local.php
+
+# Dump de déploiement : artefact régénérable (voir DEPLOIEMENT.md), et le dépôt
+# est public — il porte 165 compétitions récupérées sur athletisme.app et
+# 44 543 codes postaux GeoNames.
+/sql/dump.sql
+/sql/dump.sql.gz
