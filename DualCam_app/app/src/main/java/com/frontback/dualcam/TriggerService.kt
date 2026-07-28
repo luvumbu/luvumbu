@@ -48,7 +48,7 @@ class TriggerService : Service(), SensorEventListener {
         private const val NOTIF_ID = 43
 
         /** Cadence d'interrogation du serveur pour le déclenchement à distance. */
-        private const val REMOTE_POLL_MS = 10_000L
+        private const val REMOTE_POLL_MS = 5_000L
 
         @Volatile var isWatching = false; private set
 
@@ -81,6 +81,21 @@ class TriggerService : Service(), SensorEventListener {
     private var pollThread: Thread? = null
     @Volatile private var polling = false
     private val main = Handler(Looper.getMainLooper())
+
+    // Verrou de réveil partiel : maintient l'interrogation du serveur active écran verrouillé.
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+    private fun acquireWake() {
+        if (wakeLock?.isHeld == true) return
+        val pm = getSystemService(POWER_SERVICE) as? android.os.PowerManager ?: return
+        wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "DualCam:watch").apply {
+            setReferenceCounted(false)
+            try { acquire() } catch (_: Throwable) {}
+        }
+    }
+    private fun releaseWake() {
+        try { if (wakeLock?.isHeld == true) wakeLock?.release() } catch (_: Throwable) {}
+        wakeLock = null
+    }
 
     // Détection de capture d'écran (observateur MediaStore, actif écran verrouillé/éteint).
     private var contentObserver: ContentObserver? = null
@@ -118,7 +133,7 @@ class TriggerService : Service(), SensorEventListener {
         if (shakeEnabled) startShake()
         if (soundEnabled && hasMicPermission()) startSound()
         if (screenshotEnabled) startScreenshotWatch()
-        if (remoteEnabled) startRemotePoll()
+        if (remoteEnabled) { acquireWake(); startRemotePoll() }
 
         return START_STICKY   // revient après un kill système (surveillance persistante)
     }
@@ -155,7 +170,7 @@ class TriggerService : Service(), SensorEventListener {
         val api = ApiClient(SettingsStore(this))
         pollThread = Thread {
             while (polling) {
-                when (api.pollRemoteCommand()) {
+                when (api.pollRemoteCommand(RecordingService.isRecording)) {
                     "start" -> if (!RecordingService.isRecording) main.post { remoteStart() }
                     "stop"  -> if (RecordingService.isRecording) main.post { remoteStop() }
                 }
@@ -339,6 +354,7 @@ class TriggerService : Service(), SensorEventListener {
         running = false
         isWatching = false
         polling = false
+        releaseWake()
         pollThread?.interrupt(); pollThread = null
         try { sensorManager?.unregisterListener(this) } catch (_: Throwable) {}
         soundThread?.interrupt(); soundThread = null

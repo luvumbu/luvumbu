@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.Looper
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -215,6 +216,7 @@ class RecordingService : LifecycleService() {
                 projCode = intent.getIntExtra(EXTRA_PROJ_CODE, 0)
                 appAudio = intent.getBooleanExtra(EXTRA_APP_AUDIO, false) &&
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && projData != null
+                acquireWake()   // écran verrouillé/éteint : empêche le processeur de figer l'enregistrement
                 startAsForeground("Enregistrement en cours…")
                 startRecording()
             }
@@ -524,8 +526,25 @@ class RecordingService : LifecycleService() {
         stopAppAudioCapture()
         sessionAudioFile?.delete()
         sessionAudioFile = null
+        releaseWake()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    // Verrou de réveil partiel : garde le processeur actif écran éteint/verrouillé, sinon
+    // l'encodage vidéo se fige. Garde-fou de 6 h au cas où l'arrêt ne serait jamais appelé.
+    private var wakeLock: PowerManager.WakeLock? = null
+    private fun acquireWake() {
+        if (wakeLock?.isHeld == true) return
+        val pm = getSystemService(POWER_SERVICE) as? PowerManager ?: return
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DualCam:recording").apply {
+            setReferenceCounted(false)
+            try { acquire(6 * 60 * 60 * 1000L) } catch (_: Throwable) {}
+        }
+    }
+    private fun releaseWake() {
+        try { if (wakeLock?.isHeld == true) wakeLock?.release() } catch (_: Throwable) {}
+        wakeLock = null
     }
 
     private fun notifyState() {

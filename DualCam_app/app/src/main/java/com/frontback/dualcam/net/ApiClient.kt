@@ -186,11 +186,12 @@ class ApiClient(private val settings: SettingsStore) {
      * N'est appelé QUE si l'utilisateur a coché « Déclenchement à distance » :
      * option décochée = aucune requête, donc aucun pilotage possible depuis le serveur.
      */
-    fun pollRemoteCommand(): String? {
+    fun pollRemoteCommand(recording: Boolean): String? {
         if (settings.token.isBlank()) return null
         return try {
+            // On signale au serveur si l'on enregistre : la page web affiche « REC » en conséquence.
             val req = Request.Builder()
-                .url(base() + "/remote.php?poll=1")
+                .url(base() + "/remote.php?poll=1&rec=" + (if (recording) "1" else "0"))
                 .header("X-Auth-Token", settings.token)
                 .get()
                 .build()

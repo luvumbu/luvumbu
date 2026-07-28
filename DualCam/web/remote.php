@@ -42,6 +42,7 @@ Db::pdo()->exec(
     'CREATE TABLE IF NOT EXISTS ' . TBL_REMOTE . ' (
         user_id   INT UNSIGNED NOT NULL PRIMARY KEY,
         cmd       VARCHAR(8)   NOT NULL DEFAULT \'\',
+        rec       TINYINT(1)   NOT NULL DEFAULT 0,
         issued_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
         polled_at DATETIME     NULL DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
@@ -75,8 +76,6 @@ $online  = $agoSec !== null && $agoSec <= 60;
 <!doctype html><html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Télécommande DualCam</title>
-<!-- Rafraîchit l'état de présence du téléphone sans intervention. -->
-<meta http-equiv="refresh" content="15">
 <style>
     *{box-sizing:border-box;}
     body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;min-height:100vh;
@@ -99,37 +98,39 @@ $online  = $agoSec !== null && $agoSec <= 60;
     .ok{background:rgba(6,78,59,.45);border:1px solid #047857;color:#a7f3d0;padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:18px;}
     .note{color:#64748b;font-size:12px;line-height:1.6;margin-top:18px;border-top:1px solid rgba(148,163,184,.15);padding-top:16px;}
     a{color:#5eead4;}
+
+    /* Effet REC : cadre rouge pulsant sur TOUTE la page quand le téléphone filme. */
+    #recFx{position:fixed;inset:0;pointer-events:none;z-index:50;display:none;
+           border:10px solid #ef4444;box-shadow:inset 0 0 120px rgba(239,68,68,.55);animation:recpulse 1.3s infinite;}
+    #recFx.show{display:block;}
+    @keyframes recpulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+    #recBadge{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:51;display:none;
+              align-items:center;gap:10px;background:#b91c1c;color:#fff;font-weight:800;font-size:16px;
+              padding:9px 18px;border-radius:24px;box-shadow:0 8px 24px rgba(0,0,0,.5);letter-spacing:.5px;}
+    #recBadge.show{display:flex;}
+    #recBadge .b{width:13px;height:13px;border-radius:50%;background:#fff;animation:recpulse 1.3s infinite;}
 </style></head>
-<body><div class="card">
+<body>
+<!-- Effet REC plein écran (piloté par l'état réel renvoyé par le téléphone) -->
+<div id="recFx"></div>
+<div id="recBadge"><span class="b"></span>REC — ENREGISTREMENT EN COURS</div>
+
+<div class="card">
     <h1>🎬 Télécommande DualCam</h1>
     <p class="sub">Connecté en tant que <?= htmlspecialchars($uname) ?></p>
 
-    <?php if ($sent === 'start'): ?>
-        <div class="ok">✅ Ordre « démarrer » envoyé. Le téléphone le relèvera d'ici ~10 s.</div>
-    <?php elseif ($sent === 'stop'): ?>
-        <div class="ok">✅ Ordre « arrêter » envoyé. Le téléphone le relèvera d'ici ~10 s.</div>
-    <?php endif; ?>
+    <div id="msg" class="ok" style="display:none"></div>
 
-    <div class="state <?= $online ? 'on' : 'off' ?>">
-        <span class="dot <?= $online ? 'on' : 'off' ?>"></span>
-        <?php if ($online): ?>
-            Téléphone à l'écoute — vu il y a <?= (int) $agoSec ?> s
-        <?php elseif ($agoSec !== null): ?>
-            Dernier contact il y a <?= (int) round($agoSec / 60) ?> min — l'ordre l'attendra à sa reconnexion.
-        <?php else: ?>
-            Le téléphone n'a pas encore contacté le serveur — l'ordre l'attendra dès qu'il se connecte.
-        <?php endif; ?>
+    <div id="stateBox" class="state off">
+        <span class="dot off" id="stateDot"></span>
+        <span id="stateText">Vérification de l'état du téléphone…</span>
     </div>
 
     <!-- Boutons TOUJOURS actifs : l'ordre est déposé et attend que le téléphone se reconnecte. -->
-    <form method="post">
+    <form id="cmdForm" method="post">
         <button class="start" name="cmd" value="start">▶️ Démarrer l'enregistrement</button>
         <button class="stop"  name="cmd" value="stop">⏹ Arrêter l'enregistrement</button>
     </form>
-
-    <?php if ($pending !== ''): ?>
-        <p class="sub" style="margin:0;">⏳ Ordre « <?= htmlspecialchars($pending) ?> » en attente — se déclenchera à la reconnexion du téléphone.</p>
-    <?php endif; ?>
 
     <div class="note">
         Le téléphone n'obéit que si l'option <b>« Déclenchement à distance »</b> est cochée
@@ -138,4 +139,62 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <a href="dualcam.php">🎞️ Mes vidéos</a> ·
         <a href="gallery.php">📸 Galerie PhotoSync</a>
     </div>
-</div></body></html>
+</div>
+
+<script>
+const msg      = document.getElementById('msg');
+const stateBox = document.getElementById('stateBox');
+const stateDot = document.getElementById('stateDot');
+const stateTxt = document.getElementById('stateText');
+const recFx    = document.getElementById('recFx');
+const recBadge = document.getElementById('recBadge');
+let waitingStart = false;   // on vient de cliquer « Démarrer », on attend le REC
+
+function flash(text) { msg.textContent = text; msg.style.display = 'block'; }
+
+// Envoi de l'ordre SANS recharger la page (sinon l'effet REC repartirait de zéro).
+document.getElementById('cmdForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cmd = e.submitter && e.submitter.value ? e.submitter.value : 'start';
+    flash(cmd === 'start' ? '✅ Ordre « démarrer » envoyé — en attente du téléphone…'
+                          : '✅ Ordre « arrêter » envoyé…');
+    if (cmd === 'start') waitingStart = true;
+    if (cmd === 'stop')  waitingStart = false;
+    try {
+        await fetch('../api/remote.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'cmd=' + cmd
+        });
+    } catch (err) { flash('⚠️ Envoi impossible : ' + (err.message || err)); }
+    poll();   // rafraîchit l'état tout de suite
+});
+
+// Surveillance de l'état réel renvoyé par le téléphone.
+async function poll() {
+    try {
+        const r = await fetch('../api/remote.php?status=1', { cache: 'no-store' });
+        const j = await r.json();
+        if (!j.ok) return;
+
+        // --- Effet REC piloté par l'état RÉEL du téléphone ---
+        const rec = !!j.recording;
+        recFx.classList.toggle('show', rec);
+        recBadge.classList.toggle('show', rec);
+        if (rec && waitingStart) { waitingStart = false; flash('🔴 Enregistrement CONFIRMÉ sur le téléphone.'); }
+
+        // --- Ligne d'état ---
+        const online = !!j.online;
+        stateBox.className = 'state ' + (rec ? 'on' : online ? 'on' : 'off');
+        stateDot.className = 'dot ' + (online ? 'on' : 'off');
+        if (rec)             stateTxt.textContent = '🔴 Le téléphone enregistre (vu il y a ' + j.seen_ago_s + ' s)';
+        else if (online)     stateTxt.textContent = 'Téléphone à l\'écoute — vu il y a ' + j.seen_ago_s + ' s';
+        else if (j.seen_ago_s !== null) stateTxt.textContent = 'Dernier contact il y a ' + Math.round(j.seen_ago_s / 60) + ' min — l\'ordre l\'attendra à sa reconnexion.';
+        else                 stateTxt.textContent = 'Le téléphone n\'a pas encore contacté le serveur — l\'ordre l\'attendra dès qu\'il se connecte.';
+    } catch (e) { /* réseau : on réessaie */ }
+}
+
+poll();
+setInterval(poll, 2000);
+</script>
+</body></html>
