@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.PowerManager
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -58,25 +59,33 @@ class PhotoService : LifecycleService() {
                 val provider = future.get()
                 val imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
+                // Flux continu (analyse d'image) lié à la capture : sans un flux actif à côté,
+                // beaucoup de téléphones refusent d'ouvrir la caméra pour une photo seule.
+                val analysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+                analysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { it.close() }
                 val selector = CameraSelector.Builder().requireLensFacing(facing).build()
                 provider.unbindAll()
-                provider.bindToLifecycle(this, selector, imageCapture)
+                provider.bindToLifecycle(this, selector, imageCapture, analysis)
 
                 val side = if (facing == CameraSelector.LENS_FACING_FRONT) "avant" else "arriere"
                 val file = File(cacheDir, "photo_${side}_${System.currentTimeMillis()}.jpg")
                 val opts = ImageCapture.OutputFileOptions.Builder(file).build()
 
-                imageCapture.takePicture(opts, ContextCompat.getMainExecutor(this),
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            try { provider.unbindAll() } catch (_: Throwable) {}
-                            upload(file, side)
-                        }
-                        override fun onError(exc: ImageCaptureException) {
-                            try { provider.unbindAll() } catch (_: Throwable) {}
-                            finish("Échec de la photo : ${exc.message}")
-                        }
-                    })
+                // Laisse le flux démarrer (~700 ms) avant de déclencher, sinon la 1ʳᵉ photo peut échouer.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    imageCapture.takePicture(opts, ContextCompat.getMainExecutor(this),
+                        object : ImageCapture.OnImageSavedCallback {
+                            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                try { provider.unbindAll() } catch (_: Throwable) {}
+                                upload(file, side)
+                            }
+                            override fun onError(exc: ImageCaptureException) {
+                                try { provider.unbindAll() } catch (_: Throwable) {}
+                                finish("Échec de la photo : ${exc.message}")
+                            }
+                        })
+                }, 700L)
             } catch (t: Throwable) {
                 finish("Caméra indisponible : ${t.message}")
             }
