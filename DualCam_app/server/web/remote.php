@@ -115,11 +115,18 @@ $online  = $agoSec !== null && $agoSec <= 60;
     #recBadge.show{display:flex;}
     #recBadge .b{width:13px;height:13px;border-radius:50%;background:#fff;animation:recpulse 1.3s infinite;}
     #recBadge .chrono{font-variant-numeric:tabular-nums;background:rgba(0,0,0,.28);padding:2px 10px;border-radius:14px;margin-left:4px;}
+
+    /* Flash obturateur : l'écran devient BLANC un court instant, comme un flash photo. */
+    #shutter{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60;}
+    #shutter.flash{animation:shutter .45s ease;}
+    @keyframes shutter{0%{opacity:0;}10%{opacity:1;}45%{opacity:.95;}100%{opacity:0;}}
 </style></head>
 <body>
 <!-- Effet REC plein écran (piloté par l'état réel renvoyé par le téléphone) -->
 <div id="recFx"></div>
 <div id="recBadge"><span class="b"></span>REC<span class="chrono" id="chrono">00:00</span></div>
+<!-- Flash « obturateur » : écran noir bref quand le téléphone a relevé la commande -->
+<div id="shutter"></div>
 
 <div class="card">
     <h1>🎬 Télécommande DualCam</h1>
@@ -160,7 +167,17 @@ const stateTxt = document.getElementById('stateText');
 const recFx    = document.getElementById('recFx');
 const recBadge = document.getElementById('recBadge');
 const chrono   = document.getElementById('chrono');
+const shutter  = document.getElementById('shutter');
 let waitingStart = false;   // on vient de cliquer « Démarrer », on attend le REC
+let awaitingPickup = false; // on a envoyé une capture, on attend que le téléphone la relève
+let pendingLabel = '';
+
+// Flash « obturateur » : écran noir bref (confirme la communication avec le téléphone).
+function shutterFlash() {
+    shutter.classList.remove('flash');
+    void shutter.offsetWidth;   // relance l'animation même si rappelée vite
+    shutter.classList.add('flash');
+}
 
 // Chrono : recalé sur l'heure de début RÉELLE renvoyée par le serveur, puis il avance seul.
 let recStartMs = null;      // instant (ms local) correspondant à « début d'enregistrement »
@@ -193,6 +210,10 @@ document.getElementById('cmdForm').addEventListener('submit', async (e) => {
     flash('✅ Ordre « ' + (labels[cmd] || cmd) + ' » envoyé — le téléphone le relèvera d\'ici ~5 s.');
     if (cmd === 'start') waitingStart = true;
     if (cmd === 'stop')  waitingStart = false;
+    // Commandes « capture » : on attend que le téléphone relève l'ordre pour flasher.
+    if (cmd === 'photo_back' || cmd === 'photo_front' || cmd === 'screenshot') {
+        awaitingPickup = true; pendingLabel = labels[cmd] || cmd;
+    }
     try {
         await fetch('../api/remote.php', {
             method: 'POST',
@@ -216,6 +237,13 @@ async function poll() {
         recBadge.classList.toggle('show', rec);
         if (rec) setElapsed(j.rec_elapsed_s); else setElapsed(null);
         if (rec && waitingStart) { waitingStart = false; flash('🔴 Enregistrement CONFIRMÉ sur le téléphone.'); }
+
+        // Capture relevée par le téléphone (l'ordre a été consommé) → flash blanc de confirmation.
+        if (awaitingPickup && !j.has_pending && j.online) {
+            awaitingPickup = false;
+            shutterFlash();
+            flash('📸 ' + pendingLabel + ' — reçu par le téléphone ✓');
+        }
 
         // --- Ligne d'état ---
         const online = !!j.online;
