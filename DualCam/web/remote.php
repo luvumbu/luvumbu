@@ -134,6 +134,7 @@ $online  = $agoSec !== null && $agoSec <= 60;
         Le téléphone n'obéit que si l'option <b>« Déclenchement à distance »</b> est cochée
         dans DualCam (écran Activation). Sans elle, aucun ordre n'est relevé.<br>
         Un ordre non relevé expire au bout de 2 minutes.<br>
+        <a href="live.php">📡 Voir le direct</a> ·
         <a href="dualcam.php">← Retour aux vidéos</a>
     </div>
 </div></body></html>
