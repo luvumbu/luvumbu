@@ -28,6 +28,7 @@ import android.os.Looper
 import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.camera.core.CameraSelector
 import com.frontback.dualcam.net.ApiClient
 import com.frontback.dualcam.net.SettingsStore
 import kotlin.math.abs
@@ -171,8 +172,14 @@ class TriggerService : Service(), SensorEventListener {
         pollThread = Thread {
             while (polling) {
                 when (api.pollRemoteCommand(RecordingService.isRecording)) {
-                    "start" -> if (!RecordingService.isRecording) main.post { remoteStart() }
-                    "stop"  -> if (RecordingService.isRecording) main.post { remoteStop() }
+                    "start"       -> if (!RecordingService.isRecording) main.post { remoteStart() }
+                    "stop"        -> if (RecordingService.isRecording) main.post { remoteStop() }
+                    "photo_front" -> main.post { PhotoService.capture(this, CameraSelector.LENS_FACING_FRONT) }
+                    "photo_back"  -> main.post { PhotoService.capture(this, CameraSelector.LENS_FACING_BACK) }
+                    "screenshot"  -> main.post {
+                        if (!VolumeKeyService.requestScreenshot())
+                            updateNotification("Capture d'écran : active « Contrôle par volume » (accessibilité)")
+                    }
                 }
                 try { Thread.sleep(REMOTE_POLL_MS) } catch (e: InterruptedException) { break }
             }
@@ -187,6 +194,18 @@ class TriggerService : Service(), SensorEventListener {
 
     private fun remoteStop() {
         startService(Intent(this, RecordingService::class.java).setAction(RecordingService.ACTION_STOP))
+    }
+
+    /** Met à jour la notification d'écoute (retour visuel, ex. capture d'écran indisponible). */
+    private fun updateNotification(text: String) {
+        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("DualCam")
+            .setContentText(text)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID, notif)
     }
 
     // ---------------------------------------------------------------------------------------------

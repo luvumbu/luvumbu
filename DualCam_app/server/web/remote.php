@@ -95,6 +95,10 @@ $online  = $agoSec !== null && $agoSec <= 60;
            color:#fff;cursor:pointer;margin-bottom:12px;}
     .start{background:linear-gradient(135deg,#059669,#10b981);}
     .stop{background:linear-gradient(135deg,#b91c1c,#ef4444);}
+    .photo{background:linear-gradient(135deg,#1d4ed8,#3b82f6);}
+    .shot{background:linear-gradient(135deg,#7c3aed,#a855f7);}
+    .grid2{display:flex;gap:12px;}
+    .grid2 button{margin-bottom:12px;}
     button:disabled{opacity:.45;cursor:not-allowed;}
     .ok{background:rgba(6,78,59,.45);border:1px solid #047857;color:#a7f3d0;padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:18px;}
     .note{color:#64748b;font-size:12px;line-height:1.6;margin-top:18px;border-top:1px solid rgba(148,163,184,.15);padding-top:16px;}
@@ -132,6 +136,11 @@ $online  = $agoSec !== null && $agoSec <= 60;
     <form id="cmdForm" method="post">
         <button class="start" name="cmd" value="start">▶️ Démarrer l'enregistrement</button>
         <button class="stop"  name="cmd" value="stop">⏹ Arrêter l'enregistrement</button>
+        <div class="grid2">
+            <button class="photo" name="cmd" value="photo_back">📷 Photo arrière</button>
+            <button class="photo" name="cmd" value="photo_front">🤳 Photo avant</button>
+        </div>
+        <button class="shot" name="cmd" value="screenshot">🖼️ Capture d'écran</button>
     </form>
 
     <div class="note">
@@ -176,8 +185,12 @@ function flash(text) { msg.textContent = text; msg.style.display = 'block'; }
 document.getElementById('cmdForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const cmd = e.submitter && e.submitter.value ? e.submitter.value : 'start';
-    flash(cmd === 'start' ? '✅ Ordre « démarrer » envoyé — en attente du téléphone…'
-                          : '✅ Ordre « arrêter » envoyé…');
+    const labels = {
+        start: 'démarrer l\'enregistrement', stop: 'arrêter l\'enregistrement',
+        photo_back: 'photo caméra arrière', photo_front: 'photo caméra avant',
+        screenshot: 'capture d\'écran'
+    };
+    flash('✅ Ordre « ' + (labels[cmd] || cmd) + ' » envoyé — le téléphone le relèvera d\'ici ~5 s.');
     if (cmd === 'start') waitingStart = true;
     if (cmd === 'stop')  waitingStart = false;
     try {

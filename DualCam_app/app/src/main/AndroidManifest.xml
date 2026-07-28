@@ -79,6 +79,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection|microphone|camera" />
 
+        <!-- Capture d'UNE photo (avant/arrière) déclenchée à distance, même écran verrouillé -->
+        <service
+            android:name=".PhotoService"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
+
         <activity
             android:name=".ActivationActivity"
             android:exported="false"

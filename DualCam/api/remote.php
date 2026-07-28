@@ -113,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') Api::fail('Méthode non autorisée', 
 
 $uid = Auth::requireUser();
 $cmd = (string) ($_POST['cmd'] ?? '');
-if (!in_array($cmd, ['start', 'stop'], true)) Api::fail('Commande inconnue (start ou stop)', 400);
+$allowed = ['start', 'stop', 'photo_front', 'photo_back', 'screenshot'];
+if (!in_array($cmd, $allowed, true)) Api::fail('Commande inconnue', 400);
 
 $db->prepare(
     'INSERT INTO ' . TBL_REMOTE . ' (user_id, cmd, issued_at) VALUES (?, ?, NOW())

@@ -3,12 +3,19 @@ package com.frontback.dualcam
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.Display
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.accessibilityservice.AccessibilityService
+import com.frontback.dualcam.net.ApiClient
+import com.frontback.dualcam.net.SettingsStore
+import java.io.File
+import java.util.concurrent.Executors
 
 /**
  * Service d'accessibilité : capte les boutons de VOLUME même écran éteint / app fermée.
@@ -43,6 +50,39 @@ class VolumeKeyService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
+
+    override fun onServiceConnected() { super.onServiceConnected(); instance = this }
+    override fun onDestroy() { if (instance === this) instance = null; super.onDestroy() }
+
+    /**
+     * Prend une capture d'écran (sans autorisation de projection, grâce à l'accessibilité)
+     * et l'envoie au serveur. API 30+. Déclenchée à distance depuis le PC.
+     */
+    private fun captureScreenshotToServer() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        try {
+            takeScreenshot(Display.DEFAULT_DISPLAY, Executors.newSingleThreadExecutor(),
+                object : TakeScreenshotCallback {
+                    override fun onSuccess(res: ScreenshotResult) {
+                        try {
+                            val hb = res.hardwareBuffer
+                            val hw = Bitmap.wrapHardwareBuffer(hb, res.colorSpace)
+                            val bmp = hw?.copy(Bitmap.Config.ARGB_8888, false)
+                            hw?.recycle(); hb.close()
+                            if (bmp == null) return
+                            val file = File(cacheDir, "screenshot_${System.currentTimeMillis()}.jpg")
+                            file.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                            bmp.recycle()
+                            val settings = SettingsStore(this@VolumeKeyService)
+                            val name = "DualCam_screenshot_${System.currentTimeMillis()}.jpg"
+                            try { ApiClient(settings).uploadFile(file, name, "dualcam") } catch (_: Throwable) {}
+                            try { file.delete() } catch (_: Throwable) {}
+                        } catch (_: Throwable) {}
+                    }
+                    override fun onFailure(errorCode: Int) {}
+                })
+        } catch (_: Throwable) {}
+    }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (!prefs.getBoolean("vol_ctrl", false)) return false
@@ -165,6 +205,19 @@ class VolumeKeyService : AccessibilityService() {
 
         /** Fin de rafale : au-delà de ce délai sans nouvel appui, on décide de l'action. */
         private const val GAP_MS = 450L
+
+        /** Instance vivante du service (pour déclencher une capture d'écran à distance). */
+        @Volatile private var instance: VolumeKeyService? = null
+
+        /**
+         * Demande une capture d'écran à distance. Renvoie false si l'accessibilité DualCam
+         * n'est pas active (seule façon de capturer l'écran sans redemander l'autorisation).
+         */
+        fun requestScreenshot(): Boolean {
+            val s = instance ?: return false
+            s.captureScreenshotToServer()
+            return true
+        }
 
         /** Vrai si le service d'accessibilité DualCam est actuellement activé par l'utilisateur. */
         fun isEnabled(context: Context): Boolean {
