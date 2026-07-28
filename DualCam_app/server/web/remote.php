@@ -150,6 +150,12 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <button class="shot" name="cmd" value="screenshot">🖼️ Capture d'écran</button>
     </form>
 
+    <!-- Aperçu de la dernière capture réellement arrivée sur le serveur -->
+    <a id="capLink" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none;">
+        <div style="margin-top:6px;text-align:center;color:#a7f3d0;font-size:13px;">🖼️ Dernière capture reçue (cliquer pour agrandir)</div>
+        <img id="capPreview" alt="capture" style="display:block;width:100%;border-radius:12px;margin-top:8px;border:1px solid rgba(148,163,184,.2);">
+    </a>
+
     <div class="note">
         Le téléphone n'obéit que si l'option <b>« Déclenchement à distance »</b> est cochée
         dans DualCam (écran Activation). Sans elle, aucun ordre n'est relevé.<br>
@@ -169,7 +175,9 @@ const recBadge = document.getElementById('recBadge');
 const chrono   = document.getElementById('chrono');
 const shutter  = document.getElementById('shutter');
 let waitingStart = false;   // on vient de cliquer « Démarrer », on attend le REC
-let awaitingPickup = false; // on a envoyé une capture, on attend que le téléphone la relève
+let awaitingCapture = false;// on a envoyé une capture, on attend que l'IMAGE arrive sur le serveur
+let captureBaseline = null; // id de la dernière capture connue AVANT le clic
+let lastCaptureId = null;   // id de la dernière capture vue côté serveur
 let pendingLabel = '';
 
 // Flash « obturateur » : écran noir bref (confirme la communication avec le téléphone).
@@ -210,9 +218,11 @@ document.getElementById('cmdForm').addEventListener('submit', async (e) => {
     flash('✅ Ordre « ' + (labels[cmd] || cmd) + ' » envoyé — le téléphone le relèvera d\'ici ~5 s.');
     if (cmd === 'start') waitingStart = true;
     if (cmd === 'stop')  waitingStart = false;
-    // Commandes « capture » : on attend que le téléphone relève l'ordre pour flasher.
+    // Commandes « capture » : on attend que l'IMAGE arrive sur le serveur pour flasher.
     if (cmd === 'photo_back' || cmd === 'photo_front' || cmd === 'screenshot') {
-        awaitingPickup = true; pendingLabel = labels[cmd] || cmd;
+        awaitingCapture = true;
+        captureBaseline = lastCaptureId;   // toute image d'id supérieur = la nouvelle capture
+        pendingLabel = labels[cmd] || cmd;
     }
     try {
         await fetch('../api/remote.php', {
@@ -238,11 +248,19 @@ async function poll() {
         if (rec) setElapsed(j.rec_elapsed_s); else setElapsed(null);
         if (rec && waitingStart) { waitingStart = false; flash('🔴 Enregistrement CONFIRMÉ sur le téléphone.'); }
 
-        // Capture relevée par le téléphone (l'ordre a été consommé) → flash blanc de confirmation.
-        if (awaitingPickup && !j.has_pending && j.online) {
-            awaitingPickup = false;
+        // Suivi de la dernière capture connue côté serveur.
+        lastCaptureId = j.last_capture_id;
+
+        // Flash blanc UNIQUEMENT quand l'image est réellement ARRIVÉE (id supérieur au repère).
+        if (awaitingCapture && lastCaptureId && (captureBaseline === null || lastCaptureId > captureBaseline)) {
+            awaitingCapture = false;
             shutterFlash();
-            flash('📸 ' + pendingLabel + ' — reçu par le téléphone ✓');
+            flash('📸 ' + pendingLabel + ' — arrivée sur le serveur ✓');
+            const link = document.getElementById('capLink');
+            const img  = document.getElementById('capPreview');
+            img.src = '../api/media.php?id=' + lastCaptureId + '&thumb=1&t=' + Date.now();
+            link.href = '../api/media.php?id=' + lastCaptureId;
+            link.style.display = 'block';
         }
 
         // --- Ligne d'état ---

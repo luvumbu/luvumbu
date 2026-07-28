@@ -96,13 +96,25 @@ if (isset($_GET['status'])) {
     $elapsed = ($recording && !empty($row['rec_since']))
         ? max(0, time() - strtotime((string) $row['rec_since'])) : null;
 
+    // Dernière capture (photo avant/arrière ou capture d'écran) réellement ARRIVÉE sur le serveur.
+    // Sert au web à confirmer par un flash que l'image est bien en ligne (pas juste « ordre reçu »).
+    $cap = $db->prepare(
+        'SELECT id, original_name FROM ' . TBL_PHOTOS . '
+          WHERE user_id = ? AND source = \'dualcam\' AND deleted_at IS NULL
+            AND (original_name LIKE \'DualCam\_photo\_%\' OR original_name LIKE \'DualCam\_screenshot\_%\')
+          ORDER BY id DESC LIMIT 1'
+    );
+    $cap->execute([$uid]);
+    $capRow = $cap->fetch(PDO::FETCH_ASSOC) ?: [];
+
     Api::json([
-        'ok'            => true,
-        'recording'     => $recording,
-        'rec_elapsed_s' => $elapsed,
-        'seen_ago_s'    => $ago,
-        'online'        => $ago !== null && $ago <= 30,
-        'has_pending'   => ((string) ($row['cmd'] ?? '')) !== '',
+        'ok'               => true,
+        'recording'        => $recording,
+        'rec_elapsed_s'    => $elapsed,
+        'seen_ago_s'       => $ago,
+        'online'           => $ago !== null && $ago <= 30,
+        'has_pending'      => ((string) ($row['cmd'] ?? '')) !== '',
+        'last_capture_id'  => isset($capRow['id']) ? (int) $capRow['id'] : null,
     ]);
 }
 
