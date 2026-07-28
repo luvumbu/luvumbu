@@ -92,6 +92,9 @@ if (!$uid) {
     </div>
     <a class="link" href="remote.php">🎬 Télécommande</a>&nbsp;·&nbsp;<a class="link" href="dualcam.php">🎞 Mes vidéos</a>&nbsp;·&nbsp;<a class="link" href="gallery.php">📸 Galerie PhotoSync</a>
 
+    <!-- Diagnostic : affiche en clair ce que le serveur répond et ce que fait le lecteur. -->
+    <pre id="diag" style="margin-top:16px;max-width:560px;width:100%;font-size:11px;line-height:1.5;color:#7f9;background:rgba(0,0,0,.35);border:1px solid rgba(148,163,184,.15);border-radius:10px;padding:10px 12px;white-space:pre-wrap;">diagnostic…</pre>
+
     <script>
     const video   = document.getElementById('v');
     const dot     = document.getElementById('dot');
@@ -106,30 +109,47 @@ if (!$uid) {
     let muted = true;         // l'autoplay navigateur exige le muet au départ
     video.muted = true;
 
+    const diag = document.getElementById('diag');
+    let lastPoll = '—', lastErr = '';
     const mediaUrl = id => '../api/media.php?id=' + id;
+
+    function showDiag() {
+        diag.textContent =
+            'serveur   : ' + lastPoll + '\n' +
+            'file      : ' + queue.length + ' fragment(s) en attente' + (playing ? ' · en lecture' : '') + '\n' +
+            'dernier id: ' + sinceId + '\n' +
+            'lecteur   : ' + (video.currentSrc ? video.currentSrc.split('id=').pop() : '—') +
+                       '  état=' + video.readyState + (video.error ? ' ERREUR vidéo ' + video.error.code : '') + '\n' +
+            (lastErr ? 'souci     : ' + lastErr : 'souci     : aucun');
+    }
 
     // ---- Récupère les nouveaux fragments toutes les ~4 s ----
     async function poll() {
         try {
             const r = await fetch('../api/live.php?since=' + sinceId, { cache: 'no-store' });
-            const j = await r.json();
-            if (j.ok) {
-                recording = !!j.recording;
-                for (const it of j.items) queue.push({ id: it.id, url: mediaUrl(it.id) });
-                if (j.latest > sinceId) sinceId = j.latest;
-                updateBadge();
-                // Anti-retard : si trop de fragments en attente, on saute au plus récent.
-                if (queue.length > 3) queue = queue.slice(-1);
-                if (!playing) playNext();
-            }
-        } catch (e) { /* réseau : on réessaiera au prochain tick */ }
+            const txt = await r.text();
+            let j; try { j = JSON.parse(txt); } catch (e) { lastPoll = 'réponse illisible (HTTP ' + r.status + ') : ' + txt.slice(0, 80); showDiag(); return; }
+            if (!j.ok) { lastPoll = 'refus serveur : ' + (j.error || '?'); showDiag(); return; }
+            recording = !!j.recording;
+            for (const it of j.items) queue.push({ id: it.id, url: mediaUrl(it.id) });
+            if (j.latest > sinceId) sinceId = j.latest;
+            lastPoll = 'ok · ' + j.items.length + ' nouveau(x) · ' + (recording ? 'EN DIRECT' : 'aucun fragment récent (<' + (j.window || 90) + 's)');
+            updateBadge();
+            // Anti-retard : si trop de fragments en attente, on saute au plus récent.
+            if (queue.length > 3) queue = queue.slice(-1);
+            if (!playing) playNext();
+        } catch (e) {
+            lastPoll = 'réseau injoignable : ' + (e.message || e);
+        }
+        showDiag();
     }
 
     // ---- Lit le fragment suivant, puis enchaîne ----
     function playNext() {
         if (queue.length === 0) {
             playing = false;
-            if (!recording) showOverlay("Enregistrement terminé.<br>En attente d'un nouveau direct…");
+            if (!recording) showOverlay("En attente du téléphone…<br>Lance (ou garde en cours) un enregistrement dans l'app.");
+            showDiag();
             return;
         }
         playing = true;
@@ -137,11 +157,24 @@ if (!$uid) {
         const next = queue.shift();
         video.src = next.url;
         video.muted = muted;
-        video.play().catch(() => { /* geste utilisateur requis : le bouton son le fera */ });
+        video.play().then(() => { lastErr = ''; }).catch(err => {
+            // Blocage autoplay du navigateur : on invite à cliquer.
+            lastErr = 'lecture bloquée par le navigateur (' + (err.name || err) + ") — clique sur l'image ou « Activer le son »";
+            showOverlay('▶️ Clique ici pour lancer le direct');
+            showDiag();
+        });
+        showDiag();
     }
 
     video.addEventListener('ended', playNext);
-    video.addEventListener('error', () => { setTimeout(playNext, 300); });
+    video.addEventListener('error', () => {
+        lastErr = 'fragment illisible' + (video.error ? ' (code ' + video.error.code + ')' : '') + ' — on saute au suivant';
+        showDiag();
+        setTimeout(playNext, 300);
+    });
+    // Clic sur l'image = relance (débloque l'autoplay).
+    video.addEventListener('click', () => { hideOverlay(); if (!playing) playNext(); else video.play().catch(()=>{}); });
+    document.getElementById('overlay').addEventListener('click', () => { hideOverlay(); if (!playing) poll(); });
 
     function updateBadge() {
         if (recording) { dot.classList.add('live'); badge.textContent = 'EN DIRECT'; }
