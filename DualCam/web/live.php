@@ -90,7 +90,7 @@ if (!$uid) {
         Décalage normal de quelques secondes : le téléphone filme un fragment, l'envoie, puis on le lit.
         Diminue « Fragment (envoi) toutes les… » dans l'app pour réduire le délai.
     </div>
-    <a class="link" href="remote.php">🎬 Télécommande</a>&nbsp;·&nbsp;<a class="link" href="dualcam.php">🎞 Toutes les vidéos</a>
+    <a class="link" href="remote.php">🎬 Télécommande</a>&nbsp;·&nbsp;<a class="link" href="dualcam.php">🎞 Mes vidéos</a>&nbsp;·&nbsp;<a class="link" href="gallery.php">📸 Galerie PhotoSync</a>
 
     <script>
     const video   = document.getElementById('v');
