@@ -1,5 +1,6 @@
 package com.frontback.dualcam
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -82,6 +83,9 @@ class ActivationActivity : AppCompatActivity() {
             if (on && !SettingsStore(this).isLoggedIn) {
                 Toast.makeText(this, "Connecte-toi d'abord (compte Google) pour piloter à distance.", Toast.LENGTH_LONG).show()
             }
+            // Déclenchement en arrière-plan fiable : sortir l'app de l'économie de batterie,
+            // sinon Android tue le service d'écoute et plus rien ne se déclenche.
+            if (on) ensureBatteryExemption()
             refresh(); applyWatch()
         }
         volCtrlBtn.setOnClickListener {
@@ -175,6 +179,26 @@ class ActivationActivity : AppCompatActivity() {
 
     /** (Re)démarre ou arrête le service de surveillance selon les modes activés. */
     private fun applyWatch() = TriggerService.sync(this)
+
+    /**
+     * Demande à sortir DualCam de l'optimisation batterie : sans ça, Android met le service
+     * d'écoute en veille (ou le tue) et le déclenchement en arrière-plan devient aléatoire.
+     * N'affiche la fenêtre système que si l'app n'est pas déjà exemptée.
+     */
+    private fun ensureBatteryExemption() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val pm = getSystemService(POWER_SERVICE) as? android.os.PowerManager ?: return
+        if (pm.isIgnoringBatteryOptimizations(packageName)) return
+        try {
+            @SuppressLint("BatteryLife")
+            val i = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                .setData(Uri.parse("package:$packageName"))
+            startActivity(i)
+        } catch (_: Throwable) {
+            // Certains constructeurs bloquent cette fenêtre : on ouvre les réglages génériques.
+            try { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } catch (_: Throwable) {}
+        }
+    }
 
     private fun ensureMicPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
