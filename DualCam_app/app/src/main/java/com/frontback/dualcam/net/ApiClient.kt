@@ -189,9 +189,11 @@ class ApiClient(private val settings: SettingsStore) {
     fun pollRemoteCommand(recording: Boolean): String? {
         if (settings.token.isBlank()) return null
         return try {
-            // On signale au serveur si l'on enregistre : la page web affiche « REC » en conséquence.
+            // On signale au serveur l'état d'enregistrement ET la dernière erreur d'envoi
+            // (affichée sur la page PC pour diagnostiquer sans lire le téléphone).
+            val err = java.net.URLEncoder.encode(settings.lastUploadError.take(140), "UTF-8")
             val req = Request.Builder()
-                .url(base() + "/remote.php?poll=1&rec=" + (if (recording) "1" else "0"))
+                .url(base() + "/remote.php?poll=1&rec=" + (if (recording) "1" else "0") + "&err=" + err)
                 .header("X-Auth-Token", settings.token)
                 .get()
                 .build()

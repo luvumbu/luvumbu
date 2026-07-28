@@ -139,6 +139,9 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <span id="stateText">Vérification de l'état du téléphone…</span>
     </div>
 
+    <!-- Dernière erreur d'envoi remontée PAR LE TÉLÉPHONE (diagnostic direct) -->
+    <div id="phoneErr" style="display:none;background:rgba(127,29,29,.3);border:1px solid #7f1d1d;color:#fca5a5;padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:18px;"></div>
+
     <!-- Boutons TOUJOURS actifs : l'ordre est déposé et attend que le téléphone se reconnecte. -->
     <form id="cmdForm" method="post">
         <button class="start" name="cmd" value="start">▶️ Démarrer l'enregistrement</button>
@@ -250,6 +253,13 @@ async function poll() {
         recBadge.classList.toggle('show', rec);
         if (rec) setElapsed(j.rec_elapsed_s); else setElapsed(null);
         if (rec && waitingStart) { waitingStart = false; flash('🔴 Enregistrement CONFIRMÉ sur le téléphone.'); }
+
+        // Diagnostic : dernière erreur d'envoi remontée par le téléphone.
+        const pe = document.getElementById('phoneErr');
+        if (j.phone_err && j.phone_err.length) {
+            pe.textContent = '📵 Téléphone — dernier envoi : ' + j.phone_err;
+            pe.style.display = 'block';
+        } else { pe.style.display = 'none'; }
 
         // Suivi de la dernière capture connue côté serveur.
         lastCaptureId = j.last_capture_id;

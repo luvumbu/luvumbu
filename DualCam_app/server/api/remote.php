@@ -35,7 +35,11 @@ function remote_ensure_schema(): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
     // Migrations : ajoute les colonnes manquantes si la table existait déjà sans elles.
-    foreach (['rec' => 'TINYINT(1) NOT NULL DEFAULT 0', 'rec_since' => 'DATETIME NULL DEFAULT NULL'] as $col => $ddl) {
+    foreach ([
+        'rec' => 'TINYINT(1) NOT NULL DEFAULT 0',
+        'rec_since' => 'DATETIME NULL DEFAULT NULL',
+        'last_err' => 'VARCHAR(200) NOT NULL DEFAULT \'\'',
+    ] as $col => $ddl) {
         if (!$db->query('SHOW COLUMNS FROM ' . TBL_REMOTE . ' LIKE \'' . $col . '\'')->fetch()) {
             try { $db->exec('ALTER TABLE ' . TBL_REMOTE . ' ADD COLUMN ' . $col . ' ' . $ddl); } catch (Throwable $e) {}
         }
@@ -51,6 +55,7 @@ $db = Db::pdo();
 if (isset($_GET['poll'])) {
     $uid = Auth::requireToken();
     $rec = (isset($_GET['rec']) && $_GET['rec'] === '1') ? 1 : 0;
+    $err = isset($_GET['err']) ? substr((string) $_GET['err'], 0, 200) : '';
 
     $st = $db->prepare('SELECT cmd, issued_at, rec, rec_since FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
     $st->execute([$uid]);
@@ -71,11 +76,11 @@ if (isset($_GET['poll'])) {
         $recSince = null;
     }
 
-    // Consomme l'ordre, mémorise le passage ET l'état d'enregistrement du téléphone.
+    // Consomme l'ordre, mémorise le passage, l'état d'enregistrement ET la dernière erreur d'envoi.
     $db->prepare(
-        'INSERT INTO ' . TBL_REMOTE . ' (user_id, cmd, rec, rec_since, polled_at) VALUES (?, \'\', ?, ?, NOW())
-         ON DUPLICATE KEY UPDATE cmd = \'\', rec = VALUES(rec), rec_since = VALUES(rec_since), polled_at = NOW()'
-    )->execute([$uid, $rec, $recSince]);
+        'INSERT INTO ' . TBL_REMOTE . ' (user_id, cmd, rec, rec_since, last_err, polled_at) VALUES (?, \'\', ?, ?, ?, NOW())
+         ON DUPLICATE KEY UPDATE cmd = \'\', rec = VALUES(rec), rec_since = VALUES(rec_since), last_err = VALUES(last_err), polled_at = NOW()'
+    )->execute([$uid, $rec, $recSince, $err]);
 
     Api::json(['ok' => true, 'cmd' => $cmd]);
 }
@@ -85,7 +90,7 @@ if (isset($_GET['poll'])) {
 // ------------------------------------------------------------------
 if (isset($_GET['status'])) {
     $uid = Auth::requireUser();
-    $st = $db->prepare('SELECT cmd, rec, rec_since, polled_at FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
+    $st = $db->prepare('SELECT cmd, rec, rec_since, last_err, polled_at FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
     $st->execute([$uid]);
     $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
     $ago = !empty($row['polled_at']) ? max(0, time() - strtotime((string) $row['polled_at'])) : null;
@@ -115,6 +120,7 @@ if (isset($_GET['status'])) {
         'online'           => $ago !== null && $ago <= 30,
         'has_pending'      => ((string) ($row['cmd'] ?? '')) !== '',
         'last_capture_id'  => isset($capRow['id']) ? (int) $capRow['id'] : null,
+        'phone_err'        => (string) ($row['last_err'] ?? ''),
     ]);
 }
 
