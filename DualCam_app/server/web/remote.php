@@ -43,6 +43,7 @@ Db::pdo()->exec(
         user_id   INT UNSIGNED NOT NULL PRIMARY KEY,
         cmd       VARCHAR(8)   NOT NULL DEFAULT \'\',
         rec       TINYINT(1)   NOT NULL DEFAULT 0,
+        rec_since DATETIME     NULL DEFAULT NULL,
         issued_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
         polled_at DATETIME     NULL DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
@@ -109,11 +110,12 @@ $online  = $agoSec !== null && $agoSec <= 60;
               padding:9px 18px;border-radius:24px;box-shadow:0 8px 24px rgba(0,0,0,.5);letter-spacing:.5px;}
     #recBadge.show{display:flex;}
     #recBadge .b{width:13px;height:13px;border-radius:50%;background:#fff;animation:recpulse 1.3s infinite;}
+    #recBadge .chrono{font-variant-numeric:tabular-nums;background:rgba(0,0,0,.28);padding:2px 10px;border-radius:14px;margin-left:4px;}
 </style></head>
 <body>
 <!-- Effet REC plein écran (piloté par l'état réel renvoyé par le téléphone) -->
 <div id="recFx"></div>
-<div id="recBadge"><span class="b"></span>REC — ENREGISTREMENT EN COURS</div>
+<div id="recBadge"><span class="b"></span>REC<span class="chrono" id="chrono">00:00</span></div>
 
 <div class="card">
     <h1>🎬 Télécommande DualCam</h1>
@@ -148,7 +150,25 @@ const stateDot = document.getElementById('stateDot');
 const stateTxt = document.getElementById('stateText');
 const recFx    = document.getElementById('recFx');
 const recBadge = document.getElementById('recBadge');
+const chrono   = document.getElementById('chrono');
 let waitingStart = false;   // on vient de cliquer « Démarrer », on attend le REC
+
+// Chrono : recalé sur l'heure de début RÉELLE renvoyée par le serveur, puis il avance seul.
+let recStartMs = null;      // instant (ms local) correspondant à « début d'enregistrement »
+function setElapsed(sec) {
+    // sec = temps écoulé côté serveur ; on en déduit l'instant de départ local.
+    if (sec === null || sec === undefined) { recStartMs = null; chrono.textContent = '00:00'; return; }
+    recStartMs = Date.now() - sec * 1000;
+}
+function tickChrono() {
+    if (recStartMs === null) return;
+    let s = Math.floor((Date.now() - recStartMs) / 1000);
+    const h = Math.floor(s / 3600); s -= h * 3600;
+    const m = Math.floor(s / 60);   s -= m * 60;
+    const pad = n => String(n).padStart(2, '0');
+    chrono.textContent = (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(s);
+}
+setInterval(tickChrono, 250);
 
 function flash(text) { msg.textContent = text; msg.style.display = 'block'; }
 
@@ -177,10 +197,11 @@ async function poll() {
         const j = await r.json();
         if (!j.ok) return;
 
-        // --- Effet REC piloté par l'état RÉEL du téléphone ---
+        // --- Effet REC + chrono pilotés par l'état RÉEL du téléphone ---
         const rec = !!j.recording;
         recFx.classList.toggle('show', rec);
         recBadge.classList.toggle('show', rec);
+        if (rec) setElapsed(j.rec_elapsed_s); else setElapsed(null);
         if (rec && waitingStart) { waitingStart = false; flash('🔴 Enregistrement CONFIRMÉ sur le téléphone.'); }
 
         // --- Ligne d'état ---

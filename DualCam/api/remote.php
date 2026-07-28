@@ -29,13 +29,16 @@ function remote_ensure_schema(): void
             user_id   INT UNSIGNED NOT NULL PRIMARY KEY,
             cmd       VARCHAR(8)   NOT NULL DEFAULT \'\',
             rec       TINYINT(1)   NOT NULL DEFAULT 0,
+            rec_since DATETIME     NULL DEFAULT NULL,
             issued_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
             polled_at DATETIME     NULL DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
-    // Migration : ajoute la colonne rec si la table existait sans elle.
-    if (!$db->query('SHOW COLUMNS FROM ' . TBL_REMOTE . ' LIKE \'rec\'')->fetch()) {
-        try { $db->exec('ALTER TABLE ' . TBL_REMOTE . ' ADD COLUMN rec TINYINT(1) NOT NULL DEFAULT 0'); } catch (Throwable $e) {}
+    // Migrations : ajoute les colonnes manquantes si la table existait déjà sans elles.
+    foreach (['rec' => 'TINYINT(1) NOT NULL DEFAULT 0', 'rec_since' => 'DATETIME NULL DEFAULT NULL'] as $col => $ddl) {
+        if (!$db->query('SHOW COLUMNS FROM ' . TBL_REMOTE . ' LIKE \'' . $col . '\'')->fetch()) {
+            try { $db->exec('ALTER TABLE ' . TBL_REMOTE . ' ADD COLUMN ' . $col . ' ' . $ddl); } catch (Throwable $e) {}
+        }
     }
 }
 
@@ -49,7 +52,7 @@ if (isset($_GET['poll'])) {
     $uid = Auth::requireToken();
     $rec = (isset($_GET['rec']) && $_GET['rec'] === '1') ? 1 : 0;
 
-    $st = $db->prepare('SELECT cmd, issued_at FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
+    $st = $db->prepare('SELECT cmd, issued_at, rec, rec_since FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
     $st->execute([$uid]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
 
@@ -58,11 +61,21 @@ if (isset($_GET['poll'])) {
         $cmd = '';   // ordre périmé : on ne l'exécute pas
     }
 
+    // Heure de début d'enregistrement : figée à la transition 0→1 (pour un chrono juste),
+    // conservée tant que ça filme, remise à NULL dès l'arrêt.
+    $prevRec   = (int) ($row['rec'] ?? 0);
+    $prevSince = $row['rec_since'] ?? null;
+    if ($rec === 1) {
+        $recSince = ($prevRec === 1 && $prevSince) ? $prevSince : date('Y-m-d H:i:s');
+    } else {
+        $recSince = null;
+    }
+
     // Consomme l'ordre, mémorise le passage ET l'état d'enregistrement du téléphone.
     $db->prepare(
-        'INSERT INTO ' . TBL_REMOTE . ' (user_id, cmd, rec, polled_at) VALUES (?, \'\', ?, NOW())
-         ON DUPLICATE KEY UPDATE cmd = \'\', rec = VALUES(rec), polled_at = NOW()'
-    )->execute([$uid, $rec]);
+        'INSERT INTO ' . TBL_REMOTE . ' (user_id, cmd, rec, rec_since, polled_at) VALUES (?, \'\', ?, ?, NOW())
+         ON DUPLICATE KEY UPDATE cmd = \'\', rec = VALUES(rec), rec_since = VALUES(rec_since), polled_at = NOW()'
+    )->execute([$uid, $rec, $recSince]);
 
     Api::json(['ok' => true, 'cmd' => $cmd]);
 }
@@ -72,20 +85,24 @@ if (isset($_GET['poll'])) {
 // ------------------------------------------------------------------
 if (isset($_GET['status'])) {
     $uid = Auth::requireUser();
-    $st = $db->prepare('SELECT cmd, rec, polled_at FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
+    $st = $db->prepare('SELECT cmd, rec, rec_since, polled_at FROM ' . TBL_REMOTE . ' WHERE user_id = ?');
     $st->execute([$uid]);
     $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
     $ago = !empty($row['polled_at']) ? max(0, time() - strtotime((string) $row['polled_at'])) : null;
     // Le téléphone interroge toutes les ~5 s : au-delà de 30 s sans contact, son état
     // « enregistre » n'est plus fiable → on ne prétend pas qu'il filme encore.
     $recording = ((int) ($row['rec'] ?? 0) === 1) && $ago !== null && $ago <= 30;
+    // Temps écoulé depuis le début de l'enregistrement (pour le chrono web).
+    $elapsed = ($recording && !empty($row['rec_since']))
+        ? max(0, time() - strtotime((string) $row['rec_since'])) : null;
 
     Api::json([
-        'ok'          => true,
-        'recording'   => $recording,
-        'seen_ago_s'  => $ago,
-        'online'      => $ago !== null && $ago <= 30,
-        'has_pending' => ((string) ($row['cmd'] ?? '')) !== '',
+        'ok'            => true,
+        'recording'     => $recording,
+        'rec_elapsed_s' => $elapsed,
+        'seen_ago_s'    => $ago,
+        'online'        => $ago !== null && $ago <= 30,
+        'has_pending'   => ((string) ($row['cmd'] ?? '')) !== '',
     ]);
 }
 
