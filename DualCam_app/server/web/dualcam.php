@@ -147,6 +147,16 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
   .sheet-btn:hover{border-color:var(--accent);}
   .sheet-btn.primary{border:0;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;}
   .sheet-btn.ghost{background:transparent;color:var(--muted);}
+  .quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;padding:18px 28px 4px;max-width:1100px;margin:0 auto;}
+  .ql{display:flex;flex-direction:column;gap:2px;padding:16px 18px;border-radius:16px;text-decoration:none;color:var(--ink);
+      background:linear-gradient(135deg,rgba(20,184,166,.14),rgba(99,102,241,.14));border:1px solid var(--line);
+      transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;}
+  .ql:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 28px rgba(0,0,0,.45);}
+  .ql .ql-ic{font-size:26px;line-height:1;}
+  .ql b{font-size:1.02rem;margin-top:6px;}
+  .ql small{color:var(--muted);font-size:.8rem;}
+  .ql-live{background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(6,95,70,.18));}
+  .ql-remote{background:linear-gradient(135deg,rgba(185,28,28,.20),rgba(99,102,241,.16));}
   .gps-box{background:rgba(8,14,28,.5);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:.9rem;color:#cbd8ef;margin-bottom:6px;line-height:1.7;}
   .addr-box{margin-top:12px;font-size:.9rem;color:#cbd8ef;line-height:1.5;min-height:1px;}
 </style>
@@ -155,12 +165,17 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
   <header>
     <h1>🎥 DualCam — <?= htmlspecialchars($uname) ?> · <?= $total ?> vidéo(s)</h1>
     <div class="nav">
-      <a href="live.php">📡 Direct</a>
-      <a href="remote.php">🎬 Télécommande</a>
-      <a href="gallery.php">📸 Galerie PhotoSync</a>
       <a href="dualcam.php?logout=1">Déconnexion</a>
     </div>
   </header>
+
+  <!-- Accès rapide : toutes les fonctions DualCam, toujours visibles -->
+  <div class="quicklinks">
+    <a class="ql ql-live"   href="live.php"><span class="ql-ic">📡</span><b>Direct</b><small>Voir en temps quasi réel</small></a>
+    <a class="ql ql-remote" href="remote.php"><span class="ql-ic">🎬</span><b>Télécommande</b><small>Démarrer / arrêter à distance</small></a>
+    <a class="ql ql-vids"   href="dualcam.php"><span class="ql-ic">🎞️</span><b>Mes vidéos</b><small>Tous les enregistrements</small></a>
+    <a class="ql ql-photo"  href="gallery.php"><span class="ql-ic">📸</span><b>Galerie PhotoSync</b><small>Photos & autres médias</small></a>
+  </div>
 
   <!-- Bandeau : partage public global du compte -->
   <div class="share <?= $shareOn ? 'on' : 'off' ?>">
