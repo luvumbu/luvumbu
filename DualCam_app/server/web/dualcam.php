@@ -155,7 +155,6 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
   .ql .ql-ic{font-size:26px;line-height:1;}
   .ql b{font-size:1.02rem;margin-top:6px;}
   .ql small{color:var(--muted);font-size:.8rem;}
-  .ql-live{background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(6,95,70,.18));}
   .ql-remote{background:linear-gradient(135deg,rgba(185,28,28,.20),rgba(99,102,241,.16));}
   .gps-box{background:rgba(8,14,28,.5);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:.9rem;color:#cbd8ef;margin-bottom:6px;line-height:1.7;}
   .addr-box{margin-top:12px;font-size:.9rem;color:#cbd8ef;line-height:1.5;min-height:1px;}
@@ -171,7 +170,6 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
 
   <!-- Accès rapide : toutes les fonctions DualCam, toujours visibles -->
   <div class="quicklinks">
-    <a class="ql ql-live"   href="live.php"><span class="ql-ic">📡</span><b>Direct</b><small>Voir en temps quasi réel</small></a>
     <a class="ql ql-remote" href="remote.php"><span class="ql-ic">🎬</span><b>Télécommande</b><small>Démarrer / arrêter à distance</small></a>
     <a class="ql ql-vids"   href="dualcam.php"><span class="ql-ic">🎞️</span><b>Mes vidéos</b><small>Tous les enregistrements</small></a>
     <a class="ql ql-photo"  href="gallery.php"><span class="ql-ic">📸</span><b>Galerie PhotoSync</b><small>Photos & autres médias</small></a>

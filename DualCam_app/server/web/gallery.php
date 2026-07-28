@@ -243,7 +243,6 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
     <div class="nav">
       <a href="gallery.php" class="<?= $inTrash ? '' : 'active' ?>">Galerie</a>
       <a href="dualcam.php">🎞️ DualCam</a>
-      <a href="live.php">📡 Direct</a>
       <a href="remote.php">🎬 Télécommande</a>
       <a href="upload_web.php">➕ Ajouter</a>
       <a href="gallery.php?view=corbeille" class="<?= $inTrash ? 'active' : '' ?>">Corbeille (<?= $trashCount ?>)</a>
