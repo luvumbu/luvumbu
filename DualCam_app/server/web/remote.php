@@ -261,10 +261,10 @@ async function poll() {
             flash('📸 ' + pendingLabel + ' — reçu par le téléphone… envoi en cours');
         }
 
-        // 2) ARRIVÉE : l'image est réellement en ligne (id supérieur au repère) → aperçu.
+        // 2) ARRIVÉE : l'image est réellement en ligne (id supérieur au repère) → aperçu SANS re-flasher
+        //    (le flash ne doit se produire QUE lorsque le téléphone communique, étape 1).
         if (awaitingCapture && lastCaptureId && (captureBaseline === null || lastCaptureId > captureBaseline)) {
             awaitingCapture = false;
-            shutterFlash();
             flash('🖼️ ' + pendingLabel + ' — arrivée sur le serveur ✓');
             const link = document.getElementById('capLink');
             const img  = document.getElementById('capPreview');
