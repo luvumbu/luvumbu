@@ -85,7 +85,7 @@
         <service
             android:name=".TriggerService"
             android:exported="false"
-            android:foregroundServiceType="microphone|specialUse">
+            android:foregroundServiceType="camera|microphone|specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Détection son/secousse pour déclencher l'enregistrement de sécurité" />

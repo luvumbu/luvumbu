@@ -379,16 +379,35 @@ class TriggerService : Service(), SensorEventListener {
             .setContentIntent(open)
             .build()
 
-        val useMic = soundEnabled && hasMicPermission()
-        when {
-            // Son actif → type micro (Android 10+).
-            useMic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-                startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
-            // Secousse seule sur Android 14+ → type « usage spécial ».
-            !useMic && Build.VERSION.SDK_INT >= 34 ->
-                startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-            // Sinon (Android < 10, ou secousse seule sur < 14) : sans type.
-            else -> startForeground(NOTIF_ID, notif)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { startForeground(NOTIF_ID, notif); return }
+
+        // CLÉ du déclenchement en arrière-plan (Android 14+) : pour pouvoir LANCER
+        // l'enregistrement caméra depuis ce service (son, secousse, capture, PC), il doit
+        // lui-même détenir l'usage « caméra » (+ micro) en cours. Sans le type caméra ici,
+        // Android refuse en silence d'ouvrir la caméra → « l'enregistrement ne se fait pas ».
+        val hasCam = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        var types = 0
+        if (hasCam && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+        if (hasMicPermission())
+            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+
+        try {
+            when {
+                types != 0 -> startForeground(NOTIF_ID, notif, types)
+                Build.VERSION.SDK_INT >= 34 ->
+                    startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                else -> startForeground(NOTIF_ID, notif)
+            }
+        } catch (t: Throwable) {
+            // Redémarrage système EN arrière-plan : Android peut refuser les types caméra/micro.
+            // On se rabat sur « usage spécial » pour rester en vie (l'écoute reprend ensuite).
+            try {
+                if (Build.VERSION.SDK_INT >= 34)
+                    startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                else startForeground(NOTIF_ID, notif)
+            } catch (_: Throwable) {}
         }
     }
 }
