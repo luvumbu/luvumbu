@@ -17,8 +17,9 @@ require __DIR__ . '/../lib/bootstrap.php';
 Auth::startSession();
 Api::header();
 
-/** Durée de validité d'un ordre non relevé (secondes). */
-const REMOTE_TTL = 120;
+/** Durée de validité d'un ordre non relevé (secondes). 1 h : le téléphone peut être
+ *  hors ligne un moment (poche, veille) et déclencher dès qu'il se reconnecte. */
+const REMOTE_TTL = 3600;
 
 /** Crée la table des ordres si besoin (idempotent, comme le reste du schéma). */
 function remote_ensure_schema(): void

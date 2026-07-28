@@ -115,25 +115,26 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <?php if ($online): ?>
             Téléphone à l'écoute — vu il y a <?= (int) $agoSec ?> s
         <?php elseif ($agoSec !== null): ?>
-            Téléphone silencieux depuis <?= (int) round($agoSec / 60) ?> min — l'option est-elle cochée dans l'app ?
+            Dernier contact il y a <?= (int) round($agoSec / 60) ?> min — l'ordre l'attendra à sa reconnexion.
         <?php else: ?>
-            Le téléphone n'a jamais contacté le serveur — coche « Déclenchement à distance » dans l'app.
+            Le téléphone n'a pas encore contacté le serveur — l'ordre l'attendra dès qu'il se connecte.
         <?php endif; ?>
     </div>
 
+    <!-- Boutons TOUJOURS actifs : l'ordre est déposé et attend que le téléphone se reconnecte. -->
     <form method="post">
-        <button class="start" name="cmd" value="start" <?= $online ? '' : 'disabled' ?>>▶️ Démarrer l'enregistrement</button>
-        <button class="stop"  name="cmd" value="stop"  <?= $online ? '' : 'disabled' ?>>⏹ Arrêter l'enregistrement</button>
+        <button class="start" name="cmd" value="start">▶️ Démarrer l'enregistrement</button>
+        <button class="stop"  name="cmd" value="stop">⏹ Arrêter l'enregistrement</button>
     </form>
 
     <?php if ($pending !== ''): ?>
-        <p class="sub" style="margin:0;">⏳ Ordre « <?= htmlspecialchars($pending) ?> » en attente de relève…</p>
+        <p class="sub" style="margin:0;">⏳ Ordre « <?= htmlspecialchars($pending) ?> » en attente — se déclenchera à la reconnexion du téléphone.</p>
     <?php endif; ?>
 
     <div class="note">
         Le téléphone n'obéit que si l'option <b>« Déclenchement à distance »</b> est cochée
         dans DualCam (écran Activation). Sans elle, aucun ordre n'est relevé.<br>
-        Un ordre non relevé expire au bout de 2 minutes.<br>
+        Un ordre en attente reste valable <b>1 heure</b> : le téléphone le déclenche dès qu'il se reconnecte.<br>
         <a href="dualcam.php">🎞️ Mes vidéos</a> ·
         <a href="gallery.php">📸 Galerie PhotoSync</a>
     </div>
