@@ -37,6 +37,7 @@ import com.frontback.dualcam.net.ApiClient
 import com.frontback.dualcam.net.GeoStore
 import com.frontback.dualcam.net.LocationTracker
 import com.frontback.dualcam.net.SettingsStore
+import com.frontback.dualcam.net.UploadResult
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -535,26 +536,42 @@ class RecordingService : LifecycleService() {
     // Envoi automatique au serveur (sauvegarde de sécurité)
     // ---------------------------------------------------------------------------------------------
 
-    /** Envoie un fragment de 30 s dès qu'il est prêt (tâche de fond, tout réseau). */
-    private fun uploadSegment(file: File, index: Int) {
-        if (!settings.isLoggedIn) return
-        val session = sessionId
-        val name = "DualCam_${session}_seg${index}.mp4"
+    /**
+     * Envoi de fond commun aux fragments, photos et vidéo finale.
+     *
+     * Toute panne est REMONTÉE (notification + mémorisation dans les réglages) : un envoi
+     * silencieusement avalé donnait un serveur vide sans le moindre message côté téléphone.
+     * @param onDone appelé sur le fil d'envoi avec le succès réel de l'opération.
+     */
+    private fun upload(file: File, name: String, onDone: ((Boolean) -> Unit)? = null) {
+        if (!settings.isLoggedIn) {
+            val msg = "Non connecté : rien n'est envoyé au serveur"
+            settings.lastUploadError = msg
+            main.post { updateNotification("⚠️ $msg") }
+            onDone?.invoke(false)
+            return
+        }
         val loc = locationTracker.latLng
         uploadExec.execute {
-            try { ApiClient(settings).uploadFile(file, name, "dualcam", loc?.first, loc?.second) } catch (_: Throwable) {}
+            val res = try {
+                ApiClient(settings).uploadFile(file, name, "dualcam", loc?.first, loc?.second)
+            } catch (t: Throwable) {
+                UploadResult(false, -1, t.message ?: "erreur inconnue")
+            }
+            settings.lastUploadError = if (res.ok) "" else (res.error ?: "échec de l'envoi")
+            if (!res.ok) main.post { updateNotification("⚠️ Envoi serveur : ${settings.lastUploadError}") }
+            onDone?.invoke(res.ok)
         }
+    }
+
+    /** Envoie un fragment de 30 s dès qu'il est prêt (tâche de fond, tout réseau). */
+    private fun uploadSegment(file: File, index: Int) {
+        upload(file, "DualCam_${sessionId}_seg${index}.mp4")
     }
 
     /** Envoie une photo (caméra opposée) dès qu'elle est prise. Conservée sur le serveur. */
     private fun uploadPhoto(file: File, index: Int) {
-        if (!settings.isLoggedIn) return
-        val session = sessionId
-        val name = "DualCam_${session}_photo${index}.jpg"
-        val loc = locationTracker.latLng
-        uploadExec.execute {
-            try { ApiClient(settings).uploadFile(file, name, "dualcam", loc?.first, loc?.second) } catch (_: Throwable) {}
-        }
+        upload(file, "DualCam_${sessionId}_photo${index}.jpg")
     }
 
     /**
@@ -562,15 +579,9 @@ class RecordingService : LifecycleService() {
      * de supprimer les fragments redondants de la session (pas de doublons).
      */
     private fun uploadFinal(output: File) {
-        if (!settings.isLoggedIn) return
         val session = sessionId
-        val name = "DualCam_${session}.mp4"
-        val loc = locationTracker.latLng
-        uploadExec.execute {
-            try {
-                val res = ApiClient(settings).uploadFile(output, name, "dualcam", loc?.first, loc?.second)
-                if (res.ok) ApiClient(settings).finalizeSession(session)
-            } catch (_: Throwable) {}
+        upload(output, "DualCam_${session}.mp4") { ok ->
+            if (ok) try { ApiClient(settings).finalizeSession(session) } catch (_: Throwable) {}
         }
     }
 

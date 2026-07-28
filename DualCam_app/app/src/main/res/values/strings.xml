@@ -73,6 +73,9 @@
     <string name="act_shake_desc">Démarre si tu secoues fortement le téléphone.</string>
     <string name="act_screenshot">📸 Déclenchement par capture d\'écran</string>
     <string name="act_screenshot_desc">Démarre l\'enregistrement dès que tu fais une capture d\'écran. Fonctionne même écran verrouillé (nécessite l\'accès aux images).</string>
+    <string name="act_remote">🖥️ Déclenchement à distance (depuis le PC)</string>
+    <string name="act_remote_desc">Autorise le pilotage depuis la page web sur ton ordinateur. Tant que cette option est décochée, aucun ordre venant du serveur n\'est relevé.</string>
+    <string name="act_remote_url">Page PC : luvumbu.com/DualCam/web/remote.php</string>
     <string name="act_volume">🔊 Contrôle par bouton volume (double-clic)</string>
     <string name="act_volume_desc">Un double-clic sur le bouton volume choisi démarre OU arrête l\'enregistrement. Fonctionne même écran éteint (nécessite le service d\'accessibilité DualCam).</string>
     <string name="vol_accessibility_desc">Permet à DualCam de démarrer/arrêter l\'enregistrement par un double-clic sur le bouton volume, même écran éteint.</string>

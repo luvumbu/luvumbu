@@ -11,6 +11,7 @@ if (!defined('DB_PREFIX')) define('DB_PREFIX', 'photosync_');
 if (!defined('TBL_USERS'))    define('TBL_USERS',    DB_PREFIX . 'users');
 if (!defined('TBL_PHOTOS'))   define('TBL_PHOTOS',   DB_PREFIX . 'photos');
 if (!defined('TBL_ATTEMPTS')) define('TBL_ATTEMPTS', DB_PREFIX . 'login_attempts');
+if (!defined('TBL_REMOTE'))   define('TBL_REMOTE',   DB_PREFIX . 'remote');
 
 require_once __DIR__ . '/Db.php';
 require_once __DIR__ . '/Api.php';

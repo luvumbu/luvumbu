@@ -239,6 +239,14 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Le panneau est plus haut que l'écran sur beaucoup de téléphones : sans ce
+             ScrollView, les derniers boutons (Activation, Fermer) sont inatteignables. -->
+        <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
+            android:scrollbars="vertical">
+
         <LinearLayout
             android:id="@+id/settingsCard"
             android:layout_width="300dp"
@@ -414,6 +422,8 @@
                 android:layout_marginTop="16dp"
                 android:text="@string/close" />
         </LinearLayout>
+
+        </ScrollView>
     </LinearLayout>
 
     <!-- Écran de traitement (montage en cours) -->

@@ -747,7 +747,11 @@ class MainActivity : AppCompatActivity() {
     private fun updateAccountStatus() {
         if (settings.isLoggedIn) {
             binding.signInButton.text = getString(R.string.sign_out)
-            binding.accountStatus.text = getString(R.string.connected_as, settings.username.ifBlank { "compte Google" })
+            val base = getString(R.string.connected_as, settings.username.ifBlank { "compte Google" })
+            // Les envois se font en tâche de fond : on affiche le dernier échec ici, sinon
+            // rien n'arrive sur le serveur sans que l'écran d'accueil ne le signale.
+            val err = settings.lastUploadError
+            binding.accountStatus.text = if (err.isBlank()) base else "$base\n⚠️ Dernier envoi : $err"
         } else {
             binding.signInButton.text = getString(R.string.sign_in_google)
             binding.accountStatus.text = getString(R.string.not_connected)

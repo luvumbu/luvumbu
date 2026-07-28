@@ -24,9 +24,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.frontback.dualcam.net.ApiClient
+import com.frontback.dualcam.net.SettingsStore
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -44,13 +47,16 @@ class TriggerService : Service(), SensorEventListener {
         private const val CHANNEL_ID = "watching"
         private const val NOTIF_ID = 43
 
+        /** Cadence d'interrogation du serveur pour le déclenchement à distance. */
+        private const val REMOTE_POLL_MS = 10_000L
+
         @Volatile var isWatching = false; private set
 
         /** (Re)démarre ou arrête la surveillance selon les réglages activés. */
         fun sync(context: Context) {
             val p = context.getSharedPreferences("dualcam_settings", Context.MODE_PRIVATE)
             val on = p.getBoolean("trig_sound", false) || p.getBoolean("trig_shake", false) ||
-                p.getBoolean("trig_screenshot", false)
+                p.getBoolean("trig_screenshot", false) || p.getBoolean("trig_remote", false)
             val intent = Intent(context, TriggerService::class.java)
                 .setAction(if (on) ACTION_START else ACTION_STOP)
             if (on) ContextCompat.startForegroundService(context, intent)
@@ -66,9 +72,15 @@ class TriggerService : Service(), SensorEventListener {
     private var soundEnabled = false
     private var shakeEnabled = false
     private var screenshotEnabled = false
+    private var remoteEnabled = false
     private var saveBattery = false
     private var lowBattCut = false
     private var sensitivity = 1   // 0 faible, 1 moyen, 2 élevé
+
+    // Déclenchement à distance : boucle d'interrogation du serveur (option `trig_remote`).
+    private var pollThread: Thread? = null
+    @Volatile private var polling = false
+    private val main = Handler(Looper.getMainLooper())
 
     // Détection de capture d'écran (observateur MediaStore, actif écran verrouillé/éteint).
     private var contentObserver: ContentObserver? = null
@@ -90,11 +102,14 @@ class TriggerService : Service(), SensorEventListener {
         soundEnabled = prefs.getBoolean("trig_sound", false)
         shakeEnabled = prefs.getBoolean("trig_shake", false)
         screenshotEnabled = prefs.getBoolean("trig_screenshot", false)
+        remoteEnabled = prefs.getBoolean("trig_remote", false)
         saveBattery = prefs.getBoolean("trig_savebatt", true)
         lowBattCut = prefs.getBoolean("trig_lowbatt", true)
         sensitivity = prefs.getInt("trig_sensitivity", 1).coerceIn(0, 2)
 
-        if (!soundEnabled && !shakeEnabled && !screenshotEnabled) { stopEverything(); return START_NOT_STICKY }
+        if (!soundEnabled && !shakeEnabled && !screenshotEnabled && !remoteEnabled) {
+            stopEverything(); return START_NOT_STICKY
+        }
 
         startForegroundWatching()
         running = true
@@ -103,6 +118,7 @@ class TriggerService : Service(), SensorEventListener {
         if (shakeEnabled) startShake()
         if (soundEnabled && hasMicPermission()) startSound()
         if (screenshotEnabled) startScreenshotWatch()
+        if (remoteEnabled) startRemotePoll()
 
         return START_STICKY   // revient après un kill système (surveillance persistante)
     }
@@ -117,6 +133,45 @@ class TriggerService : Service(), SensorEventListener {
         // Lance l'enregistrement (le micro sera repris par RecordingService) puis on s'arrête.
         RecordingService.startFromTrigger(this)
         stopEverything()
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Déclenchement à distance (depuis le PC, page web/remote.php)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Interroge le serveur toutes les [REMOTE_POLL_MS] pour relever un ordre déposé depuis le PC.
+     *
+     * Cette boucle ne démarre QUE si l'option « Déclenchement à distance » est cochée
+     * (pref `trig_remote`) : sans elle, l'app ne contacte jamais ce point d'entrée et
+     * le serveur n'a aucun moyen de piloter le téléphone.
+     *
+     * Contrairement aux déclencheurs locaux, on NE s'arrête PAS après un « start » :
+     * il faut rester à l'écoute pour pouvoir recevoir le « stop » ensuite.
+     */
+    private fun startRemotePoll() {
+        if (pollThread != null) return
+        polling = true
+        val api = ApiClient(SettingsStore(this))
+        pollThread = Thread {
+            while (polling) {
+                when (api.pollRemoteCommand()) {
+                    "start" -> if (!RecordingService.isRecording) main.post { remoteStart() }
+                    "stop"  -> if (RecordingService.isRecording) main.post { remoteStop() }
+                }
+                try { Thread.sleep(REMOTE_POLL_MS) } catch (e: InterruptedException) { break }
+            }
+        }.also { it.isDaemon = true; it.start() }
+    }
+
+    private fun remoteStart() {
+        // Libère le micro avant de lancer l'enregistrement : la détection sonore le monopolise.
+        soundThread?.interrupt(); soundThread = null
+        RecordingService.startFromTrigger(this)
+    }
+
+    private fun remoteStop() {
+        startService(Intent(this, RecordingService::class.java).setAction(RecordingService.ACTION_STOP))
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -283,6 +338,8 @@ class TriggerService : Service(), SensorEventListener {
     private fun stopEverything() {
         running = false
         isWatching = false
+        polling = false
+        pollThread?.interrupt(); pollThread = null
         try { sensorManager?.unregisterListener(this) } catch (_: Throwable) {}
         soundThread?.interrupt(); soundThread = null
         try { contentObserver?.let { contentResolver.unregisterContentObserver(it) } } catch (_: Throwable) {}

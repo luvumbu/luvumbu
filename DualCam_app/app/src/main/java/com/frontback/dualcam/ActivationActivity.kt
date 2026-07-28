@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.frontback.dualcam.net.SettingsStore
 
 /**
  * Écran dédié « Modes d'activation » : l'utilisateur choisit (par bouton) comment
@@ -27,6 +28,7 @@ class ActivationActivity : AppCompatActivity() {
     private lateinit var sensBtn: Button
     private lateinit var shakeBtn: Button
     private lateinit var screenshotBtn: Button
+    private lateinit var remoteBtn: Button
     private lateinit var volCtrlBtn: Button
     private lateinit var volSchemeBtn: Button
     private lateinit var volSchemeHint: android.widget.TextView
@@ -43,6 +45,7 @@ class ActivationActivity : AppCompatActivity() {
         sensBtn = findViewById(R.id.sensitivityButton)
         shakeBtn = findViewById(R.id.shakeButton)
         screenshotBtn = findViewById(R.id.screenshotButton)
+        remoteBtn = findViewById(R.id.remoteButton)
         volCtrlBtn = findViewById(R.id.volCtrlButton)
         volSchemeBtn = findViewById(R.id.volSchemeButton)
         volSchemeHint = findViewById(R.id.volSchemeHint)
@@ -71,6 +74,14 @@ class ActivationActivity : AppCompatActivity() {
             val on = !prefs.getBoolean("trig_screenshot", false)
             prefs.edit().putBoolean("trig_screenshot", on).apply()
             if (on) ensureImagesPermission()
+            refresh(); applyWatch()
+        }
+        remoteBtn.setOnClickListener {
+            val on = !prefs.getBoolean("trig_remote", false)
+            prefs.edit().putBoolean("trig_remote", on).apply()
+            if (on && !SettingsStore(this).isLoggedIn) {
+                Toast.makeText(this, "Connecte-toi d'abord (compte Google) pour piloter à distance.", Toast.LENGTH_LONG).show()
+            }
             refresh(); applyWatch()
         }
         volCtrlBtn.setOnClickListener {
@@ -114,6 +125,7 @@ class ActivationActivity : AppCompatActivity() {
         val sound = prefs.getBoolean("trig_sound", false)
         val shake = prefs.getBoolean("trig_shake", false)
         val screenshot = prefs.getBoolean("trig_screenshot", false)
+        val remote = prefs.getBoolean("trig_remote", false)
         val volCtrl = prefs.getBoolean("vol_ctrl", false)
         val volBtn = prefs.getInt("vol_button", 2).coerceIn(0, 2)
         val saveB = prefs.getBoolean("trig_savebatt", true)
@@ -127,6 +139,11 @@ class ActivationActivity : AppCompatActivity() {
             !screenshot -> "Capture d'écran : Désactivé"
             !hasFullImagesAccess() -> "Capture d'écran : ⚠️ autorise TOUTES les photos"
             else -> "Capture d'écran : Activé ✅"
+        }
+        remoteBtn.text = when {
+            !remote -> "Déclenchement à distance : Désactivé"
+            !SettingsStore(this).isLoggedIn -> "À distance : ⚠️ connecte-toi (compte Google)"
+            else -> "Déclenchement à distance : Activé ✅"
         }
         val accessOn = VolumeKeyService.isEnabled(this)
         volCtrlBtn.text = when {

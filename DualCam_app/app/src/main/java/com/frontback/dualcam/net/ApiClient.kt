@@ -111,7 +111,9 @@ class ApiClient(private val settings: SettingsStore) {
                 if (resp.isSuccessful) return UploadResult(true, resp.code, null)
                 val serverMsg = resp.body?.string()?.take(300)?.trim().orEmpty()
                 when (resp.code) {
-                    401 -> UploadResult(false, 401, "Session expirée — reconnecte-toi")
+                    // Jeton refusé : on l'efface, sinon l'app se croit connectée indéfiniment
+                    // et chaque envoi automatique échoue en silence.
+                    401 -> { settings.logout(); UploadResult(false, 401, "Session expirée — reconnecte-toi") }
                     404 -> UploadResult(false, 404, "URL introuvable (404) — vérifie le serveur")
                     413 -> UploadResult(false, 413, "Vidéo trop volumineuse pour le serveur")
                     else -> UploadResult(false, resp.code,
@@ -173,6 +175,32 @@ class ApiClient(private val settings: SettingsStore) {
             }
         } catch (e: Exception) {
             ShareState(false, false, null, "Connexion impossible : ${e.message ?: "réseau"}")
+        }
+    }
+
+    /**
+     * Relève l'ordre déposé depuis le PC (page web/remote.php).
+     * Renvoie "start", "stop", ou null s'il n'y a rien (ou en cas de problème réseau).
+     * L'ordre est consommé côté serveur : il ne peut se déclencher qu'une fois.
+     *
+     * N'est appelé QUE si l'utilisateur a coché « Déclenchement à distance » :
+     * option décochée = aucune requête, donc aucun pilotage possible depuis le serveur.
+     */
+    fun pollRemoteCommand(): String? {
+        if (settings.token.isBlank()) return null
+        return try {
+            val req = Request.Builder()
+                .url(base() + "/remote.php?poll=1")
+                .header("X-Auth-Token", settings.token)
+                .get()
+                .build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return null
+                val json = JSONObject(resp.body?.string().orEmpty())
+                json.optString("cmd", "").ifBlank { null }
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 

@@ -56,6 +56,18 @@
 
         <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
 
+        <!-- DÉCLENCHEMENT À DISTANCE (depuis le PC) -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/act_remote" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/act_remote_desc" android:textColor="#999999" android:textSize="12sp" android:layout_marginBottom="6dp" />
+        <Button android:id="@+id/remoteButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" />
+        <TextView android:id="@+id/remoteHint" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:textColor="#5eead4" android:textSize="12sp"
+            android:text="@string/act_remote_url" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginVertical="18dp" />
+
         <!-- BOUTON VOLUME (double-clic) -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="@string/act_volume" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
