@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import com.frontback.dualcam.net.ApiClient
 import com.frontback.dualcam.net.SettingsStore
+import com.frontback.dualcam.net.UploadResult
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -85,13 +86,26 @@ class PhotoService : LifecycleService() {
     private fun upload(file: File, side: String) {
         io.execute {
             val settings = SettingsStore(this)
+            if (!settings.isLoggedIn) {
+                settings.lastUploadError = "Non connecté : reconnecte-toi (compte Google)"
+                finish("Photo prise, mais non connecté"); return@execute
+            }
             val name = "DualCam_photo_${side}_${System.currentTimeMillis()}.jpg"
-            val res = try {
-                ApiClient(settings).uploadFile(file, name, "dualcam")
-            } catch (t: Throwable) { null }
-            settings.lastUploadError = if (res?.ok == true) "" else (res?.error ?: "envoi photo échoué")
-            try { file.delete() } catch (_: Throwable) {}
-            finish(if (res?.ok == true) "Photo $side envoyée" else "Photo prise, envoi échoué")
+            val api = ApiClient(settings)
+            var ok = false
+            var lastErr = "envoi photo échoué"
+            // Réessais : le réseau peut être indisponible juste après le réveil (écran verrouillé).
+            for (attempt in 0 until 4) {
+                val res = try { api.uploadFile(file, name, "dualcam") }
+                          catch (t: Throwable) { UploadResult(false, -1, t.message ?: "réseau") }
+                if (res.ok) { ok = true; break }
+                lastErr = res.error ?: "échec"
+                try { Thread.sleep(3000L * (attempt + 1)) } catch (_: Throwable) { break }
+            }
+            settings.lastUploadError = if (ok) "" else lastErr
+            // On ne supprime la photo QUE si elle est bien partie (sinon on la garde pour ne rien perdre).
+            if (ok) { try { file.delete() } catch (_: Throwable) {} }
+            finish(if (ok) "Photo $side envoyée ✓" else "Photo prise, envoi échoué : $lastErr")
         }
     }
 
@@ -136,7 +150,7 @@ class PhotoService : LifecycleService() {
         val pm = getSystemService(POWER_SERVICE) as? PowerManager ?: return
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DualCam:photo").apply {
             setReferenceCounted(false)
-            try { acquire(60_000L) } catch (_: Throwable) {}
+            try { acquire(3 * 60_000L) } catch (_: Throwable) {}   // couvre capture + réessais d'envoi
         }
     }
     private fun releaseWake() {

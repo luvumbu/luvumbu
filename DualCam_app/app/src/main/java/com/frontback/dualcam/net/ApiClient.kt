@@ -111,9 +111,9 @@ class ApiClient(private val settings: SettingsStore) {
                 if (resp.isSuccessful) return UploadResult(true, resp.code, null)
                 val serverMsg = resp.body?.string()?.take(300)?.trim().orEmpty()
                 when (resp.code) {
-                    // Jeton refusé : on l'efface, sinon l'app se croit connectée indéfiniment
-                    // et chaque envoi automatique échoue en silence.
-                    401 -> { settings.logout(); UploadResult(false, 401, "Session expirée — reconnecte-toi") }
+                    // Jeton refusé : on NE déconnecte PAS automatiquement — un seul 401 passager
+                    // effacerait le jeton et casserait tous les envois suivants. On signale juste.
+                    401 -> UploadResult(false, 401, "Session expirée — reconnecte-toi")
                     404 -> UploadResult(false, 404, "URL introuvable (404) — vérifie le serveur")
                     413 -> UploadResult(false, 413, "Vidéo trop volumineuse pour le serveur")
                     else -> UploadResult(false, resp.code,

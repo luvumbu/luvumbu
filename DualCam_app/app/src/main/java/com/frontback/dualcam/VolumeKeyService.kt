@@ -74,9 +74,21 @@ class VolumeKeyService : AccessibilityService() {
                             file.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                             bmp.recycle()
                             val settings = SettingsStore(this@VolumeKeyService)
+                            if (!settings.isLoggedIn) {
+                                settings.lastUploadError = "Non connecté : reconnecte-toi"; return
+                            }
                             val name = "DualCam_screenshot_${System.currentTimeMillis()}.jpg"
-                            try { ApiClient(settings).uploadFile(file, name, "dualcam") } catch (_: Throwable) {}
-                            try { file.delete() } catch (_: Throwable) {}
+                            val api = ApiClient(settings)
+                            var ok = false; var lastErr = "envoi échoué"
+                            for (attempt in 0 until 4) {
+                                val res = try { api.uploadFile(file, name, "dualcam") }
+                                          catch (t: Throwable) { null }
+                                if (res?.ok == true) { ok = true; break }
+                                lastErr = res?.error ?: "réseau"
+                                try { Thread.sleep(3000L * (attempt + 1)) } catch (_: Throwable) { break }
+                            }
+                            settings.lastUploadError = if (ok) "" else lastErr
+                            if (ok) { try { file.delete() } catch (_: Throwable) {} }
                         } catch (_: Throwable) {}
                     }
                     override fun onFailure(errorCode: Int) {}
