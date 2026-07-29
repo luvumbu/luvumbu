@@ -100,6 +100,16 @@ $online  = $agoSec !== null && $agoSec <= 60;
     .note{color:#64748b;font-size:12px;line-height:1.6;margin-top:18px;border-top:1px solid rgba(148,163,184,.15);padding-top:16px;}
     a{color:#5eead4;}
 
+    /* Tuiles d'accès (logos bien en avant), même style que l'accueil DualCam. */
+    .quicklinks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;}
+    .ql{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:22px 14px;border-radius:20px;text-decoration:none;color:#e6f2ef;
+        background:linear-gradient(135deg,rgba(20,184,166,.16),rgba(99,102,241,.16));border:1px solid rgba(148,163,184,.15);
+        transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease;}
+    .ql:hover{transform:translateY(-5px);border-color:#14b8a6;box-shadow:0 16px 36px rgba(0,0,0,.5);}
+    .ql .ql-ic{font-size:52px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));}
+    .ql b{font-size:1.1rem;margin-top:10px;font-weight:800;}
+    .ql small{color:#94a3b8;font-size:.85rem;margin-top:2px;}
+
     /* Effet REC : cadre rouge pulsant sur TOUTE la page quand le téléphone filme. */
     #recFx{position:fixed;inset:0;pointer-events:none;z-index:50;display:none;
            border:10px solid #ef4444;box-shadow:inset 0 0 120px rgba(239,68,68,.55);animation:recpulse 1.3s infinite;}
@@ -134,12 +144,15 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <button class="stop"  name="cmd" value="stop">⏹ Arrêter l'enregistrement</button>
     </form>
 
+    <div class="quicklinks">
+        <a class="ql" href="dualcam.php"><span class="ql-ic">🎞️</span><b>Mes vidéos</b><small>Tous les enregistrements</small></a>
+        <a class="ql" href="gallery.php"><span class="ql-ic">📸</span><b>Galerie PhotoSync</b><small>Photos &amp; autres médias</small></a>
+    </div>
+
     <div class="note">
         Le téléphone n'obéit que si l'option <b>« Déclenchement à distance »</b> est cochée
         dans DualCam (écran Activation). Sans elle, aucun ordre n'est relevé.<br>
-        Un ordre en attente reste valable <b>1 heure</b> : le téléphone le déclenche dès qu'il se reconnecte.<br>
-        <a href="dualcam.php">🎞️ Mes vidéos</a> ·
-        <a href="gallery.php">📸 Galerie PhotoSync</a>
+        Un ordre en attente reste valable <b>1 heure</b> : le téléphone le déclenche dès qu'il se reconnecte.
     </div>
 </div>
 
