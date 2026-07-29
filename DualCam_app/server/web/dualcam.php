@@ -147,14 +147,14 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
   .sheet-btn:hover{border-color:var(--accent);}
   .sheet-btn.primary{border:0;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;}
   .sheet-btn.ghost{background:transparent;color:var(--muted);}
-  .quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;padding:18px 28px 4px;max-width:1100px;margin:0 auto;}
-  .ql{display:flex;flex-direction:column;gap:2px;padding:16px 18px;border-radius:16px;text-decoration:none;color:var(--ink);
-      background:linear-gradient(135deg,rgba(20,184,166,.14),rgba(99,102,241,.14));border:1px solid var(--line);
-      transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;}
-  .ql:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 28px rgba(0,0,0,.45);}
-  .ql .ql-ic{font-size:26px;line-height:1;}
-  .ql b{font-size:1.02rem;margin-top:6px;}
-  .ql small{color:var(--muted);font-size:.8rem;}
+  .quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;padding:26px 28px 8px;max-width:1150px;margin:0 auto;}
+  .ql{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:30px 20px;border-radius:22px;text-decoration:none;color:var(--ink);
+      background:linear-gradient(135deg,rgba(20,184,166,.16),rgba(99,102,241,.16));border:1px solid var(--line);
+      transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease;}
+  .ql:hover{transform:translateY(-5px);border-color:var(--accent);box-shadow:0 16px 36px rgba(0,0,0,.5);}
+  .ql .ql-ic{font-size:64px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));}
+  .ql b{font-size:1.35rem;margin-top:12px;font-weight:800;}
+  .ql small{color:var(--muted);font-size:.92rem;margin-top:2px;}
   .ql-remote{background:linear-gradient(135deg,rgba(185,28,28,.20),rgba(99,102,241,.16));}
   .gps-box{background:rgba(8,14,28,.5);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:.9rem;color:#cbd8ef;margin-bottom:6px;line-height:1.7;}
   .addr-box{margin-top:12px;font-size:.9rem;color:#cbd8ef;line-height:1.5;min-height:1px;}
