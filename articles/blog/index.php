@@ -8,19 +8,14 @@ if (isset($_GET['installed'])) {
 // Compte une vue de la page d'accueil (1 par IP unique, séparée des articles).
 record_home_view($pdo);
 
-// Les articles masqués ne s'affichent qu'à l'admin ou à leur auteur.
+// Les articles masqués et ceux dont la publication est programmée plus tard ne
+// s'affichent qu'à l'admin ou à leur auteur.
 $me  = current_user();
 $uid = (int)($me['id'] ?? 0);
-if (is_admin()) {
-    $visClause = '';
-} elseif ($uid) {
-    $visClause = " AND (a.visible = 1 OR a.user_id = {$uid})";
-} else {
-    $visClause = ' AND a.visible = 1';
-}
+$visClause = article_visibility_clause($pdo, 'a', $uid, is_admin());
 
 $articles = $pdo->query("
-    SELECT a.id, a.titre, a.image, a.contenu, a.created_at, a.visible,
+    SELECT a.id, a.titre, a.image, a.contenu, a.created_at, a.visible, " . publish_at_select($pdo, 'a') . ",
            u.nom, u.prenom,
            (SELECT COUNT(*) FROM comments c WHERE c.article_id = a.id) AS nb_comments,
            (SELECT COUNT(*) FROM articles s WHERE s.parent_id = a.id) AS nb_children,
@@ -28,7 +23,7 @@ $articles = $pdo->query("
     FROM articles a
     JOIN users u ON u.id = a.user_id
     WHERE a.parent_id IS NULL{$visClause}
-    ORDER BY a.created_at DESC
+    ORDER BY " . article_date_order($pdo, 'a') . " DESC
 ")->fetchAll();
 
 $pageTitle = 'Accueil';
@@ -47,8 +42,8 @@ include __DIR__ . '/includes/header.php';
             </div>
         <?php else: foreach ($articles as $a): ?>
             <article class="article-card">
-                <h2><a href="<?= e(base_url('pages/article.php?id=' . $a['id'])) ?>"><?= e($a['titre']) ?></a><?php if ((int)$a['visible'] === 0): ?> <span class="pill pill-warn">🔒 masqué</span><?php endif; ?></h2>
-                <p class="meta">Publié par <span class="publie"><?= e($a['prenom'] . ' ' . $a['nom']) ?></span> · <?= e($a['created_at']) ?> · 👁️ <?= (int)$a['nb_views'] ?> vue<?= $a['nb_views'] > 1 ? 's' : '' ?> · <?= (int)$a['nb_comments'] ?> commentaire<?= $a['nb_comments'] > 1 ? 's' : '' ?><?php if ((int)$a['nb_children'] > 0): ?> · <?= (int)$a['nb_children'] ?> sous-article<?= $a['nb_children'] > 1 ? 's' : '' ?><?php endif; ?></p>
+                <h2><a href="<?= e(base_url('pages/article.php?id=' . $a['id'])) ?>"><?= e($a['titre']) ?></a><?php if ((int)$a['visible'] === 0): ?> <span class="pill pill-warn">🔒 masqué</span><?php endif; ?><?php if (article_is_scheduled($a)): ?> <span class="pill pill-warn">⏳ programmé le <?= e(format_publish_at($a['publish_at'])) ?></span><?php endif; ?></h2>
+                <p class="meta"><?= article_is_scheduled($a) ? 'Écrit par' : 'Publié par' ?> <span class="publie"><?= e($a['prenom'] . ' ' . $a['nom']) ?></span> · <?= e(article_public_date($a)) ?> · 👁️ <?= (int)$a['nb_views'] ?> vue<?= $a['nb_views'] > 1 ? 's' : '' ?> · <?= (int)$a['nb_comments'] ?> commentaire<?= $a['nb_comments'] > 1 ? 's' : '' ?><?php if ((int)$a['nb_children'] > 0): ?> · <?= (int)$a['nb_children'] ?> sous-article<?= $a['nb_children'] > 1 ? 's' : '' ?><?php endif; ?></p>
                 <?php if (!empty($a['image'])): ?>
                     <?php $src = preg_match('#^https?://#i', $a['image']) ? $a['image'] : base_url($a['image']); ?>
                     <figure class="img-zoomable">

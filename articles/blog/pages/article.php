@@ -29,8 +29,12 @@ $errors = [];
 
 $canEdit = $user && ((int)$article['user_id'] === (int)$user['id'] || is_admin());
 
-// Article masqué : invisible au public, accessible uniquement à l'auteur / admin.
-if ((int)($article['visible'] ?? 1) === 0 && !$canEdit) {
+// Article programmé : sa date de publication n'est pas encore atteinte.
+$isScheduled = article_is_scheduled($article);
+
+// Article masqué ou pas encore publié : invisible au public, accessible
+// uniquement à l'auteur / admin.
+if (((int)($article['visible'] ?? 1) === 0 || $isScheduled) && !$canEdit) {
     http_response_code(404);
     $pageTitle = 'Article introuvable';
     include __DIR__ . '/../includes/header.php';
@@ -45,6 +49,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_visible'])) {
         $newVisible = (int)$article['visible'] === 1 ? 0 : 1;
         $pdo->prepare('UPDATE articles SET visible = ? WHERE id = ?')->execute([$newVisible, $id]);
         flash_set('success', $newVisible ? 'Article rendu visible.' : 'Article masqué (brouillon).');
+    }
+    redirect(base_url('pages/article.php?id=' . $id));
+}
+
+// Annule la programmation et publie tout de suite (auteur ou admin).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['publish_now'])) {
+    if ($canEdit && csrf_check($_POST['csrf'] ?? '') && has_publish_at($pdo)) {
+        $pdo->prepare('UPDATE articles SET publish_at = NULL, visible = 1 WHERE id = ?')->execute([$id]);
+        flash_set('success', 'Article publié immédiatement.');
     }
     redirect(base_url('pages/article.php?id=' . $id));
 }
@@ -89,17 +102,11 @@ if (!empty($article['parent_id'])) {
     $parent = $pStmt->fetch() ?: null;
 }
 
-// Sous-articles. Les masqués ne sont visibles qu'à l'admin ou à leur auteur.
+// Sous-articles. Les masqués et les programmés ne sont visibles qu'à l'admin ou à leur auteur.
 $uid = (int)($user['id'] ?? 0);
-if (is_admin()) {
-    $childVis = '';
-} elseif ($uid) {
-    $childVis = " AND (a.visible = 1 OR a.user_id = {$uid})";
-} else {
-    $childVis = ' AND a.visible = 1';
-}
+$childVis = article_visibility_clause($pdo, 'a', $uid, is_admin());
 $childStmt = $pdo->prepare("
-    SELECT a.id, a.titre, a.image, a.contenu, a.created_at, a.visible,
+    SELECT a.id, a.titre, a.image, a.contenu, a.created_at, a.visible, " . publish_at_select($pdo, 'a') . ",
            u.nom, u.prenom,
            (SELECT COUNT(*) FROM comments c WHERE c.article_id = a.id) AS nb_comments,
            (SELECT COUNT(*) FROM articles s WHERE s.parent_id = a.id) AS nb_children
@@ -148,14 +155,17 @@ $layout = parse_layout($article['layout'] ?? null);
     <?php if ($block === 'title'): ?>
         <h1><?= e($article['titre']) ?></h1>
         <p class="meta">
-            Publié par <span class="publie"><?= e($article['prenom'] . ' ' . $article['nom']) ?></span>
-            · <?= e($article['created_at']) ?>
+            <?= $isScheduled ? 'Écrit par' : 'Publié par' ?> <span class="publie"><?= e($article['prenom'] . ' ' . $article['nom']) ?></span>
+            · <?= e(article_public_date($article)) ?>
             <?php if (!empty($article['updated_at'])): ?>
                 · <em>modifié le <?= e($article['updated_at']) ?></em>
             <?php endif; ?>
             · 👁️ <?= (int)$views ?> vue<?= $views > 1 ? 's' : '' ?>
             <?php if ((int)$article['visible'] === 0): ?>
                 · <span class="pill pill-warn">🔒 masqué</span>
+            <?php endif; ?>
+            <?php if ($isScheduled): ?>
+                · <span class="pill pill-warn">⏳ publication programmée le <?= e(format_publish_at($article['publish_at'])) ?></span>
             <?php endif; ?>
         </p>
     <?php elseif ($block === 'cover' && $imgSrc): ?>
@@ -246,6 +256,14 @@ $articleQuizzes = $aqStmt->fetchAll();
                 <button type="button" class="btn-secondary" id="btn-push-article" data-id="<?= (int)$article['id'] ?>">📤 Envoyer vers le serveur</button>
             </span>
             <a class="btn-primary" href="<?= e(base_url('pages/article_new.php?parent=' . (int)$article['id'])) ?>">+ Sous-article</a>
+            <?php if ($isScheduled): ?>
+                <form method="post" class="inline-form"
+                      onsubmit="return confirm('Publier cet article maintenant (annule la programmation) ?');">
+                    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="publish_now" value="1">
+                    <button type="submit" class="btn-secondary">🚀 Publier maintenant</button>
+                </form>
+            <?php endif; ?>
             <form method="post" class="inline-form">
                 <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="toggle_visible" value="1">
@@ -270,10 +288,10 @@ $articleQuizzes = $aqStmt->fetchAll();
         <p class="muted">Aucun sous-article pour l'instant.</p>
     <?php else: foreach ($children as $c): ?>
         <article class="article-card child-card">
-            <h3><a href="<?= e(base_url('pages/article.php?id=' . (int)$c['id'])) ?>"><?= e($c['titre']) ?></a><?php if ((int)$c['visible'] === 0): ?> <span class="pill pill-warn">🔒 masqué</span><?php endif; ?></h3>
+            <h3><a href="<?= e(base_url('pages/article.php?id=' . (int)$c['id'])) ?>"><?= e($c['titre']) ?></a><?php if ((int)$c['visible'] === 0): ?> <span class="pill pill-warn">🔒 masqué</span><?php endif; ?><?php if (article_is_scheduled($c)): ?> <span class="pill pill-warn">⏳ <?= e(format_publish_at($c['publish_at'])) ?></span><?php endif; ?></h3>
             <p class="meta">
                 Par <span class="publie"><?= e($c['prenom'] . ' ' . $c['nom']) ?></span>
-                · <?= e($c['created_at']) ?>
+                · <?= e(article_public_date($c)) ?>
                 · <?= (int)$c['nb_comments'] ?> commentaire<?= $c['nb_comments'] > 1 ? 's' : '' ?>
                 <?php if ((int)$c['nb_children'] > 0): ?>
                     · <?= (int)$c['nb_children'] ?> sous-article<?= $c['nb_children'] > 1 ? 's' : '' ?>

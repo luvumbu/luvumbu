@@ -11,7 +11,7 @@ if ($method === 'GET') {
 
     $stmt = $pdo->prepare("
         SELECT a.id, a.titre, a.image, a.contenu, a.sources, a.parent_id,
-               a.visible, a.created_at, a.updated_at,
+               a.visible, " . publish_at_select($pdo, 'a') . ", a.created_at, a.updated_at,
                u.id AS author_id, u.nom, u.prenom
         FROM articles a
         JOIN users u ON u.id = a.user_id
@@ -20,11 +20,15 @@ if ($method === 'GET') {
     $stmt->execute([$id]);
     $article = $stmt->fetch();
     if (!$article) json_error('Article introuvable', 404);
-    // Un article masqué reste accessible à son auteur ou à un admin (token Bearer optionnel).
+    // Un article masqué ou programmé plus tard reste accessible à son auteur ou à
+    // un admin (token Bearer optionnel).
     $viewer = api_current_user();
     $isPriv = $viewer && ((int)$article['author_id'] === (int)$viewer['id'] || !empty($viewer['is_admin']));
-    if ((int)$article['visible'] === 0 && !$isPriv) json_error('Article introuvable', 404);
-    $article['visible'] = (int)$article['visible'];
+    $isScheduled = article_is_scheduled($article);
+    if (((int)$article['visible'] === 0 || $isScheduled) && !$isPriv) json_error('Article introuvable', 404);
+    $article['visible']      = (int)$article['visible'];
+    $article['scheduled']    = $isScheduled;
+    $article['published_at'] = article_public_date($article);
 
     // Compteur de vues : 1 par IP unique.
     record_article_view($pdo, $id);
@@ -37,13 +41,14 @@ if ($method === 'GET') {
         : null;
     unset($article['image']);
 
-    // Sous-articles
+    // Sous-articles (masqués / programmés réservés à l'auteur et à l'admin)
+    $childVis = article_visibility_clause($pdo, 'a', (int)($viewer['id'] ?? 0), !empty($viewer['is_admin']));
     $childStmt = $pdo->prepare("
         SELECT a.id, a.titre, a.created_at, u.prenom, u.nom,
                (SELECT COUNT(*) FROM comments c WHERE c.article_id = a.id) AS nb_comments
         FROM articles a
         JOIN users u ON u.id = a.user_id
-        WHERE a.parent_id = ? AND a.visible = 1
+        WHERE a.parent_id = ?{$childVis}
         ORDER BY a.created_at ASC
     ");
     $childStmt->execute([$id]);
@@ -99,6 +104,8 @@ if ($method === 'POST') {
         $editId   = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         // null = champ absent (création -> visible par défaut ; édition -> on garde l'existant)
         $visible  = array_key_exists('visible', $_POST) ? (int)((bool)$_POST['visible']) : null;
+        $schedGiven = array_key_exists('publish_at', $_POST);
+        $schedRaw   = $schedGiven ? $_POST['publish_at'] : null;
     } else {
         $body = read_json_body();
         $titre    = trim($body['titre']   ?? '');
@@ -108,7 +115,18 @@ if ($method === 'POST') {
         $overrideMethod = strtoupper(trim($body['_method'] ?? ''));
         $editId   = isset($body['id']) ? (int)$body['id'] : 0;
         $visible  = array_key_exists('visible', $body) ? (int)((bool)$body['visible']) : null;
+        $schedGiven = array_key_exists('publish_at', $body);
+        $schedRaw   = $schedGiven ? $body['publish_at'] : null;
     }
+
+    // Programmation : "publish_at" absent = inchangé ; vide/null = publication
+    // immédiate ; date ("2026-08-01T09:00" ou "2026-08-01 09:00:00") = programmée.
+    $publishAt = null;
+    if ($schedGiven) {
+        $publishAt = parse_publish_at($schedRaw);
+        if ($publishAt === false) json_error('publish_at invalide (format attendu : 2026-08-01 09:00)', 422);
+    }
+    $canSchedule = $schedGiven && has_publish_at($pdo);
 
     // Suppression : POST avec _method=DELETE (et un id)
     if ($overrideMethod === 'DELETE') {
@@ -118,7 +136,7 @@ if ($method === 'POST') {
 
     // Édition : POST avec _method=PUT (et un id)
     if ($overrideMethod === 'PUT' || $editId > 0) {
-        edit_article($pdo, $user, $editId, $titre, $contenu, $sources, $isMultipart, $visible);
+        edit_article($pdo, $user, $editId, $titre, $contenu, $sources, $isMultipart, $visible, $canSchedule, $publishAt);
         return;
     }
 
@@ -184,6 +202,10 @@ if ($method === 'POST') {
         ]);
         $newId = (int)$pdo->lastInsertId();
 
+        if ($canSchedule) {
+            $pdo->prepare('UPDATE articles SET publish_at = ? WHERE id = ?')->execute([$publishAt, $newId]);
+        }
+
         if (!empty($galleryUploads)) {
             $ins = $pdo->prepare('INSERT INTO article_images (article_id, path, caption, position) VALUES (?, ?, ?, ?)');
             foreach ($galleryUploads as $g) {
@@ -206,11 +228,14 @@ if ($method === 'POST') {
         ];
     }, $galleryUploads);
 
+    $scheduled = $canSchedule && $publishAt && strtotime($publishAt) > time();
     json_response([
         'id' => $newId,
-        'image_url' => $coverPath ? absolute_url($coverPath) : null,
-        'gallery'   => $galleryOut,
-        'message'   => 'Article publié'
+        'image_url'  => $coverPath ? absolute_url($coverPath) : null,
+        'gallery'    => $galleryOut,
+        'publish_at' => $canSchedule ? $publishAt : null,
+        'scheduled'  => $scheduled,
+        'message'    => $scheduled ? 'Article programmé pour le ' . format_publish_at($publishAt) : 'Article publié',
     ], 201);
 }
 
@@ -222,8 +247,10 @@ json_error('Méthode non autorisée', 405);
  *   - id, remove_image (1 pour retirer la couverture actuelle)
  *   - existing[<imageId>][caption|position|delete] : MAJ ou suppression d'une photo galerie existante
  *   - gallery[], captions[], positions[] : nouvelles photos à ajouter
+ *   - publish_at : date de publication programmée (vide = publier maintenant,
+ *     champ absent = programmation inchangée)
  */
-function edit_article(PDO $pdo, array $user, int $id, string $titre, string $contenu, string $sources, bool $isMultipart, ?int $visible = null) {
+function edit_article(PDO $pdo, array $user, int $id, string $titre, string $contenu, string $sources, bool $isMultipart, ?int $visible = null, bool $setPublishAt = false, ?string $publishAt = null) {
     if ($id <= 0) json_error('id manquant pour l\'édition', 400);
     if ($titre === '' || mb_strlen($titre) > 190) json_error('Titre obligatoire (max 190)', 422);
     if ($contenu === '') json_error('Contenu obligatoire', 422);
@@ -287,6 +314,10 @@ function edit_article(PDO $pdo, array $user, int $id, string $titre, string $con
         $upd = $pdo->prepare('UPDATE articles SET titre = ?, image = ?, contenu = ?, sources = ?, visible = ?, updated_at = NOW() WHERE id = ?');
         $upd->execute([$titre, $finalCover, $contenu, $sources !== '' ? $sources : null, $finalVisible, $id]);
 
+        if ($setPublishAt) {
+            $pdo->prepare('UPDATE articles SET publish_at = ? WHERE id = ?')->execute([$publishAt, $id]);
+        }
+
         // Photos existantes : MAJ ou suppression
         $existing = $_POST['existing'] ?? [];
         $deletedPaths = [];
@@ -335,10 +366,12 @@ function edit_article(PDO $pdo, array $user, int $id, string $titre, string $con
         json_error('Erreur d\'enregistrement : ' . $e->getMessage(), 500);
     }
 
+    $scheduled = $setPublishAt && $publishAt && strtotime($publishAt) > time();
     json_response([
         'id'        => $id,
         'image_url' => $finalCover ? (preg_match('#^https?://#i', $finalCover) ? $finalCover : absolute_url($finalCover)) : null,
-        'message'   => 'Article modifié',
+        'scheduled' => $scheduled,
+        'message'   => $scheduled ? 'Article modifié — publication programmée le ' . format_publish_at($publishAt) : 'Article modifié',
     ]);
 }
 

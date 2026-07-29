@@ -10,21 +10,14 @@ $page = max(1, (int)($_GET['page'] ?? 1));
 $limit = min(50, max(1, (int)($_GET['limit'] ?? 20)));
 $offset = ($page - 1) * $limit;
 
-// Visibilité : public => articles visibles ; admin => tous ; auteur => visibles + les siens.
+// Visibilité : public => articles visibles ET déjà publiés (programmation échue) ;
+// admin => tous ; auteur => les publics + les siens.
 $viewer = api_current_user();
-if ($viewer && !empty($viewer['is_admin'])) {
-    $visClause = '';
-    $visParams = [];
-} elseif ($viewer) {
-    $visClause = ' AND (a.visible = 1 OR a.user_id = ?)';
-    $visParams = [(int)$viewer['id']];
-} else {
-    $visClause = ' AND a.visible = 1';
-    $visParams = [];
-}
+$visClause = article_visibility_clause($pdo, 'a', (int)($viewer['id'] ?? 0), !empty($viewer['is_admin']));
+$visParams = [];
 
 $stmt = $pdo->prepare("
-    SELECT a.id, a.titre, a.image, a.contenu, a.visible, a.created_at, a.updated_at,
+    SELECT a.id, a.titre, a.image, a.contenu, a.visible, " . publish_at_select($pdo, 'a') . ", a.created_at, a.updated_at,
            u.id AS author_id, u.nom, u.prenom,
            (SELECT COUNT(*) FROM comments c WHERE c.article_id = a.id) AS nb_comments,
            (SELECT COUNT(*) FROM articles s WHERE s.parent_id = a.id) AS nb_children,
@@ -32,7 +25,7 @@ $stmt = $pdo->prepare("
     FROM articles a
     JOIN users u ON u.id = a.user_id
     WHERE a.parent_id IS NULL{$visClause}
-    ORDER BY a.created_at DESC
+    ORDER BY " . article_date_order($pdo, 'a') . " DESC
     LIMIT ? OFFSET ?
 ");
 $i = 1;
@@ -55,6 +48,8 @@ foreach ($articles as &$a) {
     $a['nb_children'] = (int)$a['nb_children'];
     $a['nb_views']    = (int)$a['nb_views'];
     $a['visible']     = (int)$a['visible'];
+    $a['scheduled']   = article_is_scheduled($a);
+    $a['published_at'] = article_public_date($a);
     unset($a['image']);
 }
 

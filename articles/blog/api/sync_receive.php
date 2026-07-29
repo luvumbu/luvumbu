@@ -57,6 +57,12 @@ if (!sync_key_consume($token)) {
 }
 
 try {
+    // Le blog local est peut-etre deja migre (colonne articles.publish_at) : on
+    // s'assure qu'elle existe ici aussi, sinon l'import echouerait sur
+    // "Unknown column 'publish_at'".
+    require_once __DIR__ . '/../includes/helpers.php';
+    has_publish_at($pdo);
+
     $uploadsDir = __DIR__ . '/../uploads';
     $summary = sync_apply_payload($pdo, $_FILES['payload']['tmp_name'], $uploadsDir, [
         'mode'            => $mode,

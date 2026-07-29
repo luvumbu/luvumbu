@@ -6,6 +6,9 @@ require_login();
 $errors = [];
 $titre = $contenu = $sources = '';
 $visible = 1;
+$publishAt      = null;  // "Y-m-d H:i:s" ou null (publication immédiate)
+$publishAtInput = '';    // valeur brute du champ, réaffichée en cas d'erreur
+$canSchedule    = has_publish_at($pdo);
 
 // Sous-article : on récupère le parent depuis GET ou POST (hidden)
 $parentId = (int)($_POST['parent_id'] ?? $_GET['parent'] ?? 0);
@@ -40,6 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($titre === '' || mb_strlen($titre) > 190) $errors[] = 'Titre obligatoire (max 190 caractères).';
     if ($contenu === '') $errors[] = 'Contenu obligatoire.';
+
+    if ($canSchedule) {
+        $publishAtInput = trim((string)($_POST['publish_at'] ?? ''));
+        $publishAt = parse_publish_at($publishAtInput);
+        if ($publishAt === false) {
+            $errors[] = 'Date de programmation invalide.';
+            $publishAt = null;
+        }
+    }
 
     $coverPath = null;
     if (empty($errors)) {
@@ -77,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$user['id'], $parent ? (int)$parent['id'] : null, $titre, $coverPath, $contenu, $sources ?: null, $layoutString, $visible]);
             $articleId = (int)$pdo->lastInsertId();
 
+            if ($canSchedule) {
+                $pdo->prepare('UPDATE articles SET publish_at = ? WHERE id = ?')->execute([$publishAt, $articleId]);
+            }
+
             if (!empty($galleryUploads)) {
                 $ins = $pdo->prepare('INSERT INTO article_images (article_id, path, caption, position) VALUES (?, ?, ?, ?)');
                 foreach ($galleryUploads as $g) {
@@ -92,7 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            flash_set('success', 'Article publié.');
+            flash_set('success', $publishAt && strtotime($publishAt) > time()
+                ? 'Article enregistré — publication programmée le ' . format_publish_at($publishAt) . '.'
+                : 'Article publié.');
             redirect(base_url('pages/article.php?id=' . $articleId));
         }
     }
@@ -149,6 +167,13 @@ include __DIR__ . '/../includes/header.php';
                 <input type="checkbox" name="visible" value="1" <?= $visible ? 'checked' : '' ?> style="width:auto;">
                 Article visible publiquement <span class="muted">(décoche pour le garder en brouillon / masqué)</span>
             </label>
+
+            <?php if ($canSchedule): ?>
+                <label>⏳ Programmer la publication (optionnel)
+                    <input type="datetime-local" name="publish_at" value="<?= e($publishAtInput) ?>">
+                    <span class="muted">Vide = publication immédiate. Sinon l'article reste invisible au public jusqu'à cette date, puis s'affiche automatiquement.</span>
+                </label>
+            <?php endif; ?>
 
             <button type="submit" class="btn-primary">Publier</button>
         </form>

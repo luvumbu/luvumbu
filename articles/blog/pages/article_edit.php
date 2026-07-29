@@ -27,6 +27,10 @@ $contenu = $article['contenu'];
 $sources = $article['sources'] ?? '';
 $visible = (int)($article['visible'] ?? 1);
 
+$canSchedule    = has_publish_at($pdo);
+$publishAt      = $canSchedule ? ($article['publish_at'] ?? null) : null;
+$publishAtInput = datetime_local_value($publishAt);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check($_POST['csrf'] ?? '')) {
         $errors[] = 'Jeton invalide, recharge la page.';
@@ -41,6 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($titre === '' || mb_strlen($titre) > 190) $errors[] = 'Titre obligatoire (max 190 caractères).';
     if ($contenu === '') $errors[] = 'Contenu obligatoire.';
+
+    if ($canSchedule) {
+        $publishAtInput = trim((string)($_POST['publish_at'] ?? ''));
+        $parsed = parse_publish_at($publishAtInput);
+        if ($parsed === false) {
+            $errors[] = 'Date de programmation invalide.';
+        } else {
+            $publishAt = $parsed; // null = plus de programmation (publication immédiate)
+        }
+    }
 
     $newCoverPath = null;
     $hasNewCover = !empty($_FILES['image']['name']);
@@ -91,6 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('UPDATE articles SET titre = ?, image = ?, contenu = ?, sources = ?, layout = ?, visible = ?, updated_at = NOW() WHERE id = ?');
             $stmt->execute([$titre, $finalCover, $contenu, $sources ?: null, $layoutString, $visible, $id]);
 
+            if ($canSchedule) {
+                $pdo->prepare('UPDATE articles SET publish_at = ? WHERE id = ?')->execute([$publishAt, $id]);
+            }
+
             // MAJ ou suppression des photos existantes
             $existing = $_POST['existing'] ?? [];
             if (is_array($existing)) {
@@ -136,7 +154,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            flash_set('success', 'Article modifié.');
+            flash_set('success', $publishAt && strtotime($publishAt) > time()
+                ? 'Article modifié — publication programmée le ' . format_publish_at($publishAt) . '.'
+                : 'Article modifié.');
             redirect(base_url('pages/article.php?id=' . $id));
         }
     }
@@ -234,6 +254,19 @@ include __DIR__ . '/../includes/header.php';
                 <input type="checkbox" name="visible" value="1" <?= $visible ? 'checked' : '' ?> style="width:auto;">
                 Article visible publiquement <span class="muted">(décoche pour le masquer / repasser en brouillon)</span>
             </label>
+
+            <?php if ($canSchedule): ?>
+                <label>⏳ Programmer la publication (optionnel)
+                    <input type="datetime-local" name="publish_at" value="<?= e($publishAtInput) ?>">
+                    <span class="muted">
+                        <?php if (article_is_scheduled(['publish_at' => $publishAt])): ?>
+                            Publication prévue le <strong><?= e(format_publish_at($publishAt)) ?></strong> — vide le champ pour publier tout de suite.
+                        <?php else: ?>
+                            Vide = publication immédiate. Sinon l'article reste invisible au public jusqu'à cette date, puis s'affiche automatiquement.
+                        <?php endif; ?>
+                    </span>
+                </label>
+            <?php endif; ?>
 
             <button type="submit" class="btn-primary">Enregistrer</button>
         </form>

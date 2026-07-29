@@ -113,6 +113,104 @@ function count_article_views(PDO $pdo, int $articleId): int {
     }
 }
 
+// --- Programmation de la publication (articles.publish_at) ------------------
+
+function publish_at_alter_sql(): string {
+    return 'ALTER TABLE articles ADD COLUMN publish_at DATETIME NULL DEFAULT NULL,
+            ADD INDEX idx_articles_publish (publish_at)';
+}
+
+// La colonne publish_at est ajoutée par pages/migrate.php. Si elle manque encore
+// (site pas migré), on tente l'ALTER une fois ; en cas d'échec on retombe sur
+// l'ancien comportement — la programmation est alors simplement indisponible.
+function has_publish_at(PDO $pdo): bool {
+    static $has = null;
+    if ($has !== null) return $has;
+
+    $check = function () use ($pdo) {
+        try {
+            return (bool)$pdo->query("SHOW COLUMNS FROM articles LIKE 'publish_at'")->fetch();
+        } catch (Throwable $e) {
+            return false;
+        }
+    };
+
+    $has = $check();
+    if (!$has) {
+        try {
+            $pdo->exec(publish_at_alter_sql());
+            $has = $check();
+        } catch (Throwable $e) {
+            $has = false;
+        }
+    }
+    return $has;
+}
+
+// Instant de référence : heure PHP, la même qui écrit publish_at (évite tout
+// décalage de fuseau entre PHP et MySQL).
+function publish_now_sql(): string {
+    return date('Y-m-d H:i:s');
+}
+
+// Filtre SQL des articles selon le visiteur : le public ne voit que les articles
+// visibles ET dont la date de programmation est passée (ou absente). L'auteur voit
+// les siens, l'admin voit tout. $alias = alias de la table articles.
+function article_visibility_clause(PDO $pdo, string $alias = 'a', int $viewerId = 0, bool $viewerIsAdmin = false): string {
+    if ($viewerIsAdmin) return '';
+    $public = "{$alias}.visible = 1";
+    if (has_publish_at($pdo)) {
+        $public .= " AND ({$alias}.publish_at IS NULL OR {$alias}.publish_at <= '" . publish_now_sql() . "')";
+    }
+    if ($viewerId > 0) {
+        return " AND (({$public}) OR {$alias}.user_id = {$viewerId})";
+    }
+    return " AND ({$public})";
+}
+
+// À mettre dans un SELECT : renvoie publish_at, ou NULL si la colonne n'existe pas.
+function publish_at_select(PDO $pdo, string $alias = 'a'): string {
+    return has_publish_at($pdo) ? "{$alias}.publish_at" : 'NULL AS publish_at';
+}
+
+// Expression de tri : un article programmé se classe à sa date de publication.
+function article_date_order(PDO $pdo, string $alias = 'a'): string {
+    return has_publish_at($pdo)
+        ? "COALESCE({$alias}.publish_at, {$alias}.created_at)"
+        : "{$alias}.created_at";
+}
+
+// L'article attend-il encore sa date de publication ?
+function article_is_scheduled(array $article): bool {
+    return !empty($article['publish_at']) && strtotime((string)$article['publish_at']) > time();
+}
+
+// Date affichée comme date de publication : la date programmée si elle existe.
+function article_public_date(array $article): string {
+    return !empty($article['publish_at']) ? (string)$article['publish_at'] : (string)($article['created_at'] ?? '');
+}
+
+// "2026-08-01 09:00:00" → "01/08/2026 à 09:00"
+function format_publish_at($value): string {
+    $ts = $value ? strtotime((string)$value) : false;
+    return $ts ? date('d/m/Y', $ts) . ' à ' . date('H:i', $ts) : '';
+}
+
+// "2026-08-01 09:00:00" → "2026-08-01T09:00" (valeur d'un <input datetime-local>)
+function datetime_local_value($value): string {
+    $ts = $value ? strtotime((string)$value) : false;
+    return $ts ? date('Y-m-d\TH:i', $ts) : '';
+}
+
+// Valeur d'un <input datetime-local> → "Y-m-d H:i:s". '' → null, invalide → false.
+function parse_publish_at($raw) {
+    $raw = trim((string)$raw);
+    if ($raw === '') return null;
+    $ts = strtotime(str_replace('T', ' ', $raw));
+    if ($ts === false) return false;
+    return date('Y-m-d H:i:s', $ts);
+}
+
 // Ordre par défaut des blocs d'un article.
 function default_layout() {
     return ['title', 'cover', 'content', 'gallery', 'sources'];

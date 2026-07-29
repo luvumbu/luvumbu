@@ -34,6 +34,7 @@ $columnMigrations = [
     ['articles', 'updated_at', 'ALTER TABLE articles ADD COLUMN updated_at DATETIME DEFAULT NULL'],
     ['articles', 'layout',     'ALTER TABLE articles ADD COLUMN layout VARCHAR(255) DEFAULT NULL'],
     ['articles', 'visible',    'ALTER TABLE articles ADD COLUMN visible TINYINT(1) NOT NULL DEFAULT 1'],
+    ['articles', 'publish_at', publish_at_alter_sql()],
     ['articles', 'parent_id',  'ALTER TABLE articles ADD COLUMN parent_id INT DEFAULT NULL, ADD CONSTRAINT fk_articles_parent FOREIGN KEY (parent_id) REFERENCES articles(id) ON DELETE CASCADE, ADD INDEX idx_articles_parent (parent_id)'],
     ['users',    'is_admin',   'ALTER TABLE users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0'],
 ];

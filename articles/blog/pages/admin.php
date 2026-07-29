@@ -41,7 +41,7 @@ try {
 $users = $pdo->query('SELECT id, nom, prenom, email, is_admin, created_at FROM users ORDER BY created_at DESC')->fetchAll();
 
 $articles = $pdo->query("
-    SELECT a.id, a.titre, a.created_at, a.visible, u.prenom, u.nom,
+    SELECT a.id, a.titre, a.created_at, a.visible, " . publish_at_select($pdo, 'a') . ", u.prenom, u.nom,
            (SELECT COUNT(*) FROM comments c WHERE c.article_id = a.id) AS nb_comments,
            (SELECT COUNT(*) FROM article_views v WHERE v.article_id = a.id) AS nb_views
     FROM articles a
@@ -147,9 +147,11 @@ include __DIR__ . '/../includes/header.php';
                     <td><?= e($a['prenom'] . ' ' . $a['nom']) ?></td>
                     <td>👁️ <?= (int)$a['nb_views'] ?></td>
                     <td><?= (int)$a['nb_comments'] ?></td>
-                    <td><?= e($a['created_at']) ?></td>
+                    <td><?= e(article_public_date($a)) ?></td>
                     <td>
-                        <?php if ($isVisible): ?>
+                        <?php if (article_is_scheduled($a)): ?>
+                            <span class="pill pill-warn">⏳ programmé le <?= e(format_publish_at($a['publish_at'])) ?></span>
+                        <?php elseif ($isVisible): ?>
                             <span class="pill pill-ok">👁️ visible</span>
                         <?php else: ?>
                             <span class="pill pill-warn">🔒 masqué</span>

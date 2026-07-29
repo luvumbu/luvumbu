@@ -25,9 +25,11 @@ CREATE TABLE IF NOT EXISTS articles (
     sources TEXT DEFAULT NULL,
     layout VARCHAR(255) DEFAULT NULL,
     visible TINYINT(1) NOT NULL DEFAULT 1,
+    publish_at DATETIME NULL DEFAULT NULL,
     updated_at DATETIME NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_articles_parent (parent_id),
+    INDEX idx_articles_publish (publish_at),
     CONSTRAINT fk_articles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_articles_parent FOREIGN KEY (parent_id) REFERENCES articles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
