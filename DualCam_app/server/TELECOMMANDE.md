@@ -92,42 +92,29 @@ Trois verrous Android devaient être levés (sinon rien ne se déclenche en arri
 6. Ouvrir `web/remote.php`, se connecter avec **le même compte Google**.
 7. Cliquer ▶️ Démarrer → le cadre **REC** rouge + chrono apparaît en ~5–10 s.
 
-## 7bis. Photos & capture d'écran à distance
+## 7bis. Navigation (tuiles d'accès)
 
-En plus de Démarrer / Arrêter, la télécommande propose trois captures instantanées,
-envoyées au serveur (source « dualcam », visibles dans la galerie) :
+Les pages **Mes vidéos** (`dualcam.php`) et **Télécommande** (`remote.php`) partagent de
+**grandes tuiles** avec logos bien en avant (emoji ~52–64 px + ombre, titre en gras, effet
+de survol qui soulève la tuile) :
 
-| Bouton | Commande | Fonctionne écran verrouillé ? | Condition |
-|---|---|---|---|
-| 📷 Photo arrière | `photo_back`  | ✅ oui | caméra autorisée |
-| 🤳 Photo avant   | `photo_front` | ✅ oui | caméra autorisée |
-| 🖼️ Capture d'écran | `screenshot` | ✅ oui (API 30+) | **accessibilité DualCam active** |
-
-- Les **photos** passent par un service dédié (`PhotoService`, type FGS caméra) : capture
-  d'une seule image puis arrêt. Impossible **pendant** un enregistrement (caméra occupée).
-- La **capture d'écran** utilise le service d'**accessibilité** (`AccessibilityService.takeScreenshot`),
-  seul moyen de capturer l'écran **sans redemander l'autorisation** à chaque fois. Elle exige
-  donc que l'option **« Contrôle par bouton volume »** (qui active l'accessibilité) soit activée ;
-  sinon une notification l'indique et rien n'est capturé.
+- 🎬 **Télécommande** · 🎞️ **Mes vidéos** · 📸 **Galerie PhotoSync**
 
 ## 8. Fichiers concernés
 
 **Serveur** (`DualCam/`, répliqué à l'identique dans `DualCam_app/server/`)
-- `api/remote.php` — dépôt d'ordre, relève (`?poll=1&rec=`), état (`?status=1`), TTL, chrono.
-- `web/remote.php` — page PC : boutons, pastille, effet REC plein écran, chrono, AJAX.
+- `api/remote.php` — dépôt d'ordre (start/stop), relève (`?poll=1&rec=`), état (`?status=1`), TTL, chrono.
+- `web/remote.php` — page PC : boutons Démarrer/Arrêter, pastille, effet REC plein écran, chrono, tuiles, AJAX.
 - Table `dualcam_remote` : `user_id, cmd, rec, rec_since, issued_at, polled_at` (créée
   automatiquement, migrations idempotentes).
 
 **Application** (`DualCam_app/app/`)
 - `TriggerService.kt` — boucle d'interrogation (poll 5 s), type FGS caméra, WakeLock,
-  aiguillage des commandes (start/stop/photo_front/photo_back/screenshot).
+  aiguillage des commandes start/stop.
 - `RecordingService.kt` — WakeLock pendant l'enregistrement.
-- `PhotoService.kt` — capture d'une photo (avant/arrière) en arrière-plan, type FGS caméra.
-- `VolumeKeyService.kt` — capture d'écran via l'accessibilité (`takeScreenshot`, API 30+).
 - `net/ApiClient.kt` — `pollRemoteCommand(recording)` envoie l'état + relève l'ordre.
 - `ActivationActivity.kt` — case à cocher + demande d'exemption batterie.
-- `AndroidManifest.xml` — `PhotoService` (type `camera`),
-  `TriggerService` type `camera|microphone|specialUse`,
+- `AndroidManifest.xml` — `TriggerService` type `camera|microphone|specialUse`,
   permission `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
 
 ## 9. Enregistrement en ligne
@@ -136,9 +123,16 @@ Un enregistrement déclenché à distance suit exactement le même chemin qu'un 
 manuel : gardé sur le téléphone **et** envoyé au serveur (fragments au fil de l'eau, puis
 vidéo complète). On le retrouve ensuite dans **🎞️ Mes vidéos** (`web/dualcam.php`).
 
-## 10. Points ouverts
+## 10. Points ouverts / historique
 
 - La partie **« Direct / live »** (visionner le flux quasi temps réel sur le web) a été
   **abandonnée** et retirée du code.
+- Les commandes **photo avant/arrière et capture d'écran** ont été **retirées de la
+  télécommande** (trop d'aléas de capture selon les appareils). Le code côté app
+  (`PhotoService`, capture d'écran via accessibilité) existe encore mais est **dormant** :
+  plus aucun bouton ne l'invoque, et le serveur n'accepte que `start`/`stop`. Piste retenue
+  si on y revient : ouvrir la caméra **avec un flux** (ImageAnalysis) avant de déclencher —
+  une capture `ImageCapture` seule n'ouvre pas la caméra sur beaucoup d'appareils, ce qui
+  expliquait « la vidéo marche mais pas la photo ».
 - **Sécurité à traiter** : `DualCam/lib/db.config.php` (mot de passe MySQL en clair) est
   suivi par Git — à retirer du dépôt.
