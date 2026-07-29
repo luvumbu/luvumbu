@@ -241,11 +241,11 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
   <header>
     <h1><?= $inTrash ? '🗑️ Corbeille' : '📸 ' . htmlspecialchars($uname) ?> — <?= $total ?> photo(s)</h1>
     <div class="nav">
-      <a href="gallery.php" class="<?= $inTrash ? '' : 'active' ?>">Galerie</a>
+      <a href="gallery.php" class="<?= $inTrash ? '' : 'active' ?>">🖼️ Galerie</a>
       <a href="dualcam.php">🎞️ DualCam</a>
       <a href="remote.php">🎬 Télécommande</a>
       <a href="upload_web.php">➕ Ajouter</a>
-      <a href="gallery.php?view=corbeille" class="<?= $inTrash ? 'active' : '' ?>">Corbeille (<?= $trashCount ?>)</a>
+      <a href="gallery.php?view=corbeille" class="<?= $inTrash ? 'active' : '' ?>">🗑️ Corbeille (<?= $trashCount ?>)</a>
       <form class="settings" method="get" style="margin:0;display:inline;">
         <?php if ($inTrash): ?><input type="hidden" name="view" value="corbeille"><?php endif; ?>
         <?php if ($srcFilter !== ''): ?><input type="hidden" name="src" value="<?= htmlspecialchars($srcFilter) ?>"><?php endif; ?>
@@ -258,7 +258,7 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
         </select>
       </form>
       <?php if ($isAdmin): ?><a href="admin.php" class="admin-link">🛠️ Admin</a><?php endif; ?>
-      <a href="gallery.php?logout=1">Déconnexion</a>
+      <a href="gallery.php?logout=1">🚪 Déconnexion</a>
     </div>
   </header>
 

@@ -164,7 +164,7 @@ $rows = Photos::filterExisting($stmt->fetchAll(PDO::FETCH_ASSOC), $uid);
   <header>
     <h1>🎥 DualCam — <?= htmlspecialchars($uname) ?> · <?= $total ?> vidéo(s)</h1>
     <div class="nav">
-      <a href="dualcam.php?logout=1">Déconnexion</a>
+      <a href="dualcam.php?logout=1">🚪 Déconnexion</a>
     </div>
   </header>
 
