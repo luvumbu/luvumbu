@@ -98,6 +98,14 @@ $online  = $agoSec !== null && $agoSec <= 60;
     button:disabled{opacity:.45;cursor:not-allowed;}
     .ok{background:rgba(6,78,59,.45);border:1px solid #047857;color:#a7f3d0;padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:18px;}
     .note{color:#64748b;font-size:12px;line-height:1.6;margin-top:18px;border-top:1px solid rgba(148,163,184,.15);padding-top:16px;}
+    /* Retour serveur (fichiers réellement reçus) + erreur remontée par le téléphone */
+    .feed{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+          background:rgba(30,41,59,.55);border:1px solid rgba(148,163,184,.18);color:#cbd5e1;
+          padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:14px;text-align:left;}
+    .feed.fresh{background:rgba(6,78,59,.45);border-color:#047857;color:#a7f3d0;}
+    .feed a{color:#5eead4;text-decoration:none;font-weight:700;white-space:nowrap;}
+    .phone-err{background:rgba(127,29,29,.35);border:1px solid #7f1d1d;color:#fca5a5;
+               padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:14px;text-align:left;}
     a{color:#5eead4;}
 
     /* Tuiles d'accès (logos bien en avant), même style que l'accueil DualCam. */
@@ -138,6 +146,16 @@ $online  = $agoSec !== null && $agoSec <= 60;
         <span id="stateText">Vérification de l'état du téléphone…</span>
     </div>
 
+    <!-- Retour serveur : ce qui est RÉELLEMENT monté (fragments puis vidéo complète).
+         Sans ce bloc, on voyait REC tourner sans savoir si un fichier arrivait. -->
+    <div id="feedBox" class="feed">
+        <span id="feedText">Aucun fichier reçu pour l'instant.</span>
+        <a id="feedLink" href="dualcam.php" style="display:none">→ Mes vidéos</a>
+    </div>
+
+    <!-- Erreur remontée par le TÉLÉPHONE lui-même (envoi refusé, trop gros, hors ligne…). -->
+    <div id="errBox" class="phone-err" style="display:none"></div>
+
     <!-- Boutons TOUJOURS actifs : l'ordre est déposé et attend que le téléphone se reconnecte. -->
     <form id="cmdForm" method="post">
         <button class="start" name="cmd" value="start">▶️ Démarrer l'enregistrement</button>
@@ -161,6 +179,10 @@ const msg      = document.getElementById('msg');
 const stateBox = document.getElementById('stateBox');
 const stateDot = document.getElementById('stateDot');
 const stateTxt = document.getElementById('stateText');
+const feedBox  = document.getElementById('feedBox');
+const feedTxt  = document.getElementById('feedText');
+const feedLink = document.getElementById('feedLink');
+const errBox   = document.getElementById('errBox');
 const recFx    = document.getElementById('recFx');
 const recBadge = document.getElementById('recBadge');
 const chrono   = document.getElementById('chrono');
@@ -225,6 +247,34 @@ async function poll() {
         else if (online)     stateTxt.textContent = 'Téléphone à l\'écoute — vu il y a ' + j.seen_ago_s + ' s';
         else if (j.seen_ago_s !== null) stateTxt.textContent = 'Dernier contact il y a ' + Math.round(j.seen_ago_s / 60) + ' min — l\'ordre l\'attendra à sa reconnexion.';
         else                 stateTxt.textContent = 'Le téléphone n\'a pas encore contacté le serveur — l\'ordre l\'attendra dès qu\'il se connecte.';
+
+        // --- Retour serveur : fichiers réellement reçus ---
+        const m = j.last_media;
+        if (m) {
+            const mo   = (m.size / 1048576).toFixed(1);
+            const when = m.ago_s < 60 ? 'il y a ' + m.ago_s + ' s'
+                       : m.ago_s < 3600 ? 'il y a ' + Math.round(m.ago_s / 60) + ' min'
+                       : 'il y a ' + Math.round(m.ago_s / 3600) + ' h';
+            const cnt = (rec && j.session_files > 0) ? ' · ' + j.session_files + ' fichier(s) sur cet enregistrement' : '';
+            feedTxt.textContent = '📥 Dernier fichier reçu : ' + m.name + ' (' + mo + ' Mo) ' + when + cnt;
+            feedLink.style.display = '';
+            // Vert tant que c'est frais (moins de 2 min) : le retour est en train de se faire.
+            feedBox.classList.toggle('fresh', m.ago_s <= 120);
+        } else {
+            feedTxt.textContent = rec
+                ? '⏳ Enregistrement en cours — aucun fichier encore arrivé sur le serveur.'
+                : 'Aucun fichier reçu pour l\'instant.';
+            feedLink.style.display = 'none';
+            feedBox.classList.remove('fresh');
+        }
+
+        // --- Erreur remontée par le téléphone (sinon on cherche à l'aveugle) ---
+        if (j.phone_err) {
+            errBox.textContent = '⚠️ Téléphone : ' + j.phone_err;
+            errBox.style.display = 'block';
+        } else {
+            errBox.style.display = 'none';
+        }
     } catch (e) { /* réseau : on réessaie */ }
 }
 

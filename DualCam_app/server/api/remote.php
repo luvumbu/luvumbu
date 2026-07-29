@@ -112,6 +112,28 @@ if (isset($_GET['status'])) {
     $cap->execute([$uid]);
     $capRow = $cap->fetch(PDO::FETCH_ASSOC) ?: [];
 
+    // Dernier média DualCam RÉELLEMENT arrivé sur le serveur (fragment de 30 s ou
+    // vidéo complète). C'est le vrai « retour » attendu par la page PC : sans lui,
+    // on voit REC tourner sans jamais savoir si quelque chose est monté.
+    $med = $db->prepare(
+        'SELECT id, original_name, size_bytes, uploaded_at FROM ' . TBL_PHOTOS . '
+          WHERE user_id = ? AND source = \'dualcam\' AND deleted_at IS NULL
+          ORDER BY id DESC LIMIT 1'
+    );
+    $med->execute([$uid]);
+    $medRow = $med->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    // Nombre de fichiers reçus depuis le début de l'enregistrement en cours.
+    $sessionCount = 0;
+    if (!empty($row['rec_since'])) {
+        $cnt = $db->prepare(
+            'SELECT COUNT(*) c FROM ' . TBL_PHOTOS . '
+              WHERE user_id = ? AND source = \'dualcam\' AND deleted_at IS NULL AND uploaded_at >= ?'
+        );
+        $cnt->execute([$uid, $row['rec_since']]);
+        $sessionCount = (int) ($cnt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+    }
+
     Api::json([
         'ok'               => true,
         'recording'        => $recording,
@@ -121,6 +143,14 @@ if (isset($_GET['status'])) {
         'has_pending'      => ((string) ($row['cmd'] ?? '')) !== '',
         'last_capture_id'  => isset($capRow['id']) ? (int) $capRow['id'] : null,
         'phone_err'        => (string) ($row['last_err'] ?? ''),
+        // Retour serveur : ce qui est réellement monté (nom, âge, taille) + compte de la session.
+        'last_media'       => $medRow ? [
+            'id'      => (int) $medRow['id'],
+            'name'    => (string) $medRow['original_name'],
+            'size'    => (int) $medRow['size_bytes'],
+            'ago_s'   => max(0, time() - strtotime((string) $medRow['uploaded_at'])),
+        ] : null,
+        'session_files'    => $sessionCount,
     ]);
 }
 
