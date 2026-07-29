@@ -262,6 +262,23 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
     </div>
   </header>
 
+  <!-- Tuiles d'accès (logos bien en avant), mêmes que l'accueil DualCam -->
+  <style>
+    .quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;padding:22px 28px 4px;max-width:1150px;margin:0 auto;}
+    .ql{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:26px 18px;border-radius:22px;text-decoration:none;color:#e6f2ef;
+        background:linear-gradient(135deg,rgba(20,184,166,.16),rgba(99,102,241,.16));border:1px solid rgba(148,163,184,.16);
+        transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease;}
+    .ql:hover{transform:translateY(-5px);border-color:#14b8a6;box-shadow:0 16px 36px rgba(0,0,0,.5);}
+    .ql .ql-ic{font-size:58px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));}
+    .ql b{font-size:1.25rem;margin-top:10px;font-weight:800;}
+    .ql small{color:#94a3b8;font-size:.88rem;margin-top:2px;}
+  </style>
+  <div class="quicklinks">
+    <a class="ql" href="dualcam.php"><span class="ql-ic">🎞️</span><b>DualCam — Mes vidéos</b><small>Les enregistrements</small></a>
+    <a class="ql" href="remote.php"><span class="ql-ic">🎬</span><b>Télécommande</b><small>Démarrer / arrêter à distance</small></a>
+    <a class="ql" href="upload_web.php"><span class="ql-ic">➕</span><b>Ajouter</b><small>Envoyer une photo / vidéo</small></a>
+  </div>
+
   <?php
     // Bouton « Afficher » : filtre la galerie selon l'origine (téléphone / ordinateur / web).
     $qsBase  = 'gallery.php?perpage=' . $perPage . ($inTrash ? '&view=corbeille' : '');
