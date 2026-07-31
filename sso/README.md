@@ -82,7 +82,21 @@ define('LUVUMBU_HUB', 'https://luvumbu.com/sso/');
 require __DIR__ . '/sso/client.php';
 ```
 
-## Configuration — `sso/secret.local.php` (À CRÉER, gitignoré)
+## Mise en service — `sso/install.php`
+Sur un serveur neuf, **ne pas créer `secret.local.php` à la main** : ouvrir
+`https://luvumbu.com/sso/install.php`. La page génère la clé, écrit le fichier et crée le
+premier compte administrateur. Protégée par la session `admin.php`, qui sait se rabattre sur
+les identifiants MySQL tant que le SSO n'est pas actif.
+
+> ⚠️ **Le secret et le premier compte ne se dissocient pas.** Dès que le secret existe,
+> `admin.php` et `_gestion` cessent d'accepter leur formulaire de secours et exigent le hub :
+> sans compte dans l'annuaire, plus personne n'entre. L'assistant impose donc un e-mail et un
+> mot de passe (8 caractères minimum).
+
+Voir aussi `GUIDE_DEPLOIEMENT.md` à la racine, et `etat.php` qui indique si le fichier est
+présent sur le serveur.
+
+## Configuration — `sso/secret.local.php` (généré par l'assistant, gitignoré)
 ```php
 <?php return [
   'secret'           => '<longue chaîne aléatoire, ≥ 32 caractères>',   // OBLIGATOIRE, la MÊME partout
@@ -111,6 +125,7 @@ require __DIR__ . '/sso/client.php';
 | Fichier | Rôle |
 |---------|------|
 | `lib.php` | JWT (sign/verify), vérif Google, cookie partagé |
+| `install.php` | Mise en service : écrit le secret + crée le premier admin |
 | `accounts.php` | Annuaire central : comptes, mots de passe, rôles, anti-force brute |
 | `index.php` | Hub : la page de connexion unique + l'aiguillage vers les apps |
 | `accounts_admin.php` | Gestion des comptes et des accès (admins) |
