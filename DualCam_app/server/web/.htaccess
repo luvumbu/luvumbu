@@ -1,0 +1,19 @@
+# Ce dossier est une COPIE MIROIR du serveur déployé sous /DualCam/.
+#
+# Elle vit ici parce que le projet Android embarque sa partie serveur, et elle
+# est maintenue à l'identique. Mais elle est aussi déployée en ligne, et c'est
+# un piège : les deux copies partagent la MÊME base de données alors que chacune
+# range ses fichiers dans SON PROPRE dossier uploads/ (UPLOAD_DIR est relatif).
+#
+# Conséquence observée : une vidéo envoyée par l'application — qui vise
+# https://luvumbu.com/DualCam — apparaît dans les deux galeries, mais son
+# fichier n'existe que sous /DualCam/uploads/. Ouvrir la galerie de cette
+# copie-ci donne des vignettes vides, ce qui ressemble à « rien n'a été envoyé ».
+#
+# On renvoie donc les pages web vers l'adresse officielle. Le motif capture le
+# préfixe pour fonctionner aussi bien en local (/luvumbu/…) qu'en ligne.
+#
+# L'API (api/) n'est VOLONTAIREMENT pas redirigée : OkHttp ne rejoue pas le
+# corps d'un POST après une 301/302, une redirection y casserait les envois.
+
+RedirectMatch 302 ^(.*)/DualCam_app/server/web/(.*)$ $1/DualCam/web/$2
