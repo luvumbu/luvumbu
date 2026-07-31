@@ -16,6 +16,14 @@ try {
     $summary['last_import']  = $pdo->query('SELECT finished_at FROM import_runs WHERE status = "ok" ORDER BY id DESC LIMIT 1')->fetchColumn() ?: null;
 } catch (Throwable $e) {
     $error = $e->getMessage();
+
+    // Base injoignable ou schéma absent : c'est un défaut de configuration, pas
+    // une panne. On envoie sur l'assistant, qui sait poser les questions et
+    // écrire config/config.local.php — le fichier que Git ne déploie jamais.
+    if (is_file(__DIR__ . '/install.php')) {
+        header('Location: install.php');
+        exit;
+    }
 }
 
 // Le menu « Pays » ne liste que ce qui existe réellement en base : proposer un
@@ -59,7 +67,7 @@ $today = date('Y-m-d');
 <div class="fatal">
     <h1>Base de données inaccessible</h1>
     <p><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
-    <p>Vérifiez que MySQL tourne dans XAMPP, puis lancez&nbsp;: <code>php bin/setup.php</code></p>
+    <p><a href="install.php">Configurer la base de données →</a></p>
 </div>
 <?php else: ?>
 

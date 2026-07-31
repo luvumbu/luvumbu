@@ -248,5 +248,9 @@ try {
     echo json_encode([
         'error'   => "Impossible de lire les données.",
         'message' => $e->getMessage(),
+        // Distingue « base pas configurée » de « vraie panne » : la première se
+        // règle dans install.php, la seconde non.
+        'setup_required' => $e instanceof PDOException,
+        'setup_url'      => '../install.php',
     ], JSON_UNESCAPED_UNICODE);
 }

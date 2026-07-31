@@ -9,6 +9,27 @@ choses distinctes**, et c'est la deuxième qu'on oublie&nbsp;:
 3. écrire `config/config.local.php` sur le serveur avec les identifiants MySQL
    de l'hébergeur.
 
+## Le plus simple : `install.php`
+
+Les points 2 et 3 se règlent **depuis un navigateur**, sans FTP ni ligne de
+commande&nbsp;: ouvrez **`https://…/ATHLE_COMPETITION/install.php`**. La page
+demande les identifiants MySQL de l'hébergeur, vérifie la connexion, crée la
+base si l'hébergeur l'autorise, applique `sql/schema.sql` et écrit
+`config/config.local.php` toute seule.
+
+`index.php` y renvoie automatiquement tant que la base n'est pas joignable&nbsp;:
+un déploiement sans configuration ne mène plus à un cul-de-sac.
+
+Une fois l'application opérationnelle, `install.php` **se verrouille** : changer
+les identifiants exige alors de saisir le mot de passe actuel de la base. Si ce
+mot de passe est vide, la reconfiguration par le web est refusée — il faut
+supprimer `config/config.local.php` sur le serveur pour repartir de zéro.
+
+L'installateur crée les **tables**, pas les **données** : après coup, la carte
+est vide tant que le dump n'est pas importé (voir ci-dessous).
+
+Le reste de cette page décrit la voie manuelle, toujours valable.
+
 ## Prérequis côté serveur
 
 | | |

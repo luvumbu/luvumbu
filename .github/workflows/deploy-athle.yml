@@ -31,6 +31,10 @@ jobs:
           # dangerous-clean-slate reste absent volontairement : il effacerait
           # config/config.local.php, qui n'existe que sur le serveur et porte les
           # identifiants de la base.
+          # sql/schema.sql DOIT partir : install.php s'en sert pour créer les
+          # tables depuis le navigateur. Seul le dump de données reste au sol
+          # (il est lourd, et de toute façon ignoré par Git). Le .htaccess de
+          # l'app interdit déjà l'accès web aux .sql et au dossier sql/.
           exclude: |
             **/.git*
             **/.git*/**
@@ -38,7 +42,8 @@ jobs:
             **/.browser-profile/**
             scraper/**
             data/**
-            sql/**
+            sql/dump.sql
+            sql/dump.sql.gz
             update.cmd
             DEPLOIEMENT.md
             README.md
