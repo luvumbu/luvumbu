@@ -7,5 +7,7 @@ _gestion/password.local.php
 _gestion/.lockout.json
 _gestion/apikey.local.php
 
-# SSO Luvumbu ID : secret partagé (jamais versionné)
+# SSO Luvumbu ID : secret partagé et annuaire des comptes (jamais versionnés)
 sso/secret.local.php
+sso/accounts.local.php
+sso/.attempts.json

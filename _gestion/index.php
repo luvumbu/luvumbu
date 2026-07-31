@@ -6,19 +6,45 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 require __DIR__ . '/lib.php';
-fs_boot();
+fs_boot();                                        // ouvre la session AVANT le client SSO
 
-/* Déconnexion */
+/* Connexion déléguée au hub « Luvumbu ID » : le gestionnaire n'est plus une
+   porte d'entrée séparée. Le formulaire local ne subsiste qu'en secours,
+   quand le hub n'est pas configuré sur ce serveur. */
+require_once __DIR__ . '/../sso/client.php';
+$SSO_ON = sso_ready();
+
+/* Déconnexion (globale si la session venait du hub) */
 if (isset($_GET['logout'])) {
+    $viaSso = !empty($_SESSION['fs_admin_sso']);
+    $back   = luvumbu_url('index.php');
     $_SESSION = [];
     session_destroy();
+    if ($viaSso) { header('Location: ' . rtrim(luvumbu_hub(), '/') . '/logout.php?return=' . rawurlencode($back)); exit; }
     header('Location: index.php');
     exit;
 }
 
-/* Traitement de la connexion */
 $err = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_pw'])) {
+
+/* Identité venant du hub (consomme aussi le ?sso=… du retour). */
+$ssoUser = $SSO_ON ? luvumbu_user() : null;
+if ($ssoUser) {
+    if (luvumbu_is_admin($ssoUser, 'gestion')) {
+        $_SESSION['fs_admin']     = true;
+        $_SESSION['fs_admin_sso'] = true;
+    } else {
+        $err = 'Ton compte Luvumbu ID n\'a pas le rôle administrateur sur le gestionnaire de fichiers.';
+    }
+}
+
+/* Ni session locale ni session admin du portfolio → au hub (point d'entrée unique). */
+if (!fs_authed() && $SSO_ON && !$ssoUser) {
+    luvumbu_require_login('gestion');
+}
+
+/* Traitement de la connexion de SECOURS (hub indisponible) */
+if (!$SSO_ON && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_pw'])) {
     $wait = fs_locked_for();
     if ($wait > 0) {
         $err = 'Trop de tentatives. Réessayez dans ' . ceil($wait / 60) . ' min.';
@@ -123,11 +149,24 @@ $authed = fs_authed();
 </head>
 <body>
 
-<?php if (!$authed): /* ─────────── ÉCRAN DE CONNEXION ─────────── */ ?>
+<?php if (!$authed && $SSO_ON): /* ── Identité valide mais rôle insuffisant ── */ ?>
+<div class="login">
+  <div class="card">
+    <h1>🗂️ Gestion des fichiers</h1>
+    <p class="sub">Connexion assurée par <b>Luvumbu ID</b>, le point d'entrée unique du site.</p>
+    <?php if ($err): ?><div class="err"><?= h($err) ?></div><?php endif; ?>
+    <div style="margin-top:18px">
+      <a href="<?= h(luvumbu_hub()) ?>?app=gestion&amp;return=<?= h(urlencode(luvumbu_url('index.php'))) ?>">
+        <button class="primary" style="width:100%">Changer de compte →</button></a>
+    </div>
+  </div>
+</div>
+
+<?php elseif (!$authed): /* ── SECOURS : hub non configuré sur ce serveur ── */ ?>
 <div class="login">
   <form class="card" method="post" autocomplete="off">
     <h1>🗂️ Gestion des fichiers</h1>
-    <p class="sub">luvumbu.com — accès réservé</p>
+    <p class="sub">Luvumbu ID indisponible — connexion de secours</p>
     <?php if ($err): ?><div class="err"><?= h($err) ?></div><?php endif; ?>
     <label>Utilisateur <span class="muted">(facultatif)</span></label>
     <input type="text" name="login_user" autocomplete="username">

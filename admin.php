@@ -27,12 +27,44 @@ $app     = is_file($appFile) ? (json_decode(file_get_contents($appFile), true) ?
 function ea($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 $hexok = fn($v) => is_string($v) && preg_match('/^#[0-9a-fA-F]{6}$/', $v);
 
-/* Déconnexion */
-if (isset($_GET['logout'])) { unset($_SESSION['pf_admin']); header('Location: admin.php'); exit; }
+/* ─── Connexion : déléguée au hub « Luvumbu ID » ───────────────────────────
+   Cette page ne demande plus d'identifiants : l'écosystème n'a qu'une seule
+   porte d'entrée (sso/index.php), qui vérifie l'identité, contrôle le rôle sur
+   l'application « admin », puis renvoie ici. On ne conserve le formulaire
+   MySQL qu'en secours, si le hub n'est pas configuré sur ce serveur. */
+require_once __DIR__ . '/sso/client.php';
+$SSO_ON = sso_ready();
 
-/* Connexion */
+/* Déconnexion : globale quand on est passé par le hub (un seul point de
+   sortie comme il n'y a qu'un seul point d'entrée). */
+if (isset($_GET['logout'])) {
+    $viaSso = !empty($_SESSION['pf_admin_sso']);
+    unset($_SESSION['pf_admin'], $_SESSION['pf_admin_user'], $_SESSION['pf_admin_sso']);
+    if ($viaSso) luvumbu_logout(true, luvumbu_url('admin.php'));
+    header('Location: admin.php'); exit;
+}
+
 $err = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_pw'])) {
+
+/* Identité venant du hub (consomme aussi le ?sso=… du retour). */
+$ssoUser = $SSO_ON ? luvumbu_user() : null;
+if ($ssoUser) {
+    if (luvumbu_is_admin($ssoUser, 'admin')) {
+        $_SESSION['pf_admin']      = true;
+        $_SESSION['pf_admin_user'] = $ssoUser;      // nom/e-mail pour l'affichage
+        $_SESSION['pf_admin_sso']  = true;
+    } else {
+        $err = 'Ton compte Luvumbu ID n\'a pas le rôle administrateur sur cet espace.';
+    }
+}
+
+/* Pas encore identifié et le hub est disponible → on y va (point d'entrée unique). */
+if (empty($_SESSION['pf_admin']) && $SSO_ON && !$ssoUser) {
+    luvumbu_require_login('admin');
+}
+
+/* Connexion de SECOURS (hub indisponible) : identifiants MySQL, comme avant. */
+if (!$SSO_ON && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_pw'])) {
     $tryUser = trim((string)($_POST['login_user'] ?? ''));
     $tryPw   = trim((string)$_POST['login_pw']);   // tolère espaces accidentels (copier-coller)
     $ok = false;
@@ -447,9 +479,21 @@ $themes = [
 <body>
 <div class="card">
 
-<?php if (!$authed): ?>
+<?php if (!$authed && $SSO_ON): ?>
+  <?php /* Le hub gère la connexion : on n'arrive ici que si l'identité est
+           valide mais sans le rôle administrateur sur cet espace. */ ?>
   <h1>🔒 Espace <span>admin</span></h1>
-  <p class="sub">Connexion avec les identifiants MySQL (utilisateur + mot de passe).</p>
+  <p class="sub">Connexion assurée par <b>Luvumbu ID</b>, le point d'entrée unique du site.</p>
+  <?php if ($err): ?><div class="msg err"><?= ea($err) ?></div><?php endif; ?>
+  <div class="actions">
+    <a class="btn" href="<?= ea(luvumbu_hub()) ?>?app=admin&amp;return=<?= ea(urlencode(luvumbu_url('admin.php'))) ?>">Changer de compte →</a>
+    <a class="back" href="index.php">⮜ Retour au portfolio</a>
+  </div>
+
+<?php elseif (!$authed): ?>
+  <?php /* SECOURS : hub non configuré sur ce serveur (secret SSO manquant). */ ?>
+  <h1>🔒 Espace <span>admin</span></h1>
+  <p class="sub">Luvumbu ID indisponible — connexion de secours avec les identifiants MySQL.</p>
   <?php if ($err): ?><div class="msg err"><?= ea($err) ?></div><?php endif; ?>
   <form method="post" autocomplete="off">
     <label for="user">Utilisateur MySQL</label>
