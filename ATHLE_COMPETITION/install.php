@@ -254,6 +254,14 @@ $h = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
       <tr><td>Fichier de configuration</td>
           <td class="<?= is_file(LOCAL_CONFIG) ? 'ok' : 'ko' ?>">
             <?= is_file(LOCAL_CONFIG) ? 'config/config.local.php présent' : 'absent — valeurs de développement utilisées' ?></td></tr>
+      <?php /* Le .htaccess renvoie 404 sur sql/ : impossible de savoir de l'extérieur
+               si le fichier est monté. On le dit ici, sinon « Créer les tables »
+               échoue sans qu'on comprenne pourquoi. */ ?>
+      <tr><td>Fichier de schéma</td>
+          <td class="<?= is_file(__DIR__ . '/sql/schema.sql') ? 'ok' : 'ko' ?>">
+            <?= is_file(__DIR__ . '/sql/schema.sql')
+                  ? 'sql/schema.sql présent'
+                  : 'sql/schema.sql absent — la création des tables est impossible, envoie-le par FTP' ?></td></tr>
       <tr><td>Connexion à la base</td>
           <td class="<?= $connected ? 'ok' : 'ko' ?>">
             <?= $connected ? 'établie (' . $h($current['user']) . '@' . $h($current['host']) . ' → ' . $h($current['name']) . ')' : 'impossible' ?></td></tr>
