@@ -130,7 +130,28 @@ iOS n'autorise pas l'envoi automatique en arrière-plan. On passe par le **web**
 2. Bouton **📁 Ordinateur** → choisir des fichiers (photos, vidéos, **documents**, musique…) ;
    ou **📱 Application**. L'envoi se fait directement.
 
-> 💡 iPhone : Safari → **Partager → Sur l'écran d'accueil** crée une icône type application.
+### Installer PhotoSync comme une vraie application (iPhone, Android, PC)
+
+PhotoSync est une **application web installable** : elle s'ajoute à l'écran d'accueil,
+s'ouvre **en plein écran** (sans barre d'adresse) et a sa propre icône —
+**sans App Store ni Play Store, et sans rien télécharger**.
+
+Page qui explique tout et détecte l'appareil : **`https://luvumbu.com/web/appli.php`**
+*(ou `.../dropbox/web/appli.php` si PhotoSync est dans un sous-dossier)*.
+Elle est aussi accessible par le bouton **📲 Appli** dans la galerie.
+
+| Appareil | Marche à suivre |
+|---|---|
+| **iPhone / iPad** | Ouvrir le site dans **Safari** (obligatoire) → bouton **Partager ⬆️** → **Sur l'écran d'accueil** → **Ajouter**. |
+| **Android** | Dans **Chrome** : menu **⋮** → **Installer l'application**. Un bouton *« Installer maintenant »* apparaît aussi sur `appli.php`. |
+| **Ordinateur** | Chrome/Edge : icône **⊕ Installer** dans la barre d'adresse. PhotoSync s'ouvre alors dans sa propre fenêtre. |
+
+> ⚠️ **iPhone** : l'app installée a **sa propre session**, séparée de Safari. Il faut donc
+> se reconnecter **une fois** à l'intérieur de l'app ; ensuite la connexion est conservée.
+>
+> 📴 Sans réseau, l'app affiche une page « Pas de connexion » au lieu de l'erreur du
+> navigateur. PhotoSync reste une app **connectée** : les photos ne sont pas stockées
+> sur le téléphone, elles restent sur le serveur.
 
 ### Voir et **lire** ses fichiers en ligne
 Sur **`gallery.php`** vous pouvez :

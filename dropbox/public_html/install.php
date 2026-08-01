@@ -132,6 +132,7 @@ if ($showForm):
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<?= Pwa::head('.') ?>
 <title>PhotoSync — Configuration</title>
 <style>
   body { font-family:system-ui,sans-serif; max-width:560px; margin:24px auto; padding:0 16px; background:#0b1220; color:#e2e8f0; }
@@ -220,10 +221,14 @@ try {
             INDEX idx_deleted (deleted_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
-    Auth::ensureSchema(); // crée la table users + colonnes user_id/deleted_at + index par compte
+    Auth::ensureSchema();   // table users + colonnes user_id/deleted_at + index par compte
+    Albums::ensureSchema(); // tables des albums partageables (dossiers + liaisons)
     $count = (int) Db::pdo()->query('SELECT COUNT(*) c FROM ' . TBL_PHOTOS . ' WHERE deleted_at IS NULL')
                             ->fetch(PDO::FETCH_ASSOC)['c'];
     check($checks, 'Tables « ' . DB_PREFIX . 'users / ' . DB_PREFIX . 'photos »', true, "OK ($count photo(s) active(s))");
+
+    $nAlb = (int) Db::pdo()->query('SELECT COUNT(*) c FROM ' . TBL_ALBUMS)->fetch(PDO::FETCH_ASSOC)['c'];
+    check($checks, 'Tables des albums partageables', true, "OK ($nAlb album(s))");
 } catch (Throwable $e) {
     check($checks, 'Tables PhotoSync', false, $e->getMessage());
 }
@@ -251,6 +256,7 @@ $allOk = array_reduce($checks, fn($acc, $c) => $acc && $c['ok'], true);
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?= Pwa::head('.') ?>
 <title>PhotoSync — Installation</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 680px; margin: 24px auto; padding: 0 16px; }

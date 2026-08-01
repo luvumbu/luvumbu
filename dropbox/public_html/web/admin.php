@@ -48,7 +48,7 @@ if (!$isAdmin):
 <!doctype html>
 <html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<?= Pwa::head('..') ?>
 <title>PhotoSync — Admin</title>
 <style>
   * { box-sizing:border-box; }
@@ -267,7 +267,7 @@ $pageQs = 'view=photos' . ($filterUser > 0 ? '&user=' . $filterUser : ($unassign
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<?= Pwa::head('..') ?>
 <title>PhotoSync — Inscrits</title>
 <style>
   :root{

@@ -10,6 +10,9 @@ final class Photos
     /** Choix possibles du nombre de photos par page (galerie web). */
     const PER_PAGE = [5, 10, 20, 50, 100];
 
+    /** Taille maximale (octets) d'une archive ZIP : au-delà, le disque temporaire souffre. */
+    const ZIP_MAX_BYTES = 2147483648; // 2 Go
+
     /** Chemin physique du fichier d'une ligne photo (active => uploads ; corbeille sinon). */
     public static function physicalPath(array $row): string
     {
@@ -106,6 +109,7 @@ final class Photos
             if (is_file($f)) @unlink($f);
         }
         @unlink(self::thumbFile($id));
+        Albums::forgetPhoto($id); // ne laisse pas de liaison orpheline dans les albums
         Db::pdo()->prepare('DELETE FROM ' . TBL_PHOTOS . ' WHERE id = ? AND user_id = ?')->execute([$id, $uid]);
     }
 
@@ -144,6 +148,93 @@ final class Photos
         imagejpeg($thumb, $dst, 82);
         imagedestroy($img);
         imagedestroy($thumb);
+    }
+
+    // ---- Archives ZIP (téléchargement groupé) ----
+
+    /**
+     * Fabrique une archive ZIP temporaire à partir de lignes photo (galerie ou corbeille).
+     * Renvoie ['path' => fichier temporaire, 'count' => nb de fichiers], ou null si rien
+     * n'a pu être ajouté (extension ZIP absente, fichiers introuvables…).
+     */
+    public static function buildZip(array $rows): ?array
+    {
+        if (!$rows || !class_exists('ZipArchive')) return null;
+
+        $tmp = tempnam(sys_get_temp_dir(), 'psync_zip_');
+        $zip = new ZipArchive();
+        if ($tmp === false || $zip->open($tmp, ZipArchive::OVERWRITE) !== true) {
+            if ($tmp !== false) @unlink($tmp);
+            return null;
+        }
+
+        @set_time_limit(0);
+
+        $base  = realpath(UPLOAD_DIR);
+        $added = 0;
+        $used  = [];
+        foreach ($rows as $r) {
+            $path = realpath(self::physicalPath($r));
+            // Garde-fou : on ne sort jamais du dossier uploads/ (corbeille incluse).
+            if ($path === false || $base === false || strpos($path, $base) !== 0 || !is_file($path)) continue;
+
+            $safe  = self::zipEntryName($r['original_name'] ?: ('fichier_' . $r['id']));
+            // Deux fichiers de même nom : on préfixe le second par son identifiant.
+            $entry = isset($used[$safe]) ? ($r['id'] . '_' . $safe) : $safe;
+            $used[$entry] = true;
+
+            if (!$zip->addFile($path, $entry)) continue;
+            // Photos et vidéos sont déjà compressées : on stocke tel quel, c'est bien plus rapide.
+            if (method_exists($zip, 'setCompressionName')) $zip->setCompressionName($entry, ZipArchive::CM_STORE);
+            $added++;
+        }
+        $zip->close();
+
+        if ($added === 0) { @unlink($tmp); return null; }
+        return ['path' => $tmp, 'count' => $added];
+    }
+
+    /**
+     * Nom de fichier sûr dans une archive : accents transcrits (é → e) plutôt que
+     * remplacés par des « _ », puis tout caractère exotique neutralisé.
+     */
+    public static function zipEntryName(string $name): string
+    {
+        $accents = [
+            'à'=>'a','â'=>'a','ä'=>'a','á'=>'a','ã'=>'a','å'=>'a','ç'=>'c','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e',
+            'î'=>'i','ï'=>'i','í'=>'i','ì'=>'i','ô'=>'o','ö'=>'o','ó'=>'o','ò'=>'o','õ'=>'o','ù'=>'u','û'=>'u',
+            'ü'=>'u','ú'=>'u','ÿ'=>'y','ñ'=>'n','œ'=>'oe','æ'=>'ae','ß'=>'ss',
+            'À'=>'A','Â'=>'A','Ä'=>'A','Á'=>'A','Ã'=>'A','Å'=>'A','Ç'=>'C','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E',
+            'Î'=>'I','Ï'=>'I','Í'=>'I','Ì'=>'I','Ô'=>'O','Ö'=>'O','Ó'=>'O','Ò'=>'O','Õ'=>'O','Ù'=>'U','Û'=>'U',
+            'Ü'=>'U','Ú'=>'U','Ñ'=>'N','Œ'=>'OE','Æ'=>'AE',
+        ];
+        $name = strtr($name, $accents);
+        $name = (string) preg_replace('/[^A-Za-z0-9._-]+/', '_', $name);
+        return trim($name, '_') !== '' ? $name : 'fichier';
+    }
+
+    /** Envoie l'archive au navigateur puis efface le fichier temporaire (ne revient pas). */
+    public static function sendZip(string $tmp, string $baseName): void
+    {
+        $slug = trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '_', $baseName), '_');
+        if ($slug === '') $slug = 'photosync';
+
+        while (ob_get_level() > 0) ob_end_clean();
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $slug . '.zip"');
+        header('Content-Length: ' . filesize($tmp));
+        header('X-Accel-Buffering: no');
+        readfile($tmp);
+        @unlink($tmp);
+        exit;
+    }
+
+    /** Poids total (octets) d'une liste de lignes photo. */
+    public static function totalBytes(array $rows): int
+    {
+        $n = 0;
+        foreach ($rows as $r) $n += (int) ($r['size_bytes'] ?? 0);
+        return $n;
     }
 
     // ---- Classification par type de fichier (photo / vidéo / audio / document / autre) ----

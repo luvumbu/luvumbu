@@ -41,7 +41,7 @@ try {
         $report['db_connected'] = true;
 
         $tables = [];
-        foreach ([TBL_USERS, TBL_PHOTOS] as $t) {
+        foreach ([TBL_USERS, TBL_PHOTOS, TBL_ALBUMS, TBL_ALBUM_PHOTOS] as $t) {
             try {
                 $n = Db::pdo()->query("SELECT COUNT(*) c FROM `$t`")->fetch(PDO::FETCH_ASSOC)['c'];
                 $tables[$t] = (int) $n;

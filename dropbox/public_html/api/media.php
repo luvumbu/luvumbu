@@ -2,21 +2,38 @@
 // === Sert une image, seulement si elle appartient au compte connecté ===
 //   media.php?id=12          -> image complète
 //   media.php?id=12&thumb=1  -> miniature
-// Accès : session web (galerie) OU jeton du compte (app, ?token= / X-Auth-Token).
+//   media.php?id=12&a=<tok>  -> via un album partagé (visiteur sans compte)
+// Accès : session web (galerie) OU jeton du compte (app, ?token= / X-Auth-Token)
+//         OU jeton d'album partagé (web/share.php).
 
 require __DIR__ . '/../lib/bootstrap.php';
 Auth::startSession();
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($id <= 0) { http_response_code(400); exit('id manquant'); }
+
+// --- Accès public par lien de partage ---
+// Trois conditions cumulées : la photo est bien dans l'album désigné par le jeton,
+// l'album n'a pas expiré, et son mot de passe (s'il existe) a été saisi dans cette
+// session via web/share.php. Sinon on retombe sur l'accès normal (compte).
+$shareTok = isset($_GET['a']) ? (string) $_GET['a'] : '';
+$viaShare = false;
+if ($shareTok !== '' && Albums::validToken($shareTok)) {
+    Albums::ensureSchema();
+    $shared = Albums::byToken($shareTok);
+    if ($shared && !Albums::isExpired($shared)
+        && (empty($shared['pass_hash']) || !empty($_SESSION['album_ok'][$shareTok]))) {
+        $viaShare = Albums::photoInToken($id, $shareTok);
+    }
+}
 
 // L'admin voit les photos de tout le monde ; sinon, seul le propriétaire.
 // Admin = clé maître de la base (admin_ok) OU compte Google promu administrateur.
 $uid = Auth::currentUserId();
 $isAdmin = !empty($_SESSION['admin_ok']) || ($uid !== null && Auth::isAdmin($uid));
-if (!$isAdmin && $uid === null) { http_response_code(403); exit('Accès refusé'); }
+if (!$viaShare && !$isAdmin && $uid === null) { http_response_code(403); exit('Accès refusé'); }
 
-$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-if ($id <= 0) { http_response_code(400); exit('id manquant'); }
-
-if ($isAdmin) {
+if ($viaShare || $isAdmin) {
     $stmt = Db::pdo()->prepare('SELECT user_id, stored_path, deleted_at FROM ' . TBL_PHOTOS . ' WHERE id = ?');
     $stmt->execute([$id]);
 } else {

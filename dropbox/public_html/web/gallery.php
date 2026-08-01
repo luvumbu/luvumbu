@@ -29,6 +29,20 @@ if (!in_array($perPage, Photos::PER_PAGE, true)) $perPage = 5;
 if ($uid) {
     Photos::purgeOldTrash($uid);
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+        // Ajout de la sélection à un album partageable : action groupée, traitée
+        // avant les actions photo par photo. On enchaîne sur la page de l'album
+        // pour que le lien de partage soit immédiatement sous la main.
+        if ($_POST['action'] === 'album_add') {
+            Albums::ensureSchema();
+            $aid = (int) ($_POST['album_id'] ?? 0);
+            if ($aid > 0) {
+                Albums::addPhotos($aid, (int) $uid, Request::ids());
+                header('Location: albums.php?id=' . $aid . '&ok=ajout');
+                exit;
+            }
+            header('Location: gallery.php');
+            exit;
+        }
         foreach (Request::ids() as $i) {
             switch ($_POST['action']) {
                 case 'trash':   Photos::trash($i, $uid);         break;
@@ -51,7 +65,7 @@ if (!$uid) {
     ?>
     <!doctype html><html lang="fr"><head>
         <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+        <?= Pwa::head('..') ?>
         <title>PhotoSync — Connexion</title>
         <style>
             * { box-sizing:border-box; }
@@ -74,6 +88,8 @@ if (!$uid) {
             .admin-btn { display:block; text-decoration:none; padding:13px; border-radius:12px; font-weight:700; font-size:15px;
                          color:#c4b5fd; border:1px solid rgba(124,58,237,.5); background:rgba(124,58,237,.12); transition:background .15s, color .15s; }
             .admin-btn:hover { background:rgba(124,58,237,.28); color:#fff; }
+            .install-link { display:block; margin-top:14px; color:#8da2c0; font-size:13px; text-decoration:none; }
+            .install-link:hover { color:#bcd0ef; }
         </style></head>
     <body><div class="card">
         <div class="logo">📸</div>
@@ -83,7 +99,16 @@ if (!$uid) {
         <div class="hint">Ton compte est créé automatiquement la première fois.</div>
         <div class="sep">ou</div>
         <a href="admin.php" class="admin-btn">🛠️ Espace administrateur</a>
-    </div></body></html>
+        <a href="appli.php" class="install-link" id="installLink">📲 Installer l'app sur mon téléphone</a>
+    </div>
+    <script>
+      // Inutile de proposer l'installation si on est déjà lancé depuis l'icône.
+      if (<?= Pwa::isStandaloneJs() ?>) {
+        var l = document.getElementById('installLink');
+        if (l) l.remove();
+      }
+    </script>
+    </body></html>
     <?php
     exit;
 }
@@ -127,12 +152,21 @@ $filterQs = ($srcFilter !== '' ? '&src=' . $srcFilter : '')
           . ($typeFilter !== '' ? '&type=' . $typeFilter : '')
           . ($sortKey !== 'date_desc' ? '&sort=' . $sortKey : '');
 $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
+
+// ---- Albums (pour le bouton « Ajouter à l'album » de la barre d'actions) ----
+Albums::ensureSchema();
+$myAlbums = Albums::forUser((int) $uid);
+// Arrivée depuis un album (« ➕ Ajouter des photos ») : on le présélectionne.
+$preAlbum = (int) ($_GET['album'] ?? 0);
+$preName  = '';
+foreach ($myAlbums as $a) { if ((int) $a['id'] === $preAlbum) { $preName = (string) $a['name']; break; } }
+if ($preName === '') $preAlbum = 0;
 ?>
 <!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<?= Pwa::head('..') ?>
 <title>PhotoSync — <?= $inTrash ? 'Corbeille' : 'Galerie' ?></title>
 <style>
   :root{
@@ -164,6 +198,14 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
   .bulk-btn:hover { filter:brightness(1.12); }
   .b-trash { background:linear-gradient(135deg,#ef4444,#b91c1c); } .b-restore { background:linear-gradient(135deg,var(--green),#059669); } .b-purge { background:linear-gradient(135deg,#7c2d12,#431407); }
   .b-up { background:linear-gradient(135deg,#475569,#334155); } .b-app { background:linear-gradient(135deg,#2563eb,#1565C0); }
+  .b-dl { background:linear-gradient(135deg,var(--accent2),#0891b2); }
+  .allpages { font-size:.85rem; color:#9fd7e6; background:rgba(34,211,238,.1); border:1px solid rgba(34,211,238,.35); padding:6px 11px; border-radius:999px; }
+  .b-album { background:linear-gradient(135deg,var(--violet),#6d28d9); text-decoration:none; display:inline-block; }
+  .albumsel { color:#cbd8ef; background:#16213a; border:1px solid var(--line); padding:10px 12px; border-radius:11px; font-size:.9rem; cursor:pointer; max-width:210px; }
+  .albumsel option { color:#000; }
+  /* Bandeau affiché quand on arrive depuis un album pour y ajouter des photos. */
+  .albumbar { max-width:1100px; margin:14px auto 0; padding:12px 18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+              background:rgba(167,139,250,.12); border:1px solid rgba(167,139,250,.45); border-radius:12px; color:#ddd6fe; font-size:.92rem; }
   #upLog { max-width:1100px; margin:8px auto 0; padding:0 22px; color:#8da2c0; font-size:.9rem; }
   .srcfilter { display:flex; gap:8px; align-items:center; flex-wrap:wrap; max-width:1100px; margin:14px auto 0; padding:0 22px; }
   .srcfilter-lbl { color:#8da2c0; font-size:.9rem; }
@@ -209,6 +251,14 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
     if (n === 0){ alert('Sélectionne au moins une photo.'); return false; }
     return confirm(msg.replace('{n}', n));
   }
+  // Téléchargement ZIP : soit la sélection cochée, soit toutes les pages si la case est mise.
+  function bulkZip(totalAll){
+    var all = document.getElementById('zipAll');
+    if (all && all.checked) return confirm('Préparer une archive ZIP des ' + totalAll + ' fichier(s) ? Cela peut prendre un moment.');
+    var n = document.querySelectorAll('input[name="ids[]"]:checked').length;
+    if (n === 0){ alert('Coche au moins un fichier à télécharger.'); return false; }
+    return confirm('Télécharger ' + n + ' fichier(s) en une archive ZIP ?');
+  }
   // Envoi direct depuis la galerie (boutons Ordinateur / Application), sans changer de page.
   function wireUpload(input, source){
     if (!input) return;
@@ -243,7 +293,10 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
     <div class="nav">
       <a href="gallery.php" class="<?= $inTrash ? '' : 'active' ?>">Galerie</a>
       <a href="upload_web.php">➕ Ajouter</a>
+      <a href="albums.php">📁 Albums<?= $myAlbums ? ' (' . count($myAlbums) . ')' : '' ?></a>
       <a href="gallery.php?view=corbeille" class="<?= $inTrash ? 'active' : '' ?>">Corbeille (<?= $trashCount ?>)</a>
+      <!-- Masqué quand l'app tourne déjà depuis l'écran d'accueil (voir script en bas de page). -->
+      <a href="appli.php" id="navInstall">📲 Appli</a>
       <form class="settings" method="get" style="margin:0;display:inline;">
         <?php if ($inTrash): ?><input type="hidden" name="view" value="corbeille"><?php endif; ?>
         <?php if ($srcFilter !== ''): ?><input type="hidden" name="src" value="<?= htmlspecialchars($srcFilter) ?>"><?php endif; ?>
@@ -304,6 +357,14 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
     <?php endif; ?>
   </div>
 
+  <?php if ($preAlbum > 0): ?>
+    <div class="albumbar">
+      <span>📁 Ajout à l'album <b><?= htmlspecialchars($preName) ?></b> : coche les photos voulues, puis clique sur « Ajouter à l'album ».</span>
+      <span style="flex:1"></span>
+      <a href="albums.php?id=<?= $preAlbum ?>" style="color:#ddd6fe;">← Revenir à l'album</a>
+    </div>
+  <?php endif; ?>
+
   <?php if ($total === 0): ?>
     <div class="empty"><?php
         if ($inTrash) echo 'La corbeille est vide ♻️';
@@ -319,13 +380,31 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
       <?php if ($sortKey !== 'date_desc'): ?><input type="hidden" name="sort" value="<?= htmlspecialchars($sortKey) ?>"><?php endif; ?>
       <div class="toolbar">
         <label><input type="checkbox" onclick="toggleAll(this)"> Tout sélectionner</label>
+        <?php if ($pages > 1): ?>
+          <label class="allpages" title="Le téléchargement portera sur tous les fichiers affichés par les filtres en cours, pas seulement cette page">
+            <input type="checkbox" id="zipAll" name="zip_all" value="1"> ⬇️ toutes les pages (<?= $total ?>)
+          </label>
+        <?php endif; ?>
         <span class="spacer"></span>
+        <button class="bulk-btn b-dl" type="submit" formaction="download_zip.php" onclick="return bulkZip(<?= $total ?>)">⬇️ Télécharger (ZIP)</button>
         <?php if ($inTrash): ?>
           <button class="bulk-btn b-restore" type="submit" name="action" value="restore" onclick="return bulk('Restaurer {n} photo(s) ?')">♻️ Restaurer la sélection</button>
           <button class="bulk-btn b-purge" type="submit" name="action" value="purge" onclick="return bulk('Supprimer DÉFINITIVEMENT {n} photo(s) ?')">❌ Supprimer définitivement</button>
         <?php else: ?>
           <button type="button" class="bulk-btn b-up" onclick="document.getElementById('upDesk').click()">📁 Ordinateur</button>
           <button type="button" class="bulk-btn b-app" onclick="document.getElementById('upApp').click()">📱 Application</button>
+          <?php if ($myAlbums): ?>
+            <select class="albumsel" name="album_id" title="Album de destination">
+              <?php foreach ($myAlbums as $a): ?>
+                <option value="<?= (int) $a['id'] ?>" <?= (int) $a['id'] === $preAlbum ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['name']) ?> (<?= (int) $a['n'] ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <button class="bulk-btn b-album" type="submit" name="action" value="album_add" onclick="return bulk('Ajouter {n} photo(s) à cet album ?')">📁 Ajouter à l'album</button>
+          <?php else: ?>
+            <a class="bulk-btn b-album" href="albums.php">📁 Créer un album à partager</a>
+          <?php endif; ?>
           <button class="bulk-btn b-trash" type="submit" name="action" value="trash" onclick="return bulk('Mettre {n} photo(s) à la corbeille ?')">🗑 Mettre la sélection à la corbeille</button>
           <input id="upDesk" type="file" accept="*/*" multiple style="display:none">
           <input id="upApp" type="file" accept="image/*,video/*" multiple style="display:none">
@@ -374,5 +453,12 @@ $viewQs = ($inTrash ? '&view=corbeille' : '') . $filterQs;
       </div>
     <?php endif; ?>
   <?php endif; ?>
+  <script>
+    // Installée sur l'écran d'accueil : le lien « Appli » n'a plus lieu d'être.
+    if (<?= Pwa::isStandaloneJs() ?>) {
+      var n = document.getElementById('navInstall');
+      if (n) n.remove();
+    }
+  </script>
 </body>
 </html>

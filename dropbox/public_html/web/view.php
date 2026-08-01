@@ -32,7 +32,7 @@ $media = '../api/media.php?id=' . $id;   // streaming (avec en-têtes Range pour
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<?= Pwa::head('..') ?>
 <title><?= htmlspecialchars($name) ?> — PhotoSync</title>
 <style>
   :root{ --bg:#0b1220; --line:#22304f; --ink:#e6edf7; --muted:#8da2c0; --accent:#4f8cff; }
