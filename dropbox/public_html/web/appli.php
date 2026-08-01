@@ -135,5 +135,6 @@ require __DIR__ . '/../lib/bootstrap.php';
     btn.classList.add('hidden');
   });
 </script>
+<?= Pwa::iosBanner() ?>
 </body>
 </html>

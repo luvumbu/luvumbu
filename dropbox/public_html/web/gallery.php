@@ -99,7 +99,7 @@ if (!$uid) {
         <div class="hint">Ton compte est créé automatiquement la première fois.</div>
         <div class="sep">ou</div>
         <a href="admin.php" class="admin-btn">🛠️ Espace administrateur</a>
-        <a href="appli.php" class="install-link" id="installLink">📲 Installer l'app sur mon téléphone</a>
+        <a href="appli.php" class="install-link" id="installLink">📲 Mettre sur l'écran d'accueil</a>
     </div>
     <script>
       // Inutile de proposer l'installation si on est déjà lancé depuis l'icône.
@@ -108,6 +108,7 @@ if (!$uid) {
         if (l) l.remove();
       }
     </script>
+    <?= Pwa::iosBanner() ?>
     </body></html>
     <?php
     exit;
@@ -460,5 +461,6 @@ if ($preName === '') $preAlbum = 0;
       if (n) n.remove();
     }
   </script>
+  <?= Pwa::iosBanner() ?>
 </body>
 </html>
